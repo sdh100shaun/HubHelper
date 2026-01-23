@@ -1,4 +1,4 @@
-import { PullRequest, Repository, SecurityIssue, AnalysisResult } from '../types/index.js';
+import type { AnalysisResult, PullRequest, Repository, SecurityIssue } from '../types/index.js';
 
 export class SecurityAnalyzer {
   analyzeSelfMerges(pullRequests: PullRequest[]): SecurityIssue[] {
@@ -127,9 +127,7 @@ export class SecurityAnalyzer {
     for (const repo of repositories) {
       if (!repo.workflows) continue;
 
-      const pausedWorkflows = repo.workflows.filter(
-        w => w.state === 'disabled_inactivity'
-      );
+      const pausedWorkflows = repo.workflows.filter((w) => w.state === 'disabled_inactivity');
 
       for (const workflow of pausedWorkflows) {
         issues.push({
@@ -159,9 +157,7 @@ export class SecurityAnalyzer {
     for (const repo of repositories) {
       if (!repo.workflows) continue;
 
-      const disabledWorkflows = repo.workflows.filter(
-        w => w.state === 'disabled_manually'
-      );
+      const disabledWorkflows = repo.workflows.filter((w) => w.state === 'disabled_manually');
 
       for (const workflow of disabledWorkflows) {
         issues.push({
@@ -184,10 +180,7 @@ export class SecurityAnalyzer {
     return issues;
   }
 
-  generateAnalysisResult(
-    repositories: Repository[],
-    pullRequests: PullRequest[]
-  ): AnalysisResult {
+  generateAnalysisResult(repositories: Repository[], pullRequests: PullRequest[]): AnalysisResult {
     const selfMergeIssues = this.analyzeSelfMerges(pullRequests);
     const securityPRIssues = this.analyzeSecurityPRs(pullRequests);
     const disabledActionsIssues = this.analyzeDisabledActions(repositories);
@@ -235,15 +228,11 @@ export class SecurityAnalyzer {
     }
 
     if (disabledWorkflowIssues.length > 0) {
-      recommendations.push(
-        'Review manually disabled workflows and re-enable if still needed'
-      );
+      recommendations.push('Review manually disabled workflows and re-enable if still needed');
     }
 
     if (securityPRIssues.length > 5) {
-      recommendations.push(
-        'Consider implementing automated dependency updates with Dependabot'
-      );
+      recommendations.push('Consider implementing automated dependency updates with Dependabot');
     }
 
     const summary = this.generateSummary(allIssues, repositories, pullRequests);
@@ -269,13 +258,15 @@ export class SecurityAnalyzer {
     repositories: Repository[],
     pullRequests: PullRequest[]
   ): string {
-    const critical = issues.filter(i => i.severity === 'critical').length;
-    const high = issues.filter(i => i.severity === 'high').length;
-    const medium = issues.filter(i => i.severity === 'medium').length;
-    const low = issues.filter(i => i.severity === 'low').length;
+    const critical = issues.filter((i) => i.severity === 'critical').length;
+    const high = issues.filter((i) => i.severity === 'high').length;
+    const medium = issues.filter((i) => i.severity === 'medium').length;
+    const low = issues.filter((i) => i.severity === 'low').length;
 
-    return `Analyzed ${repositories.length} repositories and ${pullRequests.length} pull requests. ` +
-           `Found ${issues.length} total issues: ` +
-           `${critical} critical, ${high} high, ${medium} medium, ${low} low severity.`;
+    return (
+      `Analyzed ${repositories.length} repositories and ${pullRequests.length} pull requests. ` +
+      `Found ${issues.length} total issues: ` +
+      `${critical} critical, ${high} high, ${medium} medium, ${low} low severity.`
+    );
   }
 }

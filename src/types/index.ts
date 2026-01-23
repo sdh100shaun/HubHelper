@@ -33,12 +33,41 @@ export interface Repository {
   workflows?: Workflow[];
 }
 
+export interface SecurityIssueDetails {
+  pr_number?: number;
+  title?: string;
+  url?: string;
+  author?: string;
+  merged_by?: string;
+  merged_at?: string;
+  was_self_merged?: boolean;
+  labels?: string[];
+  files_changed?: string[];
+  repo_name?: string;
+  full_name?: string;
+  is_private?: boolean;
+  security_enabled?: boolean;
+  workflow_name?: string;
+  workflow_path?: string;
+  workflow_url?: string;
+  is_scheduled?: boolean;
+  updated_at?: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
 export interface SecurityIssue {
-  type: 'self-merge' | 'security-pr' | 'disabled-actions' | 'unreviewed-security-pr' | 'paused-workflow' | 'disabled-workflow';
+  type:
+    | 'self-merge'
+    | 'security-pr'
+    | 'disabled-actions'
+    | 'unreviewed-security-pr'
+    | 'paused-workflow'
+    | 'disabled-workflow';
   severity: 'low' | 'medium' | 'high' | 'critical';
   repository: string;
   description: string;
-  details: any;
+  details: SecurityIssueDetails;
   detected_at: string;
 }
 

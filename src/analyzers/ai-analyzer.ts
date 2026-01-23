@@ -1,4 +1,4 @@
-import { AnalysisResult, SecurityIssue } from '../types/index.js';
+import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 /**
  * AI-powered analyzer using GitHub Copilot SDK
@@ -30,20 +30,22 @@ export class AIAnalyzer {
     const trends: string[] = [];
 
     // Analyze self-merge patterns
-    const selfMerges = issues.filter(i => i.type === 'self-merge');
+    const selfMerges = issues.filter((i) => i.type === 'self-merge');
     if (selfMerges.length > 0) {
-      const repos = new Set(selfMerges.map(i => i.repository));
+      const repos = new Set(selfMerges.map((i) => i.repository));
       patterns.push(`Self-merges detected across ${repos.size} repositories`);
 
       if (selfMerges.length > 5) {
-        trends.push('High frequency of self-merges indicates potential lack of code review culture');
+        trends.push(
+          'High frequency of self-merges indicates potential lack of code review culture'
+        );
       }
     }
 
     // Analyze security PR patterns
-    const securityPRs = issues.filter(i => i.type === 'security-pr');
+    const securityPRs = issues.filter((i) => i.type === 'security-pr');
     if (securityPRs.length > 0) {
-      const critical = securityPRs.filter(i => i.severity === 'critical').length;
+      const critical = securityPRs.filter((i) => i.severity === 'critical').length;
       patterns.push(`${securityPRs.length} security-related PRs identified`);
 
       if (critical > 0) {
@@ -52,15 +54,15 @@ export class AIAnalyzer {
     }
 
     // Analyze disabled actions
-    const disabledActions = issues.filter(i => i.type === 'disabled-actions');
+    const disabledActions = issues.filter((i) => i.type === 'disabled-actions');
     if (disabledActions.length > 0) {
       patterns.push(`${disabledActions.length} repositories have GitHub Actions disabled`);
       trends.push('Consider enabling Actions for automated security scanning and CI/CD');
     }
 
     // Risk assessment
-    const criticalCount = issues.filter(i => i.severity === 'critical').length;
-    const highCount = issues.filter(i => i.severity === 'high').length;
+    const criticalCount = issues.filter((i) => i.severity === 'critical').length;
+    const highCount = issues.filter((i) => i.severity === 'high').length;
 
     let risk_assessment = 'Low risk';
     if (criticalCount > 0) {
@@ -79,7 +81,7 @@ export class AIAnalyzer {
    */
   async generateRecommendations(issues: SecurityIssue[]): Promise<string[]> {
     const recommendations: string[] = [];
-    const issueTypes = new Set(issues.map(i => i.type));
+    const issueTypes = new Set(issues.map((i) => i.type));
 
     if (issueTypes.has('self-merge')) {
       recommendations.push(
@@ -105,7 +107,7 @@ export class AIAnalyzer {
       );
     }
 
-    const criticalIssues = issues.filter(i => i.severity === 'critical');
+    const criticalIssues = issues.filter((i) => i.severity === 'critical');
     if (criticalIssues.length > 0) {
       recommendations.push(
         `⚠️ URGENT: Address ${criticalIssues.length} critical security issues immediately`,
@@ -117,12 +119,16 @@ export class AIAnalyzer {
   }
 
   private prepareAnalysisContext(analysisResult: AnalysisResult): string {
-    return JSON.stringify({
-      summary: analysisResult.summary,
-      statistics: analysisResult.statistics,
-      issue_count_by_type: this.groupIssuesByType(analysisResult.issues),
-      issue_count_by_severity: this.groupIssuesBySeverity(analysisResult.issues),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        summary: analysisResult.summary,
+        statistics: analysisResult.statistics,
+        issue_count_by_type: this.groupIssuesByType(analysisResult.issues),
+        issue_count_by_severity: this.groupIssuesBySeverity(analysisResult.issues),
+      },
+      null,
+      2
+    );
   }
 
   private generateStructuredInsights(analysisResult: AnalysisResult): string {
@@ -138,7 +144,9 @@ export class AIAnalyzer {
     // Self-merge analysis
     if (statistics.self_merges > 0) {
       const selfMergeRate = (statistics.self_merges / statistics.total_prs) * 100;
-      insights.push(`⚠️ Self-Merge Rate: ${selfMergeRate.toFixed(1)}% (${statistics.self_merges}/${statistics.total_prs} PRs)`);
+      insights.push(
+        `⚠️ Self-Merge Rate: ${selfMergeRate.toFixed(1)}% (${statistics.self_merges}/${statistics.total_prs} PRs)`
+      );
     }
 
     // Security PR analysis
@@ -149,23 +157,31 @@ export class AIAnalyzer {
     // Actions status
     if (statistics.repos_with_disabled_actions > 0) {
       const disabledRate = (statistics.repos_with_disabled_actions / statistics.total_repos) * 100;
-      insights.push(`⚙️ Actions Disabled: ${disabledRate.toFixed(1)}% of repos (${statistics.repos_with_disabled_actions}/${statistics.total_repos})`);
+      insights.push(
+        `⚙️ Actions Disabled: ${disabledRate.toFixed(1)}% of repos (${statistics.repos_with_disabled_actions}/${statistics.total_repos})`
+      );
     }
 
     return insights.join('\n');
   }
 
   private groupIssuesByType(issues: SecurityIssue[]): Record<string, number> {
-    return issues.reduce((acc, issue) => {
-      acc[issue.type] = (acc[issue.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return issues.reduce(
+      (acc, issue) => {
+        acc[issue.type] = (acc[issue.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }
 
   private groupIssuesBySeverity(issues: SecurityIssue[]): Record<string, number> {
-    return issues.reduce((acc, issue) => {
-      acc[issue.severity] = (acc[issue.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return issues.reduce(
+      (acc, issue) => {
+        acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }
 }

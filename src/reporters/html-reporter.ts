@@ -1,5 +1,5 @@
-import { writeFileSync } from 'fs';
-import { AnalysisResult, SecurityIssue } from '../types/index.js';
+import { writeFileSync } from 'node:fs';
+import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 export class HTMLReporter {
   generateReport(result: AnalysisResult, aiInsights?: string): string {
@@ -168,12 +168,16 @@ export class HTMLReporter {
                 </div>
             </div>
 
-            ${aiInsights ? `
+            ${
+              aiInsights
+                ? `
             <div class="ai-insights">
                 <strong>🤖 AI-Powered Insights:</strong><br><br>
                 ${aiInsights}
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
             ${this.generateIssuesSection(result.issues)}
 
@@ -201,7 +205,7 @@ export class HTMLReporter {
     for (const [type, typeIssues] of Object.entries(groupedIssues)) {
       html += `<h3>${this.formatType(type)} (${typeIssues.length})</h3>`;
 
-      typeIssues.forEach(issue => {
+      for (const issue of typeIssues) {
         html += `
           <div class="issue">
             <h3>
@@ -213,7 +217,7 @@ export class HTMLReporter {
             ${issue.details.merged_at ? `<p><strong>Merged:</strong> ${new Date(issue.details.merged_at).toLocaleString()}</p>` : ''}
           </div>
         `;
-      });
+      }
     }
 
     html += '</div>';
@@ -224,28 +228,31 @@ export class HTMLReporter {
     if (recommendations.length === 0) return '';
 
     let html = '<div class="section recommendations"><h2>💡 Recommendations</h2><ul>';
-    recommendations.forEach(rec => {
+    for (const rec of recommendations) {
       html += `<li>${rec}</li>`;
-    });
+    }
     html += '</ul></div>';
 
     return html;
   }
 
   private groupIssuesByType(issues: SecurityIssue[]): Record<string, SecurityIssue[]> {
-    return issues.reduce((acc, issue) => {
-      if (!acc[issue.type]) {
-        acc[issue.type] = [];
-      }
-      acc[issue.type].push(issue);
-      return acc;
-    }, {} as Record<string, SecurityIssue[]>);
+    return issues.reduce(
+      (acc, issue) => {
+        if (!acc[issue.type]) {
+          acc[issue.type] = [];
+        }
+        acc[issue.type].push(issue);
+        return acc;
+      },
+      {} as Record<string, SecurityIssue[]>
+    );
   }
 
   private formatType(type: string): string {
     return type
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 

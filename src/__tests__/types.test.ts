@@ -1,10 +1,10 @@
 import type {
+  AnalysisResult,
+  OrganizationActivity,
   PullRequest,
   Repository,
   SecurityIssue,
   Workflow,
-  AnalysisResult,
-  OrganizationActivity,
 } from '../types/index';
 
 describe('Type Definitions', () => {

@@ -3,12 +3,12 @@
 import { Command } from 'commander';
 import { config } from 'dotenv';
 import ora from 'ora';
-import { GitHubFetcher } from './services/github-fetcher.js';
-import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
 import { AIAnalyzer } from './analyzers/ai-analyzer.js';
+import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
-import { JSONReporter } from './reporters/json-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
+import { JSONReporter } from './reporters/json-reporter.js';
+import { GitHubFetcher } from './services/github-fetcher.js';
 
 // Load environment variables
 config();
@@ -36,15 +36,19 @@ program
       // Get configuration
       const token = options.token || process.env.GITHUB_TOKEN;
       const org = options.org || process.env.GITHUB_ORG;
-      const days = parseInt(options.days);
+      const days = Number.parseInt(options.days);
 
       if (!token) {
-        consoleReporter.printError(new Error('GitHub token is required. Set GITHUB_TOKEN env var or use --token'));
+        consoleReporter.printError(
+          new Error('GitHub token is required. Set GITHUB_TOKEN env var or use --token')
+        );
         process.exit(1);
       }
 
       if (!org) {
-        consoleReporter.printError(new Error('Organization name is required. Set GITHUB_ORG env var or use --org'));
+        consoleReporter.printError(
+          new Error('Organization name is required. Set GITHUB_ORG env var or use --org')
+        );
         process.exit(1);
       }
 
@@ -99,7 +103,6 @@ program
         htmlReporter.saveToFile(analysisResult, options.html, aiInsights);
         consoleReporter.printSuccess(`HTML report saved to ${options.html}`);
       }
-
     } catch (error) {
       consoleReporter.printError(error as Error);
       process.exit(1);

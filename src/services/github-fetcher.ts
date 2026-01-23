@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { PullRequest, Repository, Workflow } from '../types/index.js';
+import type { PullRequest, Repository, Workflow } from '../types/index.js';
 
 export class GitHubFetcher {
   private octokit: Octokit;
@@ -10,7 +10,7 @@ export class GitHubFetcher {
     this.org = organization;
   }
 
-  async getRepositories(includeWorkflows: boolean = true): Promise<Repository[]> {
+  async getRepositories(includeWorkflows = true): Promise<Repository[]> {
     const repos: Repository[] = [];
     let page = 1;
     const perPage = 100;
@@ -29,10 +29,11 @@ export class GitHubFetcher {
         // Check if Actions is enabled
         let actionsEnabled = false;
         try {
-          const { data: actionsData } = await this.octokit.actions.getGithubActionsPermissionsRepository({
-            owner: this.org,
-            repo: repo.name,
-          });
+          const { data: actionsData } =
+            await this.octokit.actions.getGithubActionsPermissionsRepository({
+              owner: this.org,
+              repo: repo.name,
+            });
           actionsEnabled = actionsData.enabled;
         } catch (error) {
           // If we get a 404, Actions might not be enabled
@@ -46,8 +47,9 @@ export class GitHubFetcher {
             owner: this.org,
             repo: repo.name,
           });
-          securityEnabled = securityData.security_and_analysis?.secret_scanning?.status === 'enabled' ||
-                           securityData.security_and_analysis?.dependabot_security_updates?.status === 'enabled';
+          securityEnabled =
+            securityData.security_and_analysis?.secret_scanning?.status === 'enabled' ||
+            securityData.security_and_analysis?.dependabot_security_updates?.status === 'enabled';
         } catch (error) {
           securityEnabled = false;
         }
@@ -83,7 +85,7 @@ export class GitHubFetcher {
         per_page: 100,
       });
 
-      return data.workflows.map(workflow => {
+      return data.workflows.map((workflow) => {
         // Check if workflow has a schedule trigger
         const isScheduled = this.isScheduledWorkflow(workflow);
 
@@ -105,14 +107,14 @@ export class GitHubFetcher {
     }
   }
 
-  private isScheduledWorkflow(workflow: any): boolean {
+  private isScheduledWorkflow(workflow: { state: string }): boolean {
     // GitHub API doesn't directly expose workflow triggers, but we can infer from the name or state
     // A more accurate check would require reading the workflow file content
     // For now, we'll mark workflows as scheduled if they're disabled due to inactivity
     return workflow.state === 'disabled_inactivity';
   }
 
-  async getRecentPullRequests(daysBack: number = 30): Promise<PullRequest[]> {
+  async getRecentPullRequests(daysBack = 30): Promise<PullRequest[]> {
     const since = new Date();
     since.setDate(since.getDate() - daysBack);
 
@@ -143,8 +145,13 @@ export class GitHubFetcher {
             pull_number: pr.number,
           });
 
-          const filesChanged = files.map(f => f.filename);
-          const isSecurityRelated = this.isSecurityRelated(pr.title, pr.body || '', pr.labels.map(l => l.name), filesChanged);
+          const filesChanged = files.map((f) => f.filename);
+          const isSecurityRelated = this.isSecurityRelated(
+            pr.title,
+            pr.body || '',
+            pr.labels.map((l) => l.name),
+            filesChanged
+          );
 
           allPRs.push({
             number: pr.number,
@@ -155,7 +162,7 @@ export class GitHubFetcher {
             merged_at: pr.merged_at,
             created_at: pr.created_at,
             repository: repo.full_name,
-            labels: pr.labels.map(l => l.name),
+            labels: pr.labels.map((l) => l.name),
             is_security_related: isSecurityRelated,
             files_changed: filesChanged,
           });
@@ -168,21 +175,42 @@ export class GitHubFetcher {
     return allPRs;
   }
 
-  private isSecurityRelated(title: string, body: string, labels: string[], files: string[]): boolean {
+  private isSecurityRelated(
+    title: string,
+    body: string,
+    labels: string[],
+    files: string[]
+  ): boolean {
     const securityKeywords = [
-      'security', 'vulnerability', 'cve', 'xss', 'sql injection',
-      'csrf', 'auth', 'authentication', 'authorization', 'encrypt',
-      'secret', 'token', 'credential', 'dependabot', 'snyk',
-      'password', 'privilege', 'permission'
+      'security',
+      'vulnerability',
+      'cve',
+      'xss',
+      'sql injection',
+      'csrf',
+      'auth',
+      'authentication',
+      'authorization',
+      'encrypt',
+      'secret',
+      'token',
+      'credential',
+      'dependabot',
+      'snyk',
+      'password',
+      'privilege',
+      'permission',
     ];
 
     const securityLabels = ['security', 'vulnerability', 'dependabot'];
     const securityFiles = ['.github/workflows/', 'security.md', 'Dockerfile', '.env'];
 
     const text = `${title} ${body}`.toLowerCase();
-    const hasKeyword = securityKeywords.some(keyword => text.includes(keyword));
-    const hasLabel = labels.some(label => securityLabels.some(sl => label.toLowerCase().includes(sl)));
-    const hasSecurityFile = files.some(file => securityFiles.some(sf => file.includes(sf)));
+    const hasKeyword = securityKeywords.some((keyword) => text.includes(keyword));
+    const hasLabel = labels.some((label) =>
+      securityLabels.some((sl) => label.toLowerCase().includes(sl))
+    );
+    const hasSecurityFile = files.some((file) => securityFiles.some((sf) => file.includes(sf)));
 
     return hasKeyword || hasLabel || hasSecurityFile;
   }

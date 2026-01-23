@@ -5,11 +5,11 @@
  * rather than through the CLI.
  */
 
-import { GitHubFetcher } from '../src/services/github-fetcher.js';
-import { SecurityAnalyzer } from '../src/analyzers/security-analyzer.js';
 import { AIAnalyzer } from '../src/analyzers/ai-analyzer.js';
+import { SecurityAnalyzer } from '../src/analyzers/security-analyzer.js';
 import { ConsoleReporter } from '../src/reporters/console-reporter.js';
 import { HTMLReporter } from '../src/reporters/html-reporter.js';
+import { GitHubFetcher } from '../src/services/github-fetcher.js';
 
 async function main() {
   // Configuration
@@ -61,15 +61,19 @@ async function main() {
 
   // Step 6: Display patterns and risk assessment
   console.log('\n📊 Detected Patterns:');
-  patterns.patterns.forEach(p => console.log(`  - ${p}`));
+  for (const p of patterns.patterns) {
+    console.log(`  - ${p}`);
+  }
 
   console.log('\n📈 Trends:');
-  patterns.trends.forEach(t => console.log(`  - ${t}`));
+  for (const t of patterns.trends) {
+    console.log(`  - ${t}`);
+  }
 
   console.log(`\n🎯 Risk Assessment: ${patterns.risk_assessment}`);
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('Error:', error);
   process.exit(1);
 });

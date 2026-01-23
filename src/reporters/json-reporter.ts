@@ -1,5 +1,5 @@
-import { writeFileSync } from 'fs';
-import { AnalysisResult } from '../types/index.js';
+import { writeFileSync } from 'node:fs';
+import type { AnalysisResult } from '../types/index.js';
 
 export class JSONReporter {
   saveToFile(result: AnalysisResult, filename: string): void {
