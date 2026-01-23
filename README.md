@@ -1,5 +1,10 @@
 # GitHub Security Analysis Tools
 
+[![CI](https://github.com/sdh100shaun/gh-tools/workflows/CI/badge.svg)](https://github.com/sdh100shaun/gh-tools/actions/workflows/ci.yml)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@sdh100shaun/gh-security-tools)](https://www.npmjs.com/package/@sdh100shaun/gh-security-tools)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 AI-powered tools to visualize GitHub activity and flag security issues across organizations using the GitHub Copilot SDK.
 
 ## Features
@@ -20,6 +25,16 @@ AI-powered tools to visualize GitHub activity and flag security issues across or
 - Beautiful console output with colors
 - JSON export for automation
 - HTML reports for sharing
+
+## Requirements
+
+- **Node.js**: 18.x, 20.x, 22.x, or later
+  - Tested on Node.js 18, 20, and 22
+  - Compatible with Node.js 24+ (future versions)
+- **GitHub Personal Access Token** with appropriate permissions
+  - `repo` - Full control of private repositories
+  - `read:org` - Read org and team membership
+  - `admin:org` - Full control of orgs (for Actions settings)
 
 ## Installation
 
