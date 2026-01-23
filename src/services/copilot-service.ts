@@ -209,6 +209,12 @@ export class CopilotService {
       'disabled-actions': (i) =>
         `GitHub Actions is disabled on ${i.details.repo_name}. This prevents automated security scanning, testing, and CI/CD workflows that help catch issues early.`,
 
+      'paused-workflow': (i) =>
+        `The workflow "${i.details.workflow_name}" has been automatically paused due to repository inactivity. ${i.details.reason || 'GitHub disables scheduled workflows after 60 days of no repository activity.'}`,
+
+      'disabled-workflow': (i) =>
+        `The workflow "${i.details.workflow_name}" has been manually disabled. Consider re-enabling if this workflow is still needed for automated testing or deployment.`,
+
       'unreviewed-security-pr': (i) =>
         `Critical: This security-related PR (${i.details.title}) was merged by its author without external review. Security changes should always be reviewed by security-knowledgeable team members to prevent introducing vulnerabilities.`,
     };

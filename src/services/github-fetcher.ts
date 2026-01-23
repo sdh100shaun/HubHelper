@@ -153,12 +153,19 @@ export class GitHubFetcher {
             filesChanged
           );
 
+          // Fetch full PR details to get merged_by info
+          const { data: fullPR } = await this.octokit.pulls.get({
+            owner: this.org,
+            repo: repo.name,
+            pull_number: pr.number,
+          });
+
           allPRs.push({
             number: pr.number,
             title: pr.title,
             url: pr.html_url,
             author: pr.user?.login || 'unknown',
-            merged_by: pr.merged_by?.login || null,
+            merged_by: fullPR.merged_by?.login || null,
             merged_at: pr.merged_at,
             created_at: pr.created_at,
             repository: repo.full_name,

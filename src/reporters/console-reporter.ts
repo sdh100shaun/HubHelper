@@ -135,7 +135,7 @@ export class ConsoleReporter {
     );
   }
 
-  private getSeverityColor(severity: string): chalk.Chalk {
+  private getSeverityColor(severity: string) {
     switch (severity) {
       case 'critical':
         return chalk.red.bold;
