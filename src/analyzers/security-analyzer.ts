@@ -121,6 +121,69 @@ export class SecurityAnalyzer {
     return issues;
   }
 
+  analyzePausedWorkflows(repositories: Repository[]): SecurityIssue[] {
+    const issues: SecurityIssue[] = [];
+
+    for (const repo of repositories) {
+      if (!repo.workflows) continue;
+
+      const pausedWorkflows = repo.workflows.filter(
+        w => w.state === 'disabled_inactivity'
+      );
+
+      for (const workflow of pausedWorkflows) {
+        issues.push({
+          type: 'paused-workflow',
+          severity: workflow.is_scheduled ? 'medium' : 'low',
+          repository: repo.full_name,
+          description: `Workflow "${workflow.name}" was paused due to repository inactivity`,
+          details: {
+            workflow_name: workflow.name,
+            workflow_path: workflow.path,
+            workflow_url: workflow.url,
+            is_scheduled: workflow.is_scheduled,
+            updated_at: workflow.updated_at,
+            reason: 'Workflows are automatically disabled after 60 days of repository inactivity',
+          },
+          detected_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  analyzeDisabledWorkflows(repositories: Repository[]): SecurityIssue[] {
+    const issues: SecurityIssue[] = [];
+
+    for (const repo of repositories) {
+      if (!repo.workflows) continue;
+
+      const disabledWorkflows = repo.workflows.filter(
+        w => w.state === 'disabled_manually'
+      );
+
+      for (const workflow of disabledWorkflows) {
+        issues.push({
+          type: 'disabled-workflow',
+          severity: 'low',
+          repository: repo.full_name,
+          description: `Workflow "${workflow.name}" has been manually disabled`,
+          details: {
+            workflow_name: workflow.name,
+            workflow_path: workflow.path,
+            workflow_url: workflow.url,
+            is_scheduled: workflow.is_scheduled,
+            updated_at: workflow.updated_at,
+          },
+          detected_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    return issues;
+  }
+
   generateAnalysisResult(
     repositories: Repository[],
     pullRequests: PullRequest[]
@@ -129,12 +192,16 @@ export class SecurityAnalyzer {
     const securityPRIssues = this.analyzeSecurityPRs(pullRequests);
     const disabledActionsIssues = this.analyzeDisabledActions(repositories);
     const unreviewedSecurityIssues = this.analyzeUnreviewedSecurityPRs(pullRequests);
+    const pausedWorkflowIssues = this.analyzePausedWorkflows(repositories);
+    const disabledWorkflowIssues = this.analyzeDisabledWorkflows(repositories);
 
     const allIssues = [
       ...selfMergeIssues,
       ...securityPRIssues,
       ...disabledActionsIssues,
       ...unreviewedSecurityIssues,
+      ...pausedWorkflowIssues,
+      ...disabledWorkflowIssues,
     ];
 
     // Sort by severity
@@ -161,6 +228,18 @@ export class SecurityAnalyzer {
       );
     }
 
+    if (pausedWorkflowIssues.length > 0) {
+      recommendations.push(
+        'Re-enable paused workflows or commit to repositories to prevent automatic workflow disabling'
+      );
+    }
+
+    if (disabledWorkflowIssues.length > 0) {
+      recommendations.push(
+        'Review manually disabled workflows and re-enable if still needed'
+      );
+    }
+
     if (securityPRIssues.length > 5) {
       recommendations.push(
         'Consider implementing automated dependency updates with Dependabot'
@@ -179,6 +258,8 @@ export class SecurityAnalyzer {
         self_merges: selfMergeIssues.length,
         security_prs: securityPRIssues.length,
         repos_with_disabled_actions: disabledActionsIssues.length,
+        paused_workflows: pausedWorkflowIssues.length,
+        disabled_workflows: disabledWorkflowIssues.length,
       },
     };
   }

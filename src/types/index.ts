@@ -12,16 +12,29 @@ export interface PullRequest {
   files_changed: string[];
 }
 
+export interface Workflow {
+  id: number;
+  name: string;
+  path: string;
+  state: 'active' | 'disabled_manually' | 'disabled_inactivity';
+  created_at: string;
+  updated_at: string;
+  url: string;
+  badge_url: string;
+  is_scheduled: boolean;
+}
+
 export interface Repository {
   name: string;
   full_name: string;
   private: boolean;
   actions_enabled: boolean;
   security_enabled: boolean;
+  workflows?: Workflow[];
 }
 
 export interface SecurityIssue {
-  type: 'self-merge' | 'security-pr' | 'disabled-actions' | 'unreviewed-security-pr';
+  type: 'self-merge' | 'security-pr' | 'disabled-actions' | 'unreviewed-security-pr' | 'paused-workflow' | 'disabled-workflow';
   severity: 'low' | 'medium' | 'high' | 'critical';
   repository: string;
   description: string;
@@ -47,5 +60,7 @@ export interface AnalysisResult {
     self_merges: number;
     security_prs: number;
     repos_with_disabled_actions: number;
+    paused_workflows: number;
+    disabled_workflows: number;
   };
 }

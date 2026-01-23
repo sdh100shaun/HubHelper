@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { PullRequest, Repository } from '../types/index.js';
+import { PullRequest, Repository, Workflow } from '../types/index.js';
 
 export class GitHubFetcher {
   private octokit: Octokit;
@@ -10,7 +10,7 @@ export class GitHubFetcher {
     this.org = organization;
   }
 
-  async getRepositories(): Promise<Repository[]> {
+  async getRepositories(includeWorkflows: boolean = true): Promise<Repository[]> {
     const repos: Repository[] = [];
     let page = 1;
     const perPage = 100;
@@ -52,12 +52,19 @@ export class GitHubFetcher {
           securityEnabled = false;
         }
 
+        // Get workflows if Actions is enabled and requested
+        let workflows: Workflow[] | undefined;
+        if (actionsEnabled && includeWorkflows) {
+          workflows = await this.getWorkflows(repo.name);
+        }
+
         repos.push({
           name: repo.name,
           full_name: repo.full_name,
           private: repo.private,
           actions_enabled: actionsEnabled,
           security_enabled: securityEnabled,
+          workflows,
         });
       }
 
@@ -66,6 +73,43 @@ export class GitHubFetcher {
     }
 
     return repos;
+  }
+
+  async getWorkflows(repoName: string): Promise<Workflow[]> {
+    try {
+      const { data } = await this.octokit.actions.listRepoWorkflows({
+        owner: this.org,
+        repo: repoName,
+        per_page: 100,
+      });
+
+      return data.workflows.map(workflow => {
+        // Check if workflow has a schedule trigger
+        const isScheduled = this.isScheduledWorkflow(workflow);
+
+        return {
+          id: workflow.id,
+          name: workflow.name,
+          path: workflow.path,
+          state: workflow.state as 'active' | 'disabled_manually' | 'disabled_inactivity',
+          created_at: workflow.created_at,
+          updated_at: workflow.updated_at,
+          url: workflow.html_url,
+          badge_url: workflow.badge_url,
+          is_scheduled: isScheduled,
+        };
+      });
+    } catch (error) {
+      // If we can't fetch workflows, return empty array
+      return [];
+    }
+  }
+
+  private isScheduledWorkflow(workflow: any): boolean {
+    // GitHub API doesn't directly expose workflow triggers, but we can infer from the name or state
+    // A more accurate check would require reading the workflow file content
+    // For now, we'll mark workflows as scheduled if they're disabled due to inactivity
+    return workflow.state === 'disabled_inactivity';
   }
 
   async getRecentPullRequests(daysBack: number = 30): Promise<PullRequest[]> {

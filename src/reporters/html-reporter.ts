@@ -158,6 +158,14 @@ export class HTMLReporter {
                     <h3>${result.statistics.repos_with_disabled_actions}</h3>
                     <p>Disabled Actions</p>
                 </div>
+                <div class="stat-card">
+                    <h3>${result.statistics.paused_workflows}</h3>
+                    <p>Paused Workflows</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${result.statistics.disabled_workflows}</h3>
+                    <p>Disabled Workflows</p>
+                </div>
             </div>
 
             ${aiInsights ? `

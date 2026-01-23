@@ -8,6 +8,7 @@ AI-powered tools to visualize GitHub activity and flag security issues across or
 - Detects self-merged pull requests
 - Identifies security-related PRs
 - Flags repositories with disabled GitHub Actions
+- Detects paused/disabled workflows (including scheduled workflows)
 - Highlights unreviewed security changes
 
 🤖 **AI-Powered Insights**
@@ -22,7 +23,30 @@ AI-powered tools to visualize GitHub activity and flag security issues across or
 
 ## Installation
 
+### Quick Start with npx (Recommended)
+
+No installation required! Run directly with npx:
+
 ```bash
+npx @sdh100shaun/gh-security-tools analyze --org <your-org> --token <your-token>
+```
+
+### Global Installation
+
+Install globally to use as a CLI tool:
+
+```bash
+npm install -g @sdh100shaun/gh-security-tools
+gh-security analyze --org <your-org>
+```
+
+### Local Development
+
+Clone and install for development:
+
+```bash
+git clone https://github.com/sdh100shaun/gh-tools.git
+cd gh-tools
 npm install
 ```
 
@@ -52,15 +76,31 @@ Your GitHub personal access token needs the following scopes:
 
 ## Usage
 
-### Analyze Organization
+### Using npx (No Installation)
 
 Analyze all repositories and pull requests in an organization:
 
 ```bash
-npm run dev analyze
+npx @sdh100shaun/gh-security-tools analyze --org myorg --token ghp_xxx
 ```
 
 With custom options:
+
+```bash
+npx @sdh100shaun/gh-security-tools analyze --org myorg --days 60 --html report.html
+```
+
+### Using Global Installation
+
+If installed globally:
+
+```bash
+gh-security analyze --org myorg --days 60
+```
+
+### Using Local Development
+
+For local development:
 
 ```bash
 npm run dev analyze --org myorg --days 60
@@ -71,19 +111,19 @@ npm run dev analyze --org myorg --days 60
 Save results as JSON:
 
 ```bash
-npm run dev analyze --json results.json
+npx @sdh100shaun/gh-security-tools analyze --org myorg --json results.json
 ```
 
 Save as HTML report:
 
 ```bash
-npm run dev analyze --html report.html
+npx @sdh100shaun/gh-security-tools analyze --org myorg --html report.html
 ```
 
 Both formats:
 
 ```bash
-npm run dev analyze --json results.json --html report.html
+npx @sdh100shaun/gh-security-tools analyze --org myorg --json results.json --html report.html
 ```
 
 ### Disable AI Insights
@@ -91,7 +131,17 @@ npm run dev analyze --json results.json --html report.html
 Run analysis without AI-powered recommendations:
 
 ```bash
-npm run dev analyze --no-ai
+npx @sdh100shaun/gh-security-tools analyze --org myorg --no-ai
+```
+
+### Environment Variables
+
+Instead of passing flags, you can use environment variables:
+
+```bash
+export GITHUB_TOKEN=ghp_xxx
+export GITHUB_ORG=myorg
+npx @sdh100shaun/gh-security-tools analyze
 ```
 
 ## Command Reference
@@ -129,6 +179,16 @@ Pull requests containing security-related changes.
 Repositories with GitHub Actions disabled, missing automated security scanning.
 
 **Severity:** Medium
+
+### ⏸️ Paused Workflows
+Workflows that have been automatically paused due to repository inactivity (60 days). GitHub automatically disables scheduled workflows when a repository has no activity.
+
+**Severity:** Medium (for scheduled workflows), Low (for other workflows)
+
+### 🚫 Disabled Workflows
+Workflows that have been manually disabled by a user.
+
+**Severity:** Low
 
 ### ⚠️ Unreviewed Security PRs
 Security-related pull requests merged without external review.
@@ -171,6 +231,27 @@ npm run lint          # Check for issues
 npm run lint:fix      # Fix issues automatically
 npm run format        # Format code
 ```
+
+## Publishing to npm
+
+This package is automatically published to npm via GitHub Actions when a new release is created.
+
+### Automated Publishing
+
+1. Create a new release on GitHub
+2. The `npm-publish.yml` workflow automatically builds and publishes
+3. Package is available via `npx @sdh100shaun/gh-security-tools`
+
+### Manual Publishing
+
+For manual publishing (requires npm token):
+
+```bash
+npm run build
+npm publish
+```
+
+**Note:** You need to set the `NPM_TOKEN` secret in your GitHub repository settings for automated publishing.
 
 ## Technologies
 

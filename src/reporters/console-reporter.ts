@@ -48,7 +48,9 @@ export class ConsoleReporter {
     console.log(chalk.gray('  ├─ Total Pull Requests: ') + chalk.white(statistics.total_prs));
     console.log(chalk.gray('  ├─ Self-Merges: ') + chalk.yellow(statistics.self_merges));
     console.log(chalk.gray('  ├─ Security PRs: ') + chalk.magenta(statistics.security_prs));
-    console.log(chalk.gray('  └─ Repos with Disabled Actions: ') + chalk.red(statistics.repos_with_disabled_actions));
+    console.log(chalk.gray('  ├─ Repos with Disabled Actions: ') + chalk.red(statistics.repos_with_disabled_actions));
+    console.log(chalk.gray('  ├─ Paused Workflows: ') + chalk.yellow(statistics.paused_workflows));
+    console.log(chalk.gray('  └─ Disabled Workflows: ') + chalk.blue(statistics.disabled_workflows));
   }
 
   private printIssuesBySeverity(issues: SecurityIssue[]): void {
@@ -144,6 +146,10 @@ export class ConsoleReporter {
         return '⚙️';
       case 'unreviewed-security-pr':
         return '⚠️';
+      case 'paused-workflow':
+        return '⏸️';
+      case 'disabled-workflow':
+        return '🚫';
       default:
         return '📋';
     }
