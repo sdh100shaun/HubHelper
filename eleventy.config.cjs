@@ -2,7 +2,7 @@ const syntaxHighlight = require('@11ty/eleventy-plugin-syntaxhighlight');
 const markdownIt = require('markdown-it');
 const markdownItAnchor = require('markdown-it-anchor');
 
-module.exports = function (eleventyConfig) {
+module.exports = (eleventyConfig) => {
   // Add plugins
   eleventyConfig.addPlugin(syntaxHighlight);
 
@@ -45,9 +45,9 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addShortcode('year', () => `${new Date().getFullYear()}`);
 
   // Add navigation collection
-  eleventyConfig.addCollection('navigation', function (collectionApi) {
-    return collectionApi.getAll().filter((item) => item.data.nav);
-  });
+  eleventyConfig.addCollection('navigation', (collectionApi) =>
+    collectionApi.getAll().filter((item) => item.data.nav)
+  );
 
   // Watch targets
   eleventyConfig.addWatchTarget('docs/assets/css/');

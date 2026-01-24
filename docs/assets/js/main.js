@@ -36,7 +36,8 @@
 
 // Smooth scroll for anchor links
 (function initSmoothScroll() {
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  const anchors = document.querySelectorAll('a[href^="#"]');
+  for (const anchor of anchors) {
     anchor.addEventListener('click', function (e) {
       const href = this.getAttribute('href');
       if (href === '#') return;
@@ -57,16 +58,16 @@
         target.focus();
       }
     });
-  });
+  }
 })();
 
 // Add copy button to code blocks
 (function initCodeCopy() {
   const codeBlocks = document.querySelectorAll('pre code');
 
-  codeBlocks.forEach((codeBlock) => {
+  for (const codeBlock of codeBlocks) {
     const pre = codeBlock.parentElement;
-    if (!pre) return;
+    if (!pre) continue;
 
     // Create wrapper
     const wrapper = document.createElement('div');
@@ -116,14 +117,14 @@
     });
 
     wrapper.appendChild(button);
-  });
+  }
 })();
 
 // Add header anchor links visibility on hover
 (function initHeaderAnchors() {
   const headers = document.querySelectorAll('.prose h2[id], .prose h3[id], .prose h4[id]');
 
-  headers.forEach((header) => {
+  for (const header of headers) {
     header.style.position = 'relative';
     header.style.cursor = 'pointer';
 
@@ -133,7 +134,7 @@
         window.location.hash = id;
       }
     });
-  });
+  }
 })();
 
 console.log('GitHub Security Tools Documentation - Ready');
