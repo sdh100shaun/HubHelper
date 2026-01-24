@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'docs/**'
-      - '.eleventy.js'
+      - 'eleventy.config.cjs'
       - 'package.json'
       - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:

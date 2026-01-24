@@ -120,17 +120,19 @@ describe('GitHubFetcher', () => {
       expect(repos[0].workflows).toBeUndefined();
     });
 
+    // TODO: Fix workflow mock - includeWorkflows parameter not preventing workflow calls in test
     it.skip('should skip workflows when includeWorkflows is false', async () => {
-      mockListForOrg.mockResolvedValueOnce({
-        data: [
-          {
-            name: 'repo3',
-            full_name: 'test-org/repo3',
-            private: false,
-          },
-        ],
-      });
-      mockListForOrg.mockResolvedValueOnce({ data: [] });
+      mockListForOrg
+        .mockResolvedValueOnce({
+          data: [
+            {
+              name: 'repo3',
+              full_name: 'test-org/repo3',
+              private: false,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ data: [] });
 
       mockGetGithubActionsPermissions.mockResolvedValue({
         data: { enabled: true },
@@ -147,6 +149,7 @@ describe('GitHubFetcher', () => {
       expect(mockListRepoWorkflows).not.toHaveBeenCalled();
     });
 
+    // TODO: Fix pagination mock - needs proper termination condition (data.length < perPage)
     it.skip('should handle pagination correctly', async () => {
       const page1Data = Array.from({ length: 100 }, (_, i) => ({
         name: `repo${i}`,
@@ -156,16 +159,15 @@ describe('GitHubFetcher', () => {
 
       const page2Data = [
         {
-          name: 'repo101',
-          full_name: 'test-org/repo101',
+          name: 'repo100',
+          full_name: 'test-org/repo100',
           private: false,
         },
       ];
 
       mockListForOrg
         .mockResolvedValueOnce({ data: page1Data })
-        .mockResolvedValueOnce({ data: page2Data })
-        .mockResolvedValueOnce({ data: [] });
+        .mockResolvedValueOnce({ data: page2Data });
 
       mockGetGithubActionsPermissions.mockResolvedValue({
         data: { enabled: false },
@@ -230,19 +232,20 @@ describe('GitHubFetcher', () => {
   });
 
   describe('getRecentPullRequests', () => {
+    // TODO: Fix complex integration test - needs proper date mocking and complete workflow mock chain
     it.skip('should fetch recent merged pull requests', async () => {
       // First call to listForOrg returns one repo
-      mockListForOrg.mockResolvedValueOnce({
-        data: [
-          {
-            name: 'repo1',
-            full_name: 'test-org/repo1',
-            private: false,
-          },
-        ],
-      });
-      // Second call returns empty to end pagination
-      mockListForOrg.mockResolvedValueOnce({ data: [] });
+      mockListForOrg
+        .mockResolvedValueOnce({
+          data: [
+            {
+              name: 'repo1',
+              full_name: 'test-org/repo1',
+              private: false,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ data: [] });
 
       mockGetGithubActionsPermissions.mockResolvedValue({
         data: { enabled: true },
@@ -250,6 +253,10 @@ describe('GitHubFetcher', () => {
 
       mockGetRepo.mockResolvedValue({
         data: { security_and_analysis: {} },
+      });
+
+      mockListRepoWorkflows.mockResolvedValue({
+        data: { workflows: [] },
       });
 
       mockListPulls.mockResolvedValue({
@@ -372,17 +379,19 @@ describe('GitHubFetcher', () => {
       expect(prs).toHaveLength(0);
     });
 
+    // TODO: Fix error handling test - console.error might be called in getRepositories, not PR loop
     it.skip('should handle errors when fetching PRs for a repo', async () => {
-      mockListForOrg.mockResolvedValueOnce({
-        data: [
-          {
-            name: 'repo1',
-            full_name: 'test-org/repo1',
-            private: false,
-          },
-        ],
-      });
-      mockListForOrg.mockResolvedValueOnce({ data: [] });
+      mockListForOrg
+        .mockResolvedValueOnce({
+          data: [
+            {
+              name: 'repo1',
+              full_name: 'test-org/repo1',
+              private: false,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ data: [] });
 
       mockGetGithubActionsPermissions.mockResolvedValue({
         data: { enabled: false },
@@ -390,6 +399,10 @@ describe('GitHubFetcher', () => {
 
       mockGetRepo.mockResolvedValue({
         data: { security_and_analysis: {} },
+      });
+
+      mockListRepoWorkflows.mockResolvedValue({
+        data: { workflows: [] },
       });
 
       mockListPulls.mockRejectedValue(new Error('API Error'));
@@ -407,17 +420,19 @@ describe('GitHubFetcher', () => {
       consoleErrorSpy.mockRestore();
     });
 
+    // TODO: Fix integration test - needs complete mock chain and proper date handling
     it.skip('should detect security-related PRs by labels', async () => {
-      mockListForOrg.mockResolvedValueOnce({
-        data: [
-          {
-            name: 'repo1',
-            full_name: 'test-org/repo1',
-            private: false,
-          },
-        ],
-      });
-      mockListForOrg.mockResolvedValueOnce({ data: [] });
+      mockListForOrg
+        .mockResolvedValueOnce({
+          data: [
+            {
+              name: 'repo1',
+              full_name: 'test-org/repo1',
+              private: false,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ data: [] });
 
       mockGetGithubActionsPermissions.mockResolvedValue({
         data: { enabled: false },
@@ -425,6 +440,10 @@ describe('GitHubFetcher', () => {
 
       mockGetRepo.mockResolvedValue({
         data: { security_and_analysis: {} },
+      });
+
+      mockListRepoWorkflows.mockResolvedValue({
+        data: { workflows: [] },
       });
 
       mockListPulls.mockResolvedValue({
@@ -456,17 +475,19 @@ describe('GitHubFetcher', () => {
       expect(prs[0].is_security_related).toBe(true);
     });
 
+    // TODO: Fix integration test - PR filtering logic might need date/workflow mock adjustments
     it.skip('should detect security-related PRs by file paths', async () => {
-      mockListForOrg.mockResolvedValueOnce({
-        data: [
-          {
-            name: 'repo1',
-            full_name: 'test-org/repo1',
-            private: false,
-          },
-        ],
-      });
-      mockListForOrg.mockResolvedValueOnce({ data: [] });
+      mockListForOrg
+        .mockResolvedValueOnce({
+          data: [
+            {
+              name: 'repo1',
+              full_name: 'test-org/repo1',
+              private: false,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ data: [] });
 
       mockGetGithubActionsPermissions.mockResolvedValue({
         data: { enabled: false },
@@ -474,6 +495,10 @@ describe('GitHubFetcher', () => {
 
       mockGetRepo.mockResolvedValue({
         data: { security_and_analysis: {} },
+      });
+
+      mockListRepoWorkflows.mockResolvedValue({
+        data: { workflows: [] },
       });
 
       mockListPulls.mockResolvedValue({
