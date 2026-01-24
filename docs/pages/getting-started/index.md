@@ -1,7 +1,7 @@
 ---
 layout: page.njk
 title: Getting Started
-description: Complete guide to installing and using GitHub Security Analysis Tools
+description: Complete guide to installing and using HubHelper
 githubEdit: true
 ---
 
@@ -22,7 +22,7 @@ Before you begin, ensure you have:
 No installation required! Use npx to run the tool directly:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org your-org --token your-token
+npx @sdh100shaun/hubhelper analyze --org your-org --token your-token
 ```
 
 This is the fastest way to get started and ensures you always use the latest version.
@@ -32,13 +32,13 @@ This is the fastest way to get started and ensures you always use the latest ver
 Install globally to use the tool from anywhere:
 
 ```bash
-npm install -g @sdh100shaun/gh-security-tools
+npm install -g @sdh100shaun/hubhelper
 ```
 
 Then run with:
 
 ```bash
-gh-security analyze --org your-org
+hubhelper analyze --org your-org
 ```
 
 ### Option 3: Local Development
@@ -83,7 +83,7 @@ GITHUB_ORG=your-organization-name
 Then run without flags:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze
+npx @sdh100shaun/hubhelper analyze
 ```
 
 ### Using Command-Line Flags
@@ -91,7 +91,7 @@ npx @sdh100shaun/gh-security-tools analyze
 Pass configuration via command-line options:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org your-org \
   --token ghp_xxxxxxxxxxxxxxxxxxxx \
   --days 30
@@ -104,7 +104,7 @@ npx @sdh100shaun/gh-security-tools analyze \
 Run a basic security analysis:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg
+npx @sdh100shaun/hubhelper analyze --org myorg
 ```
 
 This will:
@@ -118,7 +118,7 @@ This will:
 Look back a specific number of days (1-365):
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --days 90
+npx @sdh100shaun/hubhelper analyze --org myorg --days 90
 ```
 
 ### Export Results
@@ -126,19 +126,19 @@ npx @sdh100shaun/gh-security-tools analyze --org myorg --days 90
 Save results in JSON format for automation:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --json report.json
+npx @sdh100shaun/hubhelper analyze --org myorg --json report.json
 ```
 
 Save results as an HTML report:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --html report.html
+npx @sdh100shaun/hubhelper analyze --org myorg --html report.html
 ```
 
 Save both formats:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --json results.json \
   --html report.html
@@ -149,7 +149,7 @@ npx @sdh100shaun/gh-security-tools analyze \
 Run analysis without AI-powered recommendations:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --no-ai
+npx @sdh100shaun/hubhelper analyze --org myorg --no-ai
 ```
 
 ## Understanding the Output
@@ -193,7 +193,7 @@ Add to your weekly routine:
 
 ```bash
 # Check the last 7 days
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --days 7 \
   --html weekly-report.html
@@ -205,7 +205,7 @@ Before a major release:
 
 ```bash
 # Comprehensive 90-day analysis
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --days 90 \
   --json audit-$(date +%Y-%m-%d).json
@@ -218,7 +218,7 @@ Add to your CI pipeline (e.g., GitHub Actions):
 ```yaml
 - name: Run Security Analysis
   run: |
-    npx @sdh100shaun/gh-security-tools analyze \
+    npx @sdh100shaun/hubhelper analyze \
       --org ${ github.repository_owner } \
       --token ${ secrets.GITHUB_TOKEN } \
       --json security-report.json

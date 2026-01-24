@@ -1,8 +1,8 @@
-# GitHub Security Analysis Tools
+# HubHelper
 
 [![CI](https://github.com/sdh100shaun/gh-tools/workflows/CI/badge.svg)](https://github.com/sdh100shaun/gh-tools/actions/workflows/ci.yml)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
-[![npm version](https://img.shields.io/npm/v/@sdh100shaun/gh-security-tools)](https://www.npmjs.com/package/@sdh100shaun/gh-security-tools)
+[![npm version](https://img.shields.io/npm/v/@sdh100shaun/hubhelper)](https://www.npmjs.com/package/@sdh100shaun/hubhelper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 AI-powered tools to visualize GitHub activity and flag security issues across organizations using the GitHub Copilot SDK.
@@ -43,7 +43,7 @@ AI-powered tools to visualize GitHub activity and flag security issues across or
 No installation required! Run directly with npx:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org <your-org> --token <your-token>
+npx @sdh100shaun/hubhelper analyze --org <your-org> --token <your-token>
 ```
 
 ### Global Installation
@@ -51,8 +51,8 @@ npx @sdh100shaun/gh-security-tools analyze --org <your-org> --token <your-token>
 Install globally to use as a CLI tool:
 
 ```bash
-npm install -g @sdh100shaun/gh-security-tools
-gh-security analyze --org <your-org>
+npm install -g @sdh100shaun/hubhelper
+hubhelper analyze --org <your-org>
 ```
 
 ### Local Development
@@ -96,13 +96,13 @@ Your GitHub personal access token needs the following scopes:
 Analyze all repositories and pull requests in an organization:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --token ghp_xxx
+npx @sdh100shaun/hubhelper analyze --org myorg --token ghp_xxx
 ```
 
 With custom options:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --days 60 --html report.html
+npx @sdh100shaun/hubhelper analyze --org myorg --days 60 --html report.html
 ```
 
 ### Using Global Installation
@@ -110,7 +110,7 @@ npx @sdh100shaun/gh-security-tools analyze --org myorg --days 60 --html report.h
 If installed globally:
 
 ```bash
-gh-security analyze --org myorg --days 60
+hubhelper analyze --org myorg --days 60
 ```
 
 ### Using Local Development
@@ -126,19 +126,19 @@ npm run dev analyze --org myorg --days 60
 Save results as JSON:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --json results.json
+npx @sdh100shaun/hubhelper analyze --org myorg --json results.json
 ```
 
 Save as HTML report:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --html report.html
+npx @sdh100shaun/hubhelper analyze --org myorg --html report.html
 ```
 
 Both formats:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --json results.json --html report.html
+npx @sdh100shaun/hubhelper analyze --org myorg --json results.json --html report.html
 ```
 
 ### Disable AI Insights
@@ -146,7 +146,7 @@ npx @sdh100shaun/gh-security-tools analyze --org myorg --json results.json --htm
 Run analysis without AI-powered recommendations:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --no-ai
+npx @sdh100shaun/hubhelper analyze --org myorg --no-ai
 ```
 
 ### Environment Variables
@@ -156,7 +156,7 @@ Instead of passing flags, you can use environment variables:
 ```bash
 export GITHUB_TOKEN=ghp_xxx
 export GITHUB_ORG=myorg
-npx @sdh100shaun/gh-security-tools analyze
+npx @sdh100shaun/hubhelper analyze
 ```
 
 ## Command Reference
@@ -255,7 +255,7 @@ This package is automatically published to npm via GitHub Actions when a new rel
 
 1. Create a new release on GitHub
 2. The `npm-publish.yml` workflow automatically builds and publishes
-3. Package is available via `npx @sdh100shaun/gh-security-tools`
+3. Package is available via `npx @sdh100shaun/hubhelper`
 
 ### Manual Publishing
 

@@ -1,5 +1,5 @@
 /**
- * Main JavaScript for GitHub Security Tools Documentation
+ * Main JavaScript for HubHelper Documentation
  */
 
 // Mobile Navigation Toggle
@@ -137,4 +137,4 @@
   }
 })();
 
-console.log('GitHub Security Tools Documentation - Ready');
+console.log('HubHelper Documentation - Ready');

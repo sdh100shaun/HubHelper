@@ -222,9 +222,9 @@ User-provided file paths are not validated, allowing writes outside intended dir
 
 **Attack Vectors:**
 ```bash
-npx gh-security-tools analyze --html ../../../etc/passwd
-npx gh-security-tools analyze --json ../../.ssh/authorized_keys
-npx gh-security-tools analyze --html /etc/cron.d/backdoor
+npx hubhelper analyze --html ../../../etc/passwd
+npx hubhelper analyze --json ../../.ssh/authorized_keys
+npx hubhelper analyze --html /etc/cron.d/backdoor
 ```
 
 ### Implementation Plan
@@ -415,13 +415,13 @@ Organization name and days parameters are not validated, allowing malicious inpu
 **Attack Vectors:**
 ```bash
 # SQL injection style (won't work but shows lack of validation)
-npx gh-security-tools --org "'; DROP TABLE--"
+npx hubhelper --org "'; DROP TABLE--"
 
 # DoS via excessive API calls
-npx gh-security-tools --org test --days 999999999
+npx hubhelper --org test --days 999999999
 
 # Invalid organization names
-npx gh-security-tools --org "../../../etc"
+npx hubhelper --org "../../../etc"
 ```
 
 ### Implementation Plan
@@ -739,15 +739,15 @@ gh repo create "test<script>alert(1)</script>" --private
 # Create PR with title: Fix bug</title><script>alert(document.cookie)</script>
 
 # Generate report and inspect HTML
-npx gh-security-tools analyze --org test --html report.html
+npx hubhelper analyze --org test --html report.html
 # Open report.html and check for unescaped content
 ```
 
 #### Path Traversal Testing
 ```bash
 # Attempt directory traversal
-npx gh-security-tools analyze --org test --html ../../../tmp/test.html
-npx gh-security-tools analyze --org test --json /etc/passwd.json
+npx hubhelper analyze --org test --html ../../../tmp/test.html
+npx hubhelper analyze --org test --json /etc/passwd.json
 
 # Verify error messages
 ```
@@ -755,12 +755,12 @@ npx gh-security-tools analyze --org test --json /etc/passwd.json
 #### Input Validation Testing
 ```bash
 # Test invalid org names
-npx gh-security-tools analyze --org "../etc" --days 30
-npx gh-security-tools analyze --org "'; DROP TABLE--" --days 30
+npx hubhelper analyze --org "../etc" --days 30
+npx hubhelper analyze --org "'; DROP TABLE--" --days 30
 
 # Test invalid days
-npx gh-security-tools analyze --org test --days -1
-npx gh-security-tools analyze --org test --days 999999
+npx hubhelper analyze --org test --days -1
+npx hubhelper analyze --org test --days 999999
 ```
 
 ---

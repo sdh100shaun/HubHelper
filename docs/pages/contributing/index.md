@@ -1,13 +1,13 @@
 ---
 layout: page.njk
 title: Contributing
-description: Guide for contributing to GitHub Security Analysis Tools
+description: Guide for contributing to HubHelper
 githubEdit: true
 ---
 
 ## Welcome Contributors!
 
-Thank you for your interest in contributing to GitHub Security Analysis Tools! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to HubHelper! This document provides guidelines and instructions for contributing to the project.
 
 ## Ways to Contribute
 

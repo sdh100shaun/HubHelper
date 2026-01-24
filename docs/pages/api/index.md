@@ -1,16 +1,16 @@
 ---
 layout: page.njk
 title: API Reference
-description: Complete command-line interface reference for GitHub Security Analysis Tools
+description: Complete command-line interface reference for HubHelper
 githubEdit: true
 ---
 
 ## Command Overview
 
-The `gh-security-tools` CLI provides commands for analyzing GitHub organization security:
+The `hubhelper` CLI provides commands for analyzing GitHub organization security:
 
 ```bash
-gh-security-tools <command> [options]
+hubhelper <command> [options]
 ```
 
 Available commands:
@@ -25,8 +25,8 @@ Analyze an entire GitHub organization for security issues.
 ### Synopsis
 
 ```bash
-gh-security-tools analyze [options]
-npx @sdh100shaun/gh-security-tools analyze [options]
+hubhelper analyze [options]
+npx @sdh100shaun/hubhelper analyze [options]
 ```
 
 ### Options
@@ -41,7 +41,7 @@ GitHub organization name to analyze.
 - **Example**: `--org my-company`
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org github
+npx @sdh100shaun/hubhelper analyze --org github
 ```
 
 #### `-t, --token <token>`
@@ -57,7 +57,7 @@ GitHub Personal Access Token for authentication.
 - **Example**: `--token ghp_xxxxxxxxxxxxxxxxxxxx`
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --token ghp_xxxxxxxxxxxxxxxxxxxx
 ```
@@ -75,7 +75,7 @@ Number of days to look back for pull request analysis.
 - **Example**: `--days 90`
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --days 60
+npx @sdh100shaun/hubhelper analyze --org myorg --days 60
 ```
 
 **Note**: Larger ranges may take longer to process and consume more API quota.
@@ -91,7 +91,7 @@ Save analysis results as JSON to the specified file.
 - **Example**: `--json results.json`
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --json reports/analysis-2026-01-24.json
 ```
@@ -113,7 +113,7 @@ Save analysis results as an HTML report to the specified file.
 - **Example**: `--html report.html`
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --html reports/security-report.html
 ```
@@ -135,7 +135,7 @@ Disable AI-powered insights and recommendations.
 - **Example**: `--no-ai`
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze --org myorg --no-ai
+npx @sdh100shaun/hubhelper analyze --org myorg --no-ai
 ```
 
 Use this flag when:
@@ -153,7 +153,7 @@ Analyze an organization using environment variables:
 export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 export GITHUB_ORG=myorg
 
-npx @sdh100shaun/gh-security-tools analyze
+npx @sdh100shaun/hubhelper analyze
 ```
 
 #### Full Analysis with All Options
@@ -161,7 +161,7 @@ npx @sdh100shaun/gh-security-tools analyze
 Comprehensive analysis with custom time range and both output formats:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org mycompany \
   --token ghp_xxxxxxxxxxxxxxxxxxxx \
   --days 90 \
@@ -174,7 +174,7 @@ npx @sdh100shaun/gh-security-tools analyze \
 Fast analysis of the last week:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --days 7 \
   --no-ai
@@ -185,7 +185,7 @@ npx @sdh100shaun/gh-security-tools analyze \
 Automated analysis in continuous integration:
 
 ```bash
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org $ORG_NAME \
   --token $GITHUB_TOKEN \
   --days 30 \
@@ -254,7 +254,7 @@ Check a specific repository for security issues.
 ### Synopsis
 
 ```bash
-gh-security-tools check-repo <owner/repo> [options]
+hubhelper check-repo <owner/repo> [options]
 ```
 
 ### Planned Options
@@ -271,7 +271,7 @@ Monitor an organization in real-time for security issues.
 ### Synopsis
 
 ```bash
-gh-security-tools watch [options]
+hubhelper watch [options]
 ```
 
 ### Planned Options
@@ -404,7 +404,7 @@ import type {
   AnalysisResult,
   SecurityIssueType,
   SeverityLevel
-} from '@sdh100shaun/gh-security-tools';
+} from '@sdh100shaun/hubhelper';
 ```
 
 ## Next Steps
