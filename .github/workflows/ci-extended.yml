@@ -1,0 +1,49 @@
+name: CI Extended (Node 24+)
+
+on:
+  push:
+    branches: [ main, claude/** ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly to catch future Node versions
+    - cron: '0 0 * * 0'
+
+jobs:
+  build-latest:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        node-version: [22.x, 24.x, latest]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+        continue-on-error: true
+
+      - name: Install dependencies
+        run: npm ci
+        continue-on-error: true
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
+
+      - name: Report Node version
+        run: node --version
