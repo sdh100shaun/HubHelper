@@ -1,7 +1,7 @@
+import { existsSync, readFileSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
 import { HTMLReporter } from '../reporters/html-reporter';
 import type { AnalysisResult } from '../types/index';
-import { readFileSync, unlinkSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
 
 describe('HTMLReporter', () => {
   let reporter: HTMLReporter;
@@ -67,7 +67,7 @@ describe('HTMLReporter', () => {
 
       expect(html).toContain('10'); // total_repos
       expect(html).toContain('50'); // total_prs
-      expect(html).toContain('5');  // self_merges
+      expect(html).toContain('5'); // self_merges
     });
 
     it('should include AI insights when provided', () => {
@@ -133,10 +133,38 @@ describe('HTMLReporter', () => {
       const multiSeverityResult: AnalysisResult = {
         ...mockResult,
         issues: [
-          { type: 'self-merge', severity: 'critical', repository: 'r1', description: 'd1', details: {}, detected_at: '2026-01-24' },
-          { type: 'self-merge', severity: 'high', repository: 'r2', description: 'd2', details: {}, detected_at: '2026-01-24' },
-          { type: 'self-merge', severity: 'medium', repository: 'r3', description: 'd3', details: {}, detected_at: '2026-01-24' },
-          { type: 'self-merge', severity: 'low', repository: 'r4', description: 'd4', details: {}, detected_at: '2026-01-24' },
+          {
+            type: 'self-merge',
+            severity: 'critical',
+            repository: 'r1',
+            description: 'd1',
+            details: {},
+            detected_at: '2026-01-24',
+          },
+          {
+            type: 'self-merge',
+            severity: 'high',
+            repository: 'r2',
+            description: 'd2',
+            details: {},
+            detected_at: '2026-01-24',
+          },
+          {
+            type: 'self-merge',
+            severity: 'medium',
+            repository: 'r3',
+            description: 'd3',
+            details: {},
+            detected_at: '2026-01-24',
+          },
+          {
+            type: 'self-merge',
+            severity: 'low',
+            repository: 'r4',
+            description: 'd4',
+            details: {},
+            detected_at: '2026-01-24',
+          },
         ],
       };
 

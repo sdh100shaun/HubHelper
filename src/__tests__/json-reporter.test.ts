@@ -1,7 +1,7 @@
+import { existsSync, readFileSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
 import { JSONReporter } from '../reporters/json-reporter';
 import type { AnalysisResult } from '../types/index';
-import { readFileSync, unlinkSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
 
 describe('JSONReporter', () => {
   let reporter: JSONReporter;

@@ -1,5 +1,5 @@
 import { GitHubFetcher } from '../services/github-fetcher';
-import type { Repository, PullRequest } from '../types/index';
+import type { PullRequest, Repository } from '../types/index';
 
 // Mock Octokit
 const mockListForOrg = jest.fn();
@@ -148,18 +148,19 @@ describe('GitHubFetcher', () => {
     });
 
     it.skip('should handle pagination correctly', async () => {
-
       const page1Data = Array.from({ length: 100 }, (_, i) => ({
         name: `repo${i}`,
         full_name: `test-org/repo${i}`,
         private: false,
       }));
 
-      const page2Data = [{
-        name: 'repo101',
-        full_name: 'test-org/repo101',
-        private: false,
-      }];
+      const page2Data = [
+        {
+          name: 'repo101',
+          full_name: 'test-org/repo101',
+          private: false,
+        },
+      ];
 
       mockListForOrg
         .mockResolvedValueOnce({ data: page1Data })
@@ -232,11 +233,13 @@ describe('GitHubFetcher', () => {
     it.skip('should fetch recent merged pull requests', async () => {
       // First call to listForOrg returns one repo
       mockListForOrg.mockResolvedValueOnce({
-        data: [{
-          name: 'repo1',
-          full_name: 'test-org/repo1',
-          private: false,
-        }],
+        data: [
+          {
+            name: 'repo1',
+            full_name: 'test-org/repo1',
+            private: false,
+          },
+        ],
       });
       // Second call returns empty to end pagination
       mockListForOrg.mockResolvedValueOnce({ data: [] });
@@ -271,10 +274,7 @@ describe('GitHubFetcher', () => {
       });
 
       mockListFiles.mockResolvedValue({
-        data: [
-          { filename: 'src/auth.ts' },
-          { filename: 'security.md' },
-        ],
+        data: [{ filename: 'src/auth.ts' }, { filename: 'security.md' }],
       });
 
       const prs = await fetcher.getRecentPullRequests(30);
@@ -289,11 +289,13 @@ describe('GitHubFetcher', () => {
 
     it('should skip PRs that were not merged', async () => {
       mockListForOrg.mockResolvedValueOnce({
-        data: [{
-          name: 'repo1',
-          full_name: 'test-org/repo1',
-          private: false,
-        }],
+        data: [
+          {
+            name: 'repo1',
+            full_name: 'test-org/repo1',
+            private: false,
+          },
+        ],
       });
 
       mockListForOrg.mockResolvedValueOnce({ data: [] });
@@ -328,11 +330,13 @@ describe('GitHubFetcher', () => {
 
     it('should skip PRs merged before the time window', async () => {
       mockListForOrg.mockResolvedValueOnce({
-        data: [{
-          name: 'repo1',
-          full_name: 'test-org/repo1',
-          private: false,
-        }],
+        data: [
+          {
+            name: 'repo1',
+            full_name: 'test-org/repo1',
+            private: false,
+          },
+        ],
       });
 
       mockListForOrg.mockResolvedValueOnce({ data: [] });
@@ -370,11 +374,13 @@ describe('GitHubFetcher', () => {
 
     it.skip('should handle errors when fetching PRs for a repo', async () => {
       mockListForOrg.mockResolvedValueOnce({
-        data: [{
-          name: 'repo1',
-          full_name: 'test-org/repo1',
-          private: false,
-        }],
+        data: [
+          {
+            name: 'repo1',
+            full_name: 'test-org/repo1',
+            private: false,
+          },
+        ],
       });
       mockListForOrg.mockResolvedValueOnce({ data: [] });
 
@@ -403,11 +409,13 @@ describe('GitHubFetcher', () => {
 
     it.skip('should detect security-related PRs by labels', async () => {
       mockListForOrg.mockResolvedValueOnce({
-        data: [{
-          name: 'repo1',
-          full_name: 'test-org/repo1',
-          private: false,
-        }],
+        data: [
+          {
+            name: 'repo1',
+            full_name: 'test-org/repo1',
+            private: false,
+          },
+        ],
       });
       mockListForOrg.mockResolvedValueOnce({ data: [] });
 
@@ -450,11 +458,13 @@ describe('GitHubFetcher', () => {
 
     it.skip('should detect security-related PRs by file paths', async () => {
       mockListForOrg.mockResolvedValueOnce({
-        data: [{
-          name: 'repo1',
-          full_name: 'test-org/repo1',
-          private: false,
-        }],
+        data: [
+          {
+            name: 'repo1',
+            full_name: 'test-org/repo1',
+            private: false,
+          },
+        ],
       });
       mockListForOrg.mockResolvedValueOnce({ data: [] });
 

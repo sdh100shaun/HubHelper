@@ -1,7 +1,21 @@
 // Mock implementation of chalk for testing
 // Returns input string unchanged, supports method chaining
 
-const mockChalk: any = (str: any): string => String(str);
+type ChalkFunction = (str: string | number) => string;
+
+interface ChalkMock extends ChalkFunction {
+  bold: ChalkMock;
+  cyan: ChalkMock;
+  red: ChalkMock;
+  yellow: ChalkMock;
+  green: ChalkMock;
+  blue: ChalkMock;
+  gray: ChalkMock;
+  white: ChalkMock;
+  magenta: ChalkMock;
+}
+
+const mockChalk = ((str: string | number): string => String(str)) as ChalkMock;
 
 // Add chainable properties that all point back to mockChalk
 mockChalk.bold = mockChalk;
