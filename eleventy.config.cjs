@@ -58,7 +58,17 @@ module.exports = (eleventyConfig) => {
     files: ['./_site/css/**/*.css', './_site/js/**/*.js'],
   });
 
+  // Add pathPrefix filter for GitHub Pages compatibility
+  eleventyConfig.addFilter('url', (url) => {
+    const prefix = process.env.ELEVENTY_PATH_PREFIX || '/HubHelper';
+    if (url.startsWith('/')) {
+      return prefix + url;
+    }
+    return url;
+  });
+
   return {
+    pathPrefix: process.env.ELEVENTY_PATH_PREFIX || '/HubHelper/',
     dir: {
       input: 'docs',
       output: '_site',
