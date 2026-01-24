@@ -1,12 +1,11 @@
 {
-  "name": "@sdh100shaun/gh-security-tools",
+  "name": "@sdh100shaun/hubhelper",
   "version": "1.0.0",
   "description": "AI-powered tools to visualize GitHub activity and flag security issues across organizations",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "gh-security": "dist/index.js",
-    "gh-security-tools": "dist/index.js"
+    "hubhelper": "dist/index.js"
   },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": {

@@ -1,7 +1,7 @@
 /**
- * Example: Basic Usage of GitHub Security Analysis Tools
+ * Example: Basic Usage of HubHelper
  *
- * This example demonstrates how to use the analysis tools programmatically
+ * This example demonstrates how to use HubHelper programmatically
  * rather than through the CLI.
  */
 

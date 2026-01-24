@@ -10,7 +10,7 @@
                    img-src 'self' data: https:;
                    font-src 'self';
                    connect-src 'self';">
-    <title>{% if title %}{{ title }} - {% endif %}GitHub Security Tools Documentation</title>
+    <title>{% if title %}{{ title }} - {% endif %}HubHelper Documentation</title>
     <meta name="description" content="{{ description or 'AI-powered tools to visualize GitHub activity and flag security issues across organizations' }}">
 
     <!-- Favicon -->
@@ -20,13 +20,13 @@
     <link rel="stylesheet" href="{{ '/css/main.css' | url }}">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="{{ title or 'GitHub Security Tools' }}">
+    <meta property="og:title" content="{{ title or 'HubHelper' }}">
     <meta property="og:description" content="{{ description or 'AI-powered tools to visualize GitHub activity and flag security issues' }}">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ title or 'GitHub Security Tools' }}">
+    <meta name="twitter:title" content="{{ title or 'HubHelper' }}">
     <meta name="twitter:description" content="{{ description or 'AI-powered security analysis for GitHub organizations' }}">
 </head>
 <body>
@@ -38,7 +38,7 @@
                 <div class="nav-brand">
                     <a href="{{ '/' | url }}" class="brand-link">
                         <span class="brand-icon">🔐</span>
-                        <span class="brand-text">GitHub Security Tools</span>
+                        <span class="brand-text">HubHelper</span>
                     </a>
                 </div>
 
@@ -71,7 +71,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h3>GitHub Security Tools</h3>
+                    <h3>HubHelper</h3>
                     <p>AI-powered security analysis for GitHub organizations</p>
                 </div>
 
@@ -96,14 +96,14 @@
                 <div class="footer-section">
                     <h4>Resources</h4>
                     <ul>
-                        <li><a href="https://www.npmjs.com/package/@sdh100shaun/gh-security-tools" target="_blank" rel="noopener">npm Package</a></li>
+                        <li><a href="https://www.npmjs.com/package/@sdh100shaun/hubhelper" target="_blank" rel="noopener">npm Package</a></li>
                         <li><a href="https://github.com/github/copilot-sdk" target="_blank" rel="noopener">GitHub Copilot SDK</a></li>
                     </ul>
                 </div>
             </div>
 
             <div class="footer-bottom">
-                <p>&copy; {% year %} GitHub Security Tools. Licensed under MIT.</p>
+                <p>&copy; {% year %} HubHelper. Licensed under MIT.</p>
                 <p>Built with <a href="https://www.11ty.dev/" target="_blank" rel="noopener">Eleventy</a></p>
             </div>
         </div>

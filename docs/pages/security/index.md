@@ -1,13 +1,13 @@
 ---
 layout: page.njk
 title: Security
-description: Security features, best practices, and vulnerability reporting for GitHub Security Analysis Tools
+description: Security features, best practices, and vulnerability reporting for HubHelper
 githubEdit: true
 ---
 
 ## Security Overview
 
-GitHub Security Analysis Tools is designed with security as a top priority. This page outlines our security features, implemented protections, and best practices for using the tool safely.
+HubHelper is designed with security as a top priority. This page outlines our security features, implemented protections, and best practices for using the tool safely.
 
 ## Implemented Security Features
 
@@ -201,10 +201,10 @@ npm test
 ```bash
 # ✅ Good: Use environment variables
 export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
-npx @sdh100shaun/gh-security-tools analyze --org myorg
+npx @sdh100shaun/hubhelper analyze --org myorg
 
 # ❌ Bad: Token in command (visible in shell history)
-npx @sdh100shaun/gh-security-tools analyze --token ghp_xxx --org myorg
+npx @sdh100shaun/hubhelper analyze --token ghp_xxx --org myorg
 ```
 
 ### 2. Secure Output Files
@@ -217,7 +217,7 @@ npx @sdh100shaun/gh-security-tools analyze --token ghp_xxx --org myorg
 
 ```bash
 # ✅ Good: Save to secure directory
-npx @sdh100shaun/gh-security-tools analyze \
+npx @sdh100shaun/hubhelper analyze \
   --org myorg \
   --html secure/reports/output.html
 
@@ -234,10 +234,10 @@ echo "secure/" >> .gitignore
 
 ```bash
 # ✅ Good: Analyze last 7 days for weekly check
-npx @sdh100shaun/gh-security-tools analyze --org myorg --days 7
+npx @sdh100shaun/hubhelper analyze --org myorg --days 7
 
 # ⚠️ Caution: 365-day analysis uses more API quota
-npx @sdh100shaun/gh-security-tools analyze --org myorg --days 365
+npx @sdh100shaun/hubhelper analyze --org myorg --days 365
 ```
 
 ### 4. CI/CD Integration Security
@@ -250,7 +250,7 @@ When using in automated pipelines:
   env:
     GITHUB_TOKEN: ${% raw %}{{ {% endraw %}secrets.ANALYSIS_TOKEN {% raw %}}}{% endraw %}
   run: |
-    npx @sdh100shaun/gh-security-tools analyze \
+    npx @sdh100shaun/hubhelper analyze \
       --org ${% raw %}{{ {% endraw %}github.repository_owner {% raw %}}}{% endraw %} \
       --json security-report.json \
       --no-ai
@@ -258,7 +258,7 @@ When using in automated pipelines:
 # ❌ Bad: Don't use GITHUB_TOKEN directly (too broad permissions)
 - name: Bad Example
   run: |
-    npx @sdh100shaun/gh-security-tools analyze \
+    npx @sdh100shaun/hubhelper analyze \
       --token ${% raw %}{{ {% endraw %}secrets.GITHUB_TOKEN {% raw %}}}{% endraw %}  # Don't do this!
 ```
 

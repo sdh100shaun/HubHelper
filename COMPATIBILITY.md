@@ -1,6 +1,6 @@
 # Node.js Compatibility
 
-This document outlines the Node.js version compatibility for GitHub Security Analysis Tools.
+This document outlines the Node.js version compatibility for HubHelper.
 
 ## Supported Versions
 
