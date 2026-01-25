@@ -26,6 +26,11 @@ AI-powered tools to visualize GitHub activity and flag security issues across or
 - JSON export for automation
 - HTML reports for sharing
 
+⚡ **Automation Ready**
+- Schedule security scans with GitHub Actions
+- Use GitHub Apps for automated workflows
+- See [GitHub App Setup](https://sdh100shaun.github.io/gh-tools/pages/github-app/) for automated scanning
+
 ## Requirements
 
 - **Node.js**: 18.x, 20.x, 22.x, or later

@@ -1,0 +1,154 @@
+name: Scheduled Security Scan
+
+# This workflow demonstrates automated security scanning using GitHub App authentication
+# It runs on a schedule and can also be triggered manually
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+    # Run every day at 6:00 AM UTC (uncomment if you want daily scans)
+    # - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days to analyze'
+        required: false
+        default: '7'
+        type: string
+      format:
+        description: 'Output format'
+        required: false
+        default: 'json'
+        type: choice
+        options:
+          - json
+          - html
+          - console
+
+permissions:
+  contents: read
+  issues: write  # Optional: for creating issues from findings
+  pull-requests: read
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.SECURITY_SCANNER_APP_ID }}
+          private-key: ${{ secrets.SECURITY_SCANNER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install gh-security-tools
+        run: npm install -g @sdh100shaun/gh-security-tools
+
+      - name: Run security analysis
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_ORG: ${{ github.repository_owner }}
+        run: |
+          gh-security analyze \
+            --org "$GITHUB_ORG" \
+            --days ${{ inputs.days || '7' }} \
+            --json security-report.json \
+            --html security-report.html \
+            --no-ai
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report-${{ github.run_number }}
+          path: |
+            security-report.json
+            security-report.html
+          retention-days: 90
+
+      - name: Check for critical issues
+        id: check-issues
+        run: |
+          # Parse JSON report and check for critical findings
+          SELF_MERGES=$(jq '.summary.totalSelfMerges // 0' security-report.json)
+          DISABLED_ACTIONS=$(jq '.summary.reposWithDisabledActions // 0' security-report.json)
+
+          echo "self_merges=$SELF_MERGES" >> $GITHUB_OUTPUT
+          echo "disabled_actions=$DISABLED_ACTIONS" >> $GITHUB_OUTPUT
+
+          if [ "$SELF_MERGES" -gt 5 ] || [ "$DISABLED_ACTIONS" -gt 3 ]; then
+            echo "has_critical=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_critical=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create issue for critical findings (optional)
+        if: steps.check-issues.outputs.has_critical == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('security-report.json', 'utf8'));
+
+            const selfMerges = report.summary.totalSelfMerges || 0;
+            const disabledActions = report.summary.reposWithDisabledActions || 0;
+
+            const issueBody = `## 🔒 Security Scan Findings
+
+            **Scan Date:** ${new Date().toISOString().split('T')[0]}
+            **Scan Period:** Last ${{ inputs.days || '7' }} days
+
+            ### Summary
+            - 🚨 **Self-merged PRs:** ${selfMerges}
+            - ⚠️ **Repositories with disabled Actions:** ${disabledActions}
+
+            ### Recommendations
+            ${selfMerges > 0 ? '- Review self-merged PRs to ensure proper code review processes\n' : ''}
+            ${disabledActions > 0 ? '- Investigate repositories with disabled GitHub Actions\n' : ''}
+
+            ### Full Report
+            Download the full report from the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifacts.
+
+            ---
+            *Automated security scan by [gh-security-tools](https://github.com/sdh100shaun/gh-tools)*
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔒 Security Scan Findings - ${new Date().toISOString().split('T')[0]}`,
+              body: issueBody,
+              labels: ['security', 'automated-scan']
+            });
+
+      - name: Post summary
+        run: |
+          echo "## Security Scan Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Organization:** ${{ github.repository_owner }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Period:** Last ${{ inputs.days || '7' }} days" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Add summary from JSON report
+          TOTAL_REPOS=$(jq '.summary.totalRepositories // 0' security-report.json)
+          SELF_MERGES=$(jq '.summary.totalSelfMerges // 0' security-report.json)
+          DISABLED_ACTIONS=$(jq '.summary.reposWithDisabledActions // 0' security-report.json)
+
+          echo "### Key Findings" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Repositories:** $TOTAL_REPOS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Self-merged PRs:** $SELF_MERGES" >> $GITHUB_STEP_SUMMARY
+          echo "- **Disabled Actions:** $DISABLED_ACTIONS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 View full reports in workflow artifacts" >> $GITHUB_STEP_SUMMARY

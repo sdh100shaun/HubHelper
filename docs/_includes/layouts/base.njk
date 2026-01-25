@@ -49,6 +49,7 @@
                 <ul class="nav-menu">
                     <li><a href="{{ '/' | url }}" {% if page.url == "/" %}aria-current="page"{% endif %}>Home</a></li>
                     <li><a href="{{ '/pages/getting-started/' | url }}" {% if page.url.startsWith('/pages/getting-started') %}aria-current="page"{% endif %}>Getting Started</a></li>
+                    <li><a href="{{ '/pages/github-app/' | url }}" {% if page.url.startsWith('/pages/github-app') %}aria-current="page"{% endif %}>GitHub App</a></li>
                     <li><a href="{{ '/pages/api/' | url }}" {% if page.url.startsWith('/pages/api') %}aria-current="page"{% endif %}>API Reference</a></li>
                     <li><a href="{{ '/pages/security/' | url }}" {% if page.url.startsWith('/pages/security') %}aria-current="page"{% endif %}>Security</a></li>
                     <li><a href="{{ '/pages/contributing/' | url }}" {% if page.url.startsWith('/pages/contributing') %}aria-current="page"{% endif %}>Contributing</a></li>
@@ -79,6 +80,7 @@
                     <h4>Documentation</h4>
                     <ul>
                         <li><a href="{{ '/pages/getting-started/' | url }}">Getting Started</a></li>
+                        <li><a href="{{ '/pages/github-app/' | url }}">GitHub App Setup</a></li>
                         <li><a href="{{ '/pages/api/' | url }}">API Reference</a></li>
                         <li><a href="{{ '/pages/security/' | url }}">Security</a></li>
                     </ul>

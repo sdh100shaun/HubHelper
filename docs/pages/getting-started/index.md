@@ -14,6 +14,8 @@ Before you begin, ensure you have:
   - Fine-grained token (recommended) or Classic token
   - See [Creating a GitHub Token](#creating-a-github-token) below
 
+**Looking for automated scanning?** Check out the [GitHub App Setup Guide](/pages/github-app/) to configure scheduled security scans with GitHub Apps instead of personal access tokens.
+
 ## Installation Options
 
 ### Option 1: Run with npx (Recommended)
