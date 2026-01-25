@@ -10,10 +10,9 @@ githubEdit: true
 Before you begin, ensure you have:
 
 - **Node.js** 18.x, 20.x, 22.x, or later installed
-- A **GitHub Personal Access Token** with the following scopes:
-  - `repo` - Full control of private repositories
-  - `read:org` - Read org and team membership
-  - `admin:org` - Full control of orgs (for Actions settings)
+- A **GitHub Personal Access Token** with read-only permissions
+  - Fine-grained token (recommended) or Classic token
+  - See [Creating a GitHub Token](#creating-a-github-token) below
 
 ## Installation Options
 
@@ -59,15 +58,88 @@ npm run dev analyze --org your-org
 
 ## Creating a GitHub Token
 
-1. Go to [GitHub Settings > Developer Settings > Personal Access Tokens](https://github.com/settings/tokens)
+### Fine-Grained Token (Recommended)
+
+Fine-grained tokens provide the most secure access with minimal read-only permissions.
+
+#### Quick Setup
+
+1. **Navigate to Token Settings**
+
+   Go to: [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta)
+
+2. **Click "Generate new token"**
+
+3. **Configure Token**
+
+   | Setting | Value |
+   |---------|-------|
+   | Token name | `gh-security-tools-readonly` |
+   | Expiration | 90 days |
+   | Resource owner | *Select your organization* |
+   | Repository access | All repositories |
+
+4. **Set Permissions (Read-only)**
+
+   **Repository permissions:**
+   - ✅ **Actions**: Read
+   - ✅ **Pull requests**: Read
+   - ✅ **Administration**: Read (optional - for security settings)
+   - ✅ **Metadata**: Read (automatic)
+
+   **Organization permissions:** None required
+
+5. **Generate and Save**
+   - Click "Generate token"
+   - Copy the token immediately (starts with `github_pat_...`)
+   - Store securely
+
+#### What These Permissions Enable
+
+| Permission | What It's Used For | Required? |
+|------------|-------------------|-----------|
+| **Actions: Read** | Check if GitHub Actions is enabled<br>List workflow status (active/disabled/paused) | ✅ Yes |
+| **Pull requests: Read** | Analyze merged PRs<br>Detect self-merges<br>Identify security-related PRs | ✅ Yes |
+| **Metadata: Read** | List organization repositories<br>Get repository details | ✅ Yes (automatic) |
+| **Administration: Read** | Check secret scanning status<br>Check Dependabot status | ⚠️ Optional |
+
+**Note:** Without `Administration: Read`, security scanning status checks will be skipped, but the tool will still work.
+
+### Classic Token (Alternative)
+
+If you prefer classic tokens (not recommended for security):
+
+1. Go to [GitHub Settings > Personal Access Tokens](https://github.com/settings/tokens)
 2. Click "Generate new token" → "Generate new token (classic)"
 3. Give your token a descriptive name (e.g., "Security Analysis Tool")
 4. Select the following scopes:
-   - ✅ `repo` - Full control of private repositories
-   - ✅ `read:org` - Read org and team membership
-   - ✅ `admin:org` - Full control of orgs
+   - ✅ `repo` (if analyzing private repositories)
+   - ✅ `read:org` (read organization membership)
 5. Click "Generate token"
 6. **Copy the token immediately** - you won't be able to see it again!
+
+**Security Note:** Classic tokens grant broader access than necessary. Fine-grained tokens are more secure.
+
+### Testing Your Token
+
+Verify your token has the correct permissions:
+
+```bash
+# Set token
+export GITHUB_TOKEN="github_pat_..."
+
+# Test repository access
+curl -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/orgs/YOUR_ORG/repos | jq '.[0].name'
+
+# Test pull request access
+curl -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/repos/YOUR_ORG/REPO/pulls | jq '.[0].number'
+
+# Test Actions access
+curl -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/repos/YOUR_ORG/REPO/actions/permissions | jq '.enabled'
+```
 
 ## Configuration
 
@@ -93,9 +165,61 @@ Pass configuration via command-line options:
 ```bash
 npx @sdh100shaun/gh-security-tools analyze \
   --org your-org \
-  --token ghp_xxxxxxxxxxxxxxxxxxxx \
+  --token your_token_here \
   --days 30
 ```
+
+### Storing Your Token Securely
+
+#### Local Development
+
+**Option 1: .env File (Recommended)**
+```bash
+# Create .env file
+cat > .env <<EOF
+GITHUB_TOKEN=your_token_here
+GITHUB_ORG=your-org
+EOF
+
+# Add to .gitignore (important!)
+echo ".env" >> .gitignore
+```
+
+**Option 2: Environment Variable**
+```bash
+# Temporary (current session only)
+export GITHUB_TOKEN="your_token_here"
+export GITHUB_ORG="your-org"
+
+# Persistent (add to ~/.bashrc or ~/.zshrc)
+echo 'export GITHUB_TOKEN="your_token_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### CI/CD (GitHub Actions)
+
+Store as a GitHub Secret:
+
+1. Go to: `Settings → Secrets → Actions → New secret`
+2. Name: `GITHUB_TOKEN`
+3. Value: your token
+
+Use in workflow:
+```yaml
+- name: Run security analysis
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: npx @sdh100shaun/gh-security-tools analyze --org ${{ github.repository_owner }}
+```
+
+#### Token Security Checklist
+
+- ✅ Use fine-grained tokens with read-only permissions
+- ✅ Set expiration (90 days or less)
+- ✅ Store in `.env` file (added to `.gitignore`)
+- ✅ Never commit tokens to git
+- ✅ Rotate tokens every 90 days
+- ✅ Revoke immediately if compromised
 
 ## Basic Usage
 
