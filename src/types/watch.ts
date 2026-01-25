@@ -113,13 +113,13 @@ export interface IssueFingerprint {
  */
 export interface WatchScanResult {
   /** Repositories analyzed in this scan */
-  repositories: any[]; // TODO: Import Repository type from main types
+  repositories: unknown[]; // TODO: Import Repository type from main types
 
   /** Pull requests analyzed in this scan */
-  pullRequests: any[]; // TODO: Import PullRequest type from main types
+  pullRequests: unknown[]; // TODO: Import PullRequest type from main types
 
   /** Security analysis results */
-  analysisResult: any; // TODO: Import AnalysisResult type from main types
+  analysisResult: unknown; // TODO: Import AnalysisResult type from main types
 
   /** ISO timestamp when scan started */
   scanTimestamp: string;
@@ -131,7 +131,7 @@ export interface WatchScanResult {
   apiCallsUsed: number;
 
   /** New issues detected in this scan (not in previous state) */
-  newIssues: any[]; // TODO: Import SecurityIssue type from main types
+  newIssues: unknown[]; // TODO: Import SecurityIssue type from main types
 
   /** Issues resolved since last scan (were in state, not in current) */
   resolvedIssues: IssueFingerprint[];
@@ -183,7 +183,7 @@ export interface Alert {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
 
   /** Security issues included in alert (if applicable) */
-  issues?: any[]; // TODO: Import SecurityIssue type from main types
+  issues?: unknown[]; // TODO: Import SecurityIssue type from main types
 
   /** Human-readable alert message */
   message: string;
@@ -319,8 +319,8 @@ export class WatchError extends Error {
   constructor(
     message: string,
     public type: WatchErrorType,
-    public retriable: boolean = false,
-    public cause?: Error,
+    public retriable = false,
+    public cause?: Error
   ) {
     super(message);
     this.name = 'WatchError';
