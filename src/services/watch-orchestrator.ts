@@ -14,10 +14,13 @@
 
 import type { WatchConfig, WatchScanResult, WatchStatistics } from '../types/watch.js';
 import type { StateManagerConfig } from '../types/watch.js';
+import type { SecurityIssue as FullSecurityIssue, Repository, PullRequest } from '../types/index.js';
+import { SecurityAnalyzer } from '../analyzers/security-analyzer.js';
 import { ChangeDetector } from './change-detector.js';
 import { GitHubFetcher } from './github-fetcher.js';
 import { StateManager } from './state-manager.js';
 
+// Flexible SecurityIssue interface for internal use
 interface SecurityIssue {
   type: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
@@ -31,6 +34,7 @@ export class WatchOrchestrator {
   private readonly stateManager: StateManager;
   private readonly changeDetector: ChangeDetector;
   private readonly githubFetcher: GitHubFetcher;
+  private readonly securityAnalyzer: SecurityAnalyzer;
   private intervalId: NodeJS.Timeout | null = null;
   private isShuttingDown = false;
   private currentScanPromise: Promise<void> | null = null;
@@ -51,6 +55,7 @@ export class WatchOrchestrator {
     this.stateManager = new StateManager(stateConfig);
     this.changeDetector = new ChangeDetector();
     this.githubFetcher = new GitHubFetcher(config.token, config.organization);
+    this.securityAnalyzer = new SecurityAnalyzer();
 
     // Initialize statistics
     this.statistics = {
@@ -179,7 +184,7 @@ export class WatchOrchestrator {
         `   └─ Pull requests (last ${this.config.lookbackDays} days): ${pullRequests.length}`
       );
 
-      // Analyze for security issues (simplified - in real implementation would use SecurityAnalyzer)
+      // Analyze for security issues using SecurityAnalyzer
       const currentIssues = await this.analyzeSecurityIssues(repositories, pullRequests);
 
       // Detect changes
@@ -398,19 +403,23 @@ export class WatchOrchestrator {
 
   /**
    * Analyze repositories and PRs for security issues
-   * This is a simplified version - in real implementation would use SecurityAnalyzer
+   * Uses SecurityAnalyzer to detect security risks
    */
   private async analyzeSecurityIssues(
-    repositories: unknown[],
-    pullRequests: unknown[]
+    repositories: Repository[],
+    pullRequests: PullRequest[]
   ): Promise<SecurityIssue[]> {
-    const issues: SecurityIssue[] = [];
-
-    // This is a placeholder - real implementation would use the SecurityAnalyzer
-    // For now, just return empty to allow testing the orchestration logic
     console.log('🔍 Analyzing for security issues...');
 
-    return issues;
+    // Use SecurityAnalyzer to generate analysis result
+    const analysisResult = this.securityAnalyzer.generateAnalysisResult(repositories, pullRequests);
+
+    // Update API calls counter
+    this.statistics.apiCallsMade += analysisResult.statistics.total_repos;
+    this.statistics.apiCallsMade += analysisResult.statistics.total_prs;
+
+    // Return the detected issues (cast to flexible interface for internal use)
+    return analysisResult.issues as unknown as SecurityIssue[];
   }
 
   /**
