@@ -12,7 +12,6 @@
  * @module services/watch-orchestrator
  */
 
-import type { Octokit } from '@octokit/rest';
 import type { WatchConfig, WatchScanResult, WatchStatistics } from '../types/watch.js';
 import type { StateManagerConfig } from '../types/watch.js';
 import { ChangeDetector } from './change-detector.js';
@@ -38,7 +37,7 @@ export class WatchOrchestrator {
   private statistics: WatchStatistics;
   private startTime: number;
 
-  constructor(config: WatchConfig, octokit: Octokit) {
+  constructor(config: WatchConfig) {
     this.config = config;
     this.startTime = Date.now();
 
@@ -50,7 +49,7 @@ export class WatchOrchestrator {
 
     this.stateManager = new StateManager(stateConfig);
     this.changeDetector = new ChangeDetector();
-    this.githubFetcher = new GitHubFetcher(octokit, config.organization);
+    this.githubFetcher = new GitHubFetcher(config.token, config.organization);
 
     // Initialize statistics
     this.statistics = {
