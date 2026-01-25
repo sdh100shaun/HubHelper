@@ -538,4 +538,29 @@ describe('WatchOrchestrator', () => {
       });
     });
   });
+
+  describe('Additional Coverage', () => {
+    it('should track state correctly through scan lifecycle', async () => {
+      orchestrator = new WatchOrchestrator({ ...config, once: true });
+
+      const initialStats = orchestrator.getStatistics();
+      expect(initialStats.state).toBe('stopped');
+
+      await orchestrator.start();
+
+      const finalStats = orchestrator.getStatistics();
+      expect(finalStats.state).toBe('stopped');
+      expect(finalStats.totalScans).toBe(1);
+    });
+
+    it('should calculate uptime correctly', async () => {
+      orchestrator = new WatchOrchestrator({ ...config, once: true });
+
+      // Wait a bit before getting stats
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const stats = orchestrator.getStatistics();
+      expect(stats.uptime).toBeGreaterThanOrEqual(100);
+    });
+  });
 });
