@@ -485,8 +485,8 @@ For local testing or custom scripts:
 ```bash
 npm install @octokit/auth-app
 
-node << 'EOF'
-const { createAppAuth } = require("@octokit/auth-app");
+node --input-type=module << 'EOF'
+import { createAppAuth } from "@octokit/auth-app";
 
 const auth = createAppAuth({
   appId: process.env.APP_ID,
