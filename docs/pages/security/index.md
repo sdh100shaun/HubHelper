@@ -343,17 +343,184 @@ See [SECURITY_REVIEW.md](https://github.com/sdh100shaun/gh-tools/blob/main/SECUR
 
 ## Security-Related Configuration
 
+## Token Security
+
+### Minimum Privilege Principle
+
+This tool follows the principle of least privilege. Use **fine-grained tokens** with only the minimum required permissions:
+
+**Repository permissions (Read-only):**
+- ✅ **Actions**: Read - Workflow status checks
+- ✅ **Pull requests**: Read - PR analysis
+- ✅ **Metadata**: Read - Repository listing (automatic)
+- ⚠️ **Administration**: Read - Security settings (optional)
+
+**Organization permissions:**
+- ❌ **None required** for most use cases
+
+### Why Fine-Grained Tokens?
+
+| Feature | Fine-Grained Token | Classic Token |
+|---------|-------------------|---------------|
+| **Security** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| **Granular permissions** | ✅ Yes | ❌ No |
+| **Repository scoping** | ✅ Yes | ❌ No |
+| **Forced expiration** | ✅ Yes | ❌ No |
+| **Read-only option** | ✅ Yes | ⚠️ Limited |
+| **Audit trail** | ✅ Detailed | ⚠️ Basic |
+| **Org scoping** | ✅ Yes | ❌ No |
+| **Revocation impact** | 🎯 Minimal | 💥 Broad |
+
+**Classic tokens require broad scopes:**
+- `repo` - Full control of repositories (write access not needed)
+- `read:org` - Read organization membership
+- `admin:org` - Full org control (extremely broad, dangerous)
+
+**Fine-grained tokens need only:**
+- Read-only repository permissions
+- No write access
+- No organization-level permissions
+- Scoped to specific organization
+
+**Security improvement:** Fine-grained tokens are ~99% less permissive than classic tokens for this use case.
+
+### Token Security Checklist
+
+Use this checklist to ensure your tokens are secure:
+
+- [ ] Using fine-grained tokens (not classic)
+- [ ] Read-only permissions (no write access)
+- [ ] Organization-scoped (not account-wide)
+- [ ] Expiration set (90 days or less)
+- [ ] Stored in secure credential manager
+- [ ] Not committed to git (added to .gitignore)
+- [ ] Rotated regularly (every 90 days)
+- [ ] Revoked immediately if compromised
+- [ ] Separate tokens for dev/staging/production
+
+### Token Storage Security
+
+**✅ Secure Storage Methods:**
+- Environment variables (for local development)
+- `.env` file (in .gitignore)
+- GitHub Secrets (for CI/CD)
+- Password managers (1Password, LastPass, Bitwarden)
+- Secrets managers (AWS Secrets Manager, Azure Key Vault, HashiCorp Vault)
+
+**❌ Insecure Storage Methods:**
+- Hard-coded in source code
+- Committed to version control
+- Stored in plain text files
+- Shared via email/Slack/chat
+- Logged to console/files
+- Exposed in shell history
+
+### Audit and Monitoring
+
+**Monitor token usage:**
+
+```bash
+# Check token permissions
+curl -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/user/installations
+
+# View audit log
+# Go to: https://github.com/settings/security-log
+# Filter by token usage
+```
+
+**Set up alerts:**
+- GitHub automatically sends email when tokens are exposed in commits
+- Enable notifications: Settings → Notifications → Security alerts
+- Review audit logs regularly for unexpected usage
+
+### Token Compromise Response
+
+If a token is compromised, follow these steps immediately:
+
+**1. Immediate Actions:**
+```bash
+# Revoke the token immediately
+# Go to: https://github.com/settings/tokens
+# Click "Delete" next to the compromised token
+```
+
+**2. Investigate:**
+```bash
+# Check audit logs for unauthorized access
+# Settings → Security log
+# Look for API calls made with the token
+# Note: timestamps, IP addresses, actions performed
+```
+
+**3. Rotate:**
+```bash
+# Create new fine-grained token with same permissions
+# Update all services using the old token:
+# - Local .env files
+# - GitHub Actions secrets
+# - CI/CD configurations
+# - Production servers
+```
+
+**4. Review:**
+```bash
+# Check for unauthorized changes:
+# - Review recent commits in all repositories
+# - Check pull requests created/merged
+# - Review GitHub Actions workflow runs
+# - Verify organization settings unchanged
+```
+
+**5. Document:**
+- Record incident details
+- Note when compromise was detected
+- List actions taken
+- Update security procedures if needed
+
 ### Permissions Required
 
-The tool requires these GitHub API permissions:
+The tool works with both token types:
+
+#### Fine-Grained Personal Access Token (Recommended)
+
+**Repository permissions:**
+
+| Permission | Purpose | Required? |
+|------------|---------|-----------|
+| **Actions**: Read | Check if GitHub Actions is enabled<br>List workflow status (active/disabled/paused) | ✅ Yes |
+| **Pull requests**: Read | Analyze merged PRs<br>Detect self-merges<br>Identify security-related PRs | ✅ Yes |
+| **Metadata**: Read | List organization repositories<br>Get repository details | ✅ Yes (automatic) |
+| **Administration**: Read | Check secret scanning status<br>Check Dependabot status | ⚠️ Optional |
+
+**Organization permissions:**
+- ❌ None required
+
+**Security benefits:**
+- ✅ Read-only access (cannot modify anything)
+- ✅ Organization-scoped (limited blast radius)
+- ✅ Repository-specific access possible
+- ✅ Automatic expiration
+- ✅ Detailed audit logs
+
+#### Classic Personal Access Token (Legacy)
+
+**Scopes:**
 
 | Scope | Purpose | Risk Level |
 |-------|---------|------------|
-| `repo` | Access repository data | High - Full repo access |
-| `read:org` | Read organization info | Low - Read-only |
-| `admin:org` | Check Actions settings | Medium - Read org config |
+| `repo` | Access repository data | ⚠️ High - Full repo access (write not needed) |
+| `read:org` | Read organization info | ✅ Low - Read-only |
 
-**Mitigation**: Use a dedicated token, rotate regularly, limit to specific organizations.
+**Security concerns:**
+- ⚠️ Grants write access (not needed)
+- ⚠️ No expiration enforcement
+- ⚠️ Cannot limit to specific repositories
+- ⚠️ Broad scope across all organizations
+
+**Note:** The `admin:org` scope mentioned in older documentation is NOT required. The tool only needs read access.
+
+**Mitigation:** Use fine-grained tokens instead. If using classic tokens, create a dedicated token, rotate every 90 days, and limit to specific organizations.
 
 ### Data Handling
 
