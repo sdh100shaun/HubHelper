@@ -36,6 +36,7 @@ export class WatchOrchestrator {
   private currentScanPromise: Promise<void> | null = null;
   private statistics: WatchStatistics;
   private startTime: number;
+  private shutdownHandler: (() => Promise<void>) | null = null;
 
   constructor(config: WatchConfig) {
     this.config = config;
@@ -140,6 +141,13 @@ export class WatchOrchestrator {
       } catch (error) {
         console.warn('⚠️ Scan did not complete within timeout');
       }
+    }
+
+    // Remove signal handlers to prevent memory leaks
+    if (this.shutdownHandler) {
+      process.removeListener('SIGINT', this.shutdownHandler);
+      process.removeListener('SIGTERM', this.shutdownHandler);
+      this.shutdownHandler = null;
     }
 
     // Release lock
@@ -305,13 +313,13 @@ export class WatchOrchestrator {
    * Set up signal handlers for graceful shutdown
    */
   private setupSignalHandlers(): void {
-    const shutdownHandler = async () => {
+    this.shutdownHandler = async () => {
       await this.stop();
       process.exit(0);
     };
 
-    process.on('SIGINT', shutdownHandler);
-    process.on('SIGTERM', shutdownHandler);
+    process.on('SIGINT', this.shutdownHandler);
+    process.on('SIGTERM', this.shutdownHandler);
   }
 
   /**
