@@ -64,7 +64,9 @@ export class StateManager {
           );
         } catch (error: unknown) {
           // Process doesn't exist, lock is stale
-          if (error instanceof Error && error.message.includes('ESRCH')) {
+          // Node.js throws SystemError with code 'ESRCH' when process not found
+          const nodeError = error as NodeJS.ErrnoException;
+          if (nodeError.code === 'ESRCH') {
             console.warn(`Cleaning up stale lock file (PID ${lockData.pid} no longer exists)`);
             fs.unlinkSync(this.lockFile);
           } else {
