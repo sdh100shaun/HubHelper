@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { ComplianceAnalyzer } from '../analyzers/compliance-analyzer.js';
 import { ComplianceChecker } from '../services/compliance-checker.js';
 import { GitHubFetcher } from '../services/github-fetcher.js';
+import type { ApprovedEmailConfig, UserProfile } from '../types/index.js';
 
 // Mock the fetcher so we never hit the network
 jest.mock('../services/github-fetcher.js');
@@ -28,8 +29,8 @@ describe('ComplianceAnalyzer', () => {
 
     // Define what the mock instance exposes
     mockFetcher = {
-      getOrgMembers: jest.fn<() => Promise<any[]>>(),
-      getApprovedEmailConfig: jest.fn<() => Promise<any>>(),
+      getOrgMembers: jest.fn<() => Promise<UserProfile[]>>(),
+      getApprovedEmailConfig: jest.fn<() => Promise<ApprovedEmailConfig>>(),
     };
     MockedFetcher.mockImplementation(() => mockFetcher);
 
@@ -108,9 +109,7 @@ describe('ComplianceAnalyzer', () => {
       mockFetcher.getApprovedEmailConfig.mockResolvedValue({
         domains: ['acme.com'],
       });
-      mockFetcher.getOrgMembers.mockResolvedValue([
-        { login: 'ghost', name: null, email: null },
-      ]);
+      mockFetcher.getOrgMembers.mockResolvedValue([{ login: 'ghost', name: null, email: null }]);
 
       const result = await analyzer.analyze('policy-repo');
 
@@ -166,9 +165,7 @@ describe('ComplianceAnalyzer', () => {
   // ---------------------------------------------------------------
   describe('analyze – error propagation', () => {
     it('throws when the config file cannot be fetched', async () => {
-      mockFetcher.getApprovedEmailConfig.mockRejectedValue(
-        new Error('404 – file not found')
-      );
+      mockFetcher.getApprovedEmailConfig.mockRejectedValue(new Error('404 – file not found'));
 
       await expect(analyzer.analyze('missing-repo')).rejects.toThrow('404');
     });

@@ -9,9 +9,9 @@
  * @module analyzers/compliance-analyzer
  */
 
-import type { ComplianceResult } from '../types/index.js';
 import { ComplianceChecker } from '../services/compliance-checker.js';
 import { GitHubFetcher } from '../services/github-fetcher.js';
+import type { ComplianceResult } from '../types/index.js';
 
 export class ComplianceAnalyzer {
   private readonly fetcher: GitHubFetcher;

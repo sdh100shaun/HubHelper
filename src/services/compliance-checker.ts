@@ -109,7 +109,7 @@ export class ComplianceChecker {
     if (config.domains.some((d) => d === domain)) return true;
 
     // Exact-address allow-list check
-    if (config.exactEmails && config.exactEmails.some((e) => e === normalised)) return true;
+    if (config.exactEmails?.some((e) => e === normalised)) return true;
 
     return false;
   }

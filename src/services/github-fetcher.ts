@@ -1,5 +1,11 @@
 import { Octokit } from '@octokit/rest';
-import type { ApprovedEmailConfig, PullRequest, Repository, UserProfile, Workflow } from '../types/index.js';
+import type {
+  ApprovedEmailConfig,
+  PullRequest,
+  Repository,
+  UserProfile,
+  Workflow,
+} from '../types/index.js';
 
 export class GitHubFetcher {
   private octokit: Octokit;
