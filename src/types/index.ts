@@ -93,3 +93,60 @@ export interface AnalysisResult {
     disabled_workflows: number;
   };
 }
+
+// ---------------------------------------------------------------------------
+// User-compliance types
+// ---------------------------------------------------------------------------
+
+/** GitHub user profile as returned by the Users API */
+export interface UserProfile {
+  /** GitHub username (login handle) */
+  login: string;
+  /** Full name set in the user's public profile, or null when absent */
+  name: string | null;
+  /** Public email set in the user's profile, or null when absent */
+  email: string | null;
+}
+
+/** Source-of-truth for which email addresses are considered "approved".
+ *  Persisted as `.hubhelper/approved-emails.json` inside the designated
+ *  repository so that the list can be edited through normal pull-request
+ *  workflows. */
+export interface ApprovedEmailConfig {
+  /** Allowed email-address domains (lower-case, no leading dot).
+   *  e.g. ["acme.com", "partner.io"] */
+  domains: string[];
+  /** Individual addresses that are approved regardless of domain.
+   *  Useful for contractors whose domain is not on the allow-list. */
+  exactEmails?: string[];
+}
+
+/** Every kind of violation that a single user can commit */
+export type ComplianceViolationType = 'missing_full_name' | 'missing_approved_email';
+
+/** One user's full compliance record when they are non-compliant */
+export interface ComplianceViolation {
+  /** GitHub login of the non-compliant user */
+  user: string;
+  /** Which rules the user broke */
+  violations: ComplianceViolationType[];
+  /** Snapshot of the relevant profile fields at check time */
+  details: {
+    name: string | null;
+    email: string | null;
+  };
+}
+
+/** Aggregate result returned by a single compliance scan */
+export interface ComplianceResult {
+  /** Organisation that was checked */
+  organization: string;
+  /** Total number of org members examined */
+  totalMembers: number;
+  /** Members that passed every rule */
+  compliantMembers: number;
+  /** Members that failed at least one rule, with details */
+  nonCompliantMembers: ComplianceViolation[];
+  /** ISO-8601 timestamp when the check ran */
+  checkedAt: string;
+}
