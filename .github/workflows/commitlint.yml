@@ -1,0 +1,117 @@
+name: Commitlint
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+  push:
+    branches: [ claude/** ]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commitlint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # Fetch all history for commitlint
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate current commit
+        if: github.event_name == 'push'
+        run: npx commitlint --from=HEAD~1 --to=HEAD --verbose
+
+      - name: Validate PR commits
+        if: github.event_name == 'pull_request'
+        run: npx commitlint --from=${{ github.event.pull_request.base.sha }} --to=${{ github.event.pull_request.head.sha }} --verbose
+
+      - name: Display commit format help
+        if: failure()
+        run: |
+          echo ""
+          echo "❌ One or more commits do not follow Conventional Commits format"
+          echo ""
+          echo "Required format: <type>(<scope>): <subject>"
+          echo ""
+          echo "Examples:"
+          echo "  feat(auth): add OAuth2 authentication"
+          echo "  fix(api): resolve race condition in data fetcher"
+          echo "  docs(readme): update installation instructions"
+          echo "  security(deps): update vulnerable dependencies"
+          echo ""
+          echo "Allowed types:"
+          echo "  feat      - New feature"
+          echo "  fix       - Bug fix"
+          echo "  docs      - Documentation changes"
+          echo "  style     - Code style/formatting changes"
+          echo "  refactor  - Code refactoring"
+          echo "  perf      - Performance improvements"
+          echo "  test      - Test changes"
+          echo "  build     - Build system changes"
+          echo "  ci        - CI configuration changes"
+          echo "  chore     - Maintenance tasks"
+          echo "  security  - Security fixes/improvements"
+          echo "  revert    - Revert previous commit"
+          echo ""
+          echo "See: https://www.conventionalcommits.org/"
+          echo ""
+
+  commit-summary:
+    name: Commit Summary
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Analyze commit types
+        run: |
+          echo "=== Commit Analysis ==="
+          echo ""
+
+          # Get all commits in the PR
+          COMMITS=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --pretty=format:"%s")
+          TOTAL=$(echo "$COMMITS" | wc -l)
+
+          echo "Total commits: $TOTAL"
+          echo ""
+
+          # Count by type
+          echo "Commits by type:"
+          echo "$COMMITS" | grep -oE '^[a-z]+' | sort | uniq -c | sort -rn || echo "  (analysis unavailable)"
+          echo ""
+
+          # Check for breaking changes
+          BREAKING=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --pretty=format:"%b" | grep -c "BREAKING CHANGE:" || true)
+
+          if [ "$BREAKING" -gt 0 ]; then
+            echo "⚠️  WARNING: This PR contains $BREAKING BREAKING CHANGE(s)"
+          else
+            echo "✅ No breaking changes detected"
+          fi

@@ -8,7 +8,12 @@
     "gh-security": "dist/index.js",
     "gh-security-tools": "dist/index.js"
   },
-  "files": ["dist", "README.md", "LICENSE", "sbom.json"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "sbom.json"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -22,6 +27,12 @@
     "sbom:generate": "cyclonedx-npm --output-file sbom.json --spec-version 1.6 --short-PURLs",
     "sbom:generate:xml": "cyclonedx-npm --output-file sbom.xml --spec-version 1.6 --output-format XML",
     "sbom:all": "npm run sbom:generate && npm run sbom:generate:xml",
+    "commitlint": "commitlint --edit",
+    "commitlint:last": "commitlint --from=HEAD~1",
+    "commitlint:all": "commitlint --from=origin/main",
+    "commit:validate": "commitlint --from=HEAD~1 --to=HEAD --verbose",
+    "hooks:install": "node scripts/install-git-hooks.js",
+    "hooks:uninstall": "node scripts/uninstall-git-hooks.js",
     "prepublishOnly": "npm run lint && npm run build && npm run sbom:generate"
   },
   "keywords": [
@@ -58,6 +69,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.5.3",
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
     "@cyclonedx/cyclonedx-npm": "^4.1.2",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.5",
