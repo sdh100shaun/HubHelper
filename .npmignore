@@ -41,3 +41,6 @@ npm-debug.log*
 
 # Testing
 .nyc_output/
+
+# SBOM (JSON is included via package.json files[], XML is not published)
+sbom.xml

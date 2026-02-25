@@ -41,6 +41,20 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Generate SBOM
+        run: npm run sbom:all
+
+      - name: Verify SBOM
+        run: |
+          echo "=== SBOM Verification ==="
+          if [ ! -f sbom.json ]; then
+            echo "❌ Error: sbom.json not found"
+            exit 1
+          fi
+          echo "✅ SBOM generated successfully"
+          echo "Components: $(jq '.components | length' sbom.json)"
+          echo "Dependencies: $(jq '.dependencies | length' sbom.json)"
+
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:

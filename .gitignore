@@ -7,3 +7,7 @@ coverage/
 .vscode/
 .idea/
 _site/
+
+# SBOM files (generated during build/publish)
+sbom.json
+sbom.xml

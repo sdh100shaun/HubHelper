@@ -1,0 +1,130 @@
+name: SBOM Generation
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  generate-sbom:
+    name: Generate Software Bill of Materials
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate SBOM (JSON)
+        run: npm run sbom:generate
+
+      - name: Generate SBOM (XML)
+        run: npm run sbom:generate:xml
+
+      - name: Validate SBOM files exist
+        run: |
+          if [ ! -f sbom.json ]; then
+            echo "Error: sbom.json not generated"
+            exit 1
+          fi
+          if [ ! -f sbom.xml ]; then
+            echo "Error: sbom.xml not generated"
+            exit 1
+          fi
+          echo "✅ SBOM files generated successfully"
+
+      - name: Display SBOM summary
+        run: |
+          echo "=== SBOM Summary ==="
+          echo "Format: CycloneDX 1.6"
+          echo "Components: $(jq '.components | length' sbom.json)"
+          echo "Dependencies: $(jq '.dependencies | length' sbom.json)"
+          echo "JSON Size: $(wc -c < sbom.json) bytes"
+          echo "XML Size: $(wc -c < sbom.xml) bytes"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.5.0
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            sbom.json
+            sbom.xml
+          retention-days: 90
+
+      - name: Attach SBOM to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@d3d6a1c4dbbb1e15b1b0dc42f30c1e8c0c00ad93 # v2.2.0
+        with:
+          files: |
+            sbom.json
+            sbom.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  validate-sbom:
+    name: Validate SBOM
+    runs-on: ubuntu-latest
+    needs: generate-sbom
+
+    steps:
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: sbom-${{ github.sha }}
+
+      - name: Validate JSON format
+        run: |
+          if ! jq empty sbom.json 2>/dev/null; then
+            echo "❌ Invalid JSON format"
+            exit 1
+          fi
+          echo "✅ SBOM JSON is valid"
+
+      - name: Check SBOM metadata
+        run: |
+          echo "=== SBOM Metadata ==="
+          echo "Spec Version: $(jq -r '.specVersion' sbom.json)"
+          echo "Serial Number: $(jq -r '.serialNumber' sbom.json)"
+          echo "Version: $(jq -r '.version' sbom.json)"
+          echo "Tool: $(jq -r '.metadata.tools[0].name' sbom.json)"
+          echo "Component Name: $(jq -r '.metadata.component.name' sbom.json)"
+          echo "Component Version: $(jq -r '.metadata.component.version' sbom.json)"
+
+      - name: Analyze dependencies
+        run: |
+          echo "=== Dependency Analysis ==="
+          echo "Total Components: $(jq '.components | length' sbom.json)"
+          echo "Production Dependencies: $(jq '[.components[] | select(.scope == "required")] | length' sbom.json)"
+          echo "Development Dependencies: $(jq '[.components[] | select(.scope == "optional")] | length' sbom.json)"
+          echo ""
+          echo "Top 10 Dependencies:"
+          jq -r '.components[:10] | .[] | "\(.name)@\(.version)"' sbom.json
+
+      - name: Security check via SBOM
+        run: |
+          echo "=== Security Analysis ==="
+          echo "Checking for known vulnerable components..."
+          # This is a placeholder - in production, integrate with vulnerability databases
+          echo "✅ SBOM generated for security analysis"
+          echo "Note: Upload this SBOM to security scanning tools like:"
+          echo "  - OWASP Dependency-Track"
+          echo "  - Anchore"
+          echo "  - Snyk"
+          echo "  - GitHub Dependency Graph"

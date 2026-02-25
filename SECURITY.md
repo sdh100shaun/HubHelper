@@ -33,6 +33,15 @@ We will respond to your report within 48 hours and work with you to address any 
 - Update dependencies promptly when security patches are released
 - Dependencies are automatically scanned by Dependabot (if enabled in your fork)
 
+### Software Bill of Materials (SBOM)
+
+- This project generates CycloneDX 1.6 SBOMs for supply chain transparency
+- SBOMs are automatically generated during builds and releases
+- `sbom.json` is included in published npm packages
+- SBOMs attached to GitHub releases for verification
+- Use SBOMs for vulnerability tracking, license compliance, and security audits
+- See [docs/SBOM.md](docs/SBOM.md) for detailed SBOM documentation
+
 ### CI/CD Security
 
 - GitHub Actions workflows use pinned versions for security
