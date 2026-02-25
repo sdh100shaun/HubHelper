@@ -1,0 +1,43 @@
+# Development files
+src/
+*.test.ts
+*.spec.ts
+__tests__/
+coverage/
+.github/
+
+# Configuration
+tsconfig.json
+biome.json
+jest.config.js
+.env
+.env.*
+!.env.example
+
+# Documentation (include only README)
+docs/
+.eleventy.js
+_site/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+.nyc_output/

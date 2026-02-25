@@ -181,7 +181,9 @@ export class GitHubFetcher {
           });
         }
       } catch (error) {
-        console.error(`Error fetching PRs for ${repo.name}:`, error);
+        // Log error without exposing sensitive details
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`Error fetching PRs for ${repo.name}: ${message}`);
       }
     }
 
