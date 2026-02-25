@@ -8,8 +8,8 @@
  * Run: npm run hooks:uninstall
  */
 
-import { unlinkSync, existsSync, copyFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { copyFileSync, existsSync, unlinkSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -18,18 +18,18 @@ export default {
       2,
       'always',
       [
-        'feat',      // New feature
-        'fix',       // Bug fix
-        'docs',      // Documentation only changes
-        'style',     // Code style changes (formatting, missing semicolons, etc)
-        'refactor',  // Code refactoring (neither fixes a bug nor adds a feature)
-        'perf',      // Performance improvements
-        'test',      // Adding or updating tests
-        'build',     // Changes to build system or external dependencies
-        'ci',        // Changes to CI configuration files and scripts
-        'chore',     // Other changes that don't modify src or test files
-        'revert',    // Reverts a previous commit
-        'security',  // Security improvements or fixes
+        'feat', // New feature
+        'fix', // Bug fix
+        'docs', // Documentation only changes
+        'style', // Code style changes (formatting, missing semicolons, etc)
+        'refactor', // Code refactoring (neither fixes a bug nor adds a feature)
+        'perf', // Performance improvements
+        'test', // Adding or updating tests
+        'build', // Changes to build system or external dependencies
+        'ci', // Changes to CI configuration files and scripts
+        'chore', // Other changes that don't modify src or test files
+        'revert', // Reverts a previous commit
+        'security', // Security improvements or fixes
       ],
     ],
 
@@ -65,11 +65,7 @@ export default {
     ],
 
     // Subject rules
-    'subject-case': [
-      2,
-      'never',
-      ['sentence-case', 'start-case', 'pascal-case', 'upper-case'],
-    ],
+    'subject-case': [2, 'never', ['sentence-case', 'start-case', 'pascal-case', 'upper-case']],
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never', '.'],
 

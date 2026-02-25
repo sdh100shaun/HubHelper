@@ -9,8 +9,8 @@
  * Run: npm run hooks:install
  */
 
-import { writeFileSync, mkdirSync, chmodSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -83,7 +83,6 @@ function installHook() {
     console.log('⚠️  Warning: commit-msg hook already exists');
     console.log('   Backing up existing hook to commit-msg.backup\n');
     const backupPath = join(hooksDir, 'commit-msg.backup');
-    const { copyFileSync } = await import('node:fs');
     copyFileSync(hookPath, backupPath);
   }
 
@@ -96,7 +95,9 @@ function installHook() {
   chmodSync(hookPath, 0o755);
 
   console.log('\n✅ Conventional Commits hook installed successfully!\n');
-  console.log('📝 Your commit messages will now be validated against the Conventional Commits spec.');
+  console.log(
+    '📝 Your commit messages will now be validated against the Conventional Commits spec.'
+  );
   console.log('   Format: <type>(<scope>): <subject>\n');
   console.log('Examples:');
   console.log('  feat(auth): add OAuth2 authentication');

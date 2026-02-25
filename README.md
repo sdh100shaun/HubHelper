@@ -313,7 +313,49 @@ Analyzed 45 repositories and 123 pull requests. Found 12 total issues:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+Contributions are welcome! We follow industry-standard practices to maintain code quality and consistency.
+
+### Commit Message Format
+
+This project uses **Conventional Commits** for clear, semantic commit messages:
+
+```
+<type>(<scope>): <subject>
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `security`, `revert`
+
+**Examples:**
+```bash
+feat(auth): add OAuth2 authentication
+fix(api): resolve race condition in fetcher
+docs(readme): update installation instructions
+security(deps): patch vulnerable dependencies
+```
+
+### Development Setup
+
+1. Fork and clone the repository
+2. Install dependencies: `npm install`
+3. (Optional) Install commit hooks: `npm run hooks:install`
+4. Make your changes with tests
+5. Ensure all checks pass: `npm run lint && npm test && npm run build`
+6. Commit using conventional format
+7. Push and create a Pull Request
+
+### Validation
+
+- **Local (Optional)**: Install git hooks to validate commits locally
+  ```bash
+  npm run hooks:install
+  ```
+- **CI (Automatic)**: All PRs are validated automatically
+- **Manual**: Check your last commit
+  ```bash
+  npm run commit:validate
+  ```
+
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
