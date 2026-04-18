@@ -493,8 +493,10 @@ const auth = createAppAuth({
   privateKey: process.env.APP_PRIVATE_KEY,
 });
 
-const { token } = await auth({ type: "installation" });
-console.log(token);
+(async () => {
+  const { token } = await auth({ type: "installation" });
+  console.log(token);
+})();
 EOF
 ```
 
