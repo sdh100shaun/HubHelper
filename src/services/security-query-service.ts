@@ -5,7 +5,7 @@
  * the GitHub Copilot SDK configured with Anthropic Claude models.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import { CopilotClient } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 export interface QueryResult {
@@ -16,10 +16,11 @@ export interface QueryResult {
 }
 
 export class SecurityQueryService {
-  private anthropic: Anthropic;
+  private client: CopilotClient;
   private model = 'claude-sonnet-4-20250514';
   private cachedContext?: string;
   private cachedAnalysis?: AnalysisResult;
+  private anthropicKey: string;
 
   constructor(apiKey?: string) {
     const key = apiKey || process.env.ANTHROPIC_API_KEY;
@@ -28,7 +29,17 @@ export class SecurityQueryService {
         'Anthropic API key required. Set ANTHROPIC_API_KEY environment variable or pass as parameter.'
       );
     }
-    this.anthropic = new Anthropic({ apiKey: key });
+    this.anthropicKey = key;
+    this.client = new CopilotClient({ autoStart: false });
+  }
+
+  /**
+   * Ensure client is started
+   */
+  private async ensureStarted(): Promise<void> {
+    if (this.client.getState() !== 'connected') {
+      await this.client.start();
+    }
   }
 
   /**
@@ -43,31 +54,38 @@ export class SecurityQueryService {
       this.cachedAnalysis = analysisData;
       this.cachedContext = context;
 
-      // Use Claude via Anthropic SDK (integrated with Copilot workflow)
-      const response = await this.anthropic.messages.create({
+      // Ensure client is started
+      await this.ensureStarted();
+
+      // Create session with Anthropic provider and Claude model
+      const session = await this.client.createSession({
         model: this.model,
-        max_tokens: 2048,
-        system: [
-          {
-            type: 'text',
-            text: this.getSystemPrompt(),
-            cache_control: { type: 'ephemeral' },
-          },
-          {
-            type: 'text',
-            text: context,
-            cache_control: { type: 'ephemeral' },
-          },
-        ],
-        messages: [
-          {
-            role: 'user',
-            content: question,
-          },
-        ],
+        provider: {
+          type: 'anthropic',
+          baseUrl: 'https://api.anthropic.com',
+          apiKey: this.anthropicKey,
+        },
+        systemMessage: {
+          mode: 'replace',
+          content: `${this.getSystemPrompt()}\n\n${context}`,
+        },
+        onPermissionRequest: async () => ({ kind: 'approved' }),
       });
 
-      return this.parseResponse(response, analysisData, question);
+      try {
+        // Send question and wait for response
+        const response = await session.sendAndWait({ prompt: question });
+
+        if (!response) {
+          throw new Error('No response received from Claude');
+        }
+
+        // Parse and return result
+        return this.parseResponse(response.data.content, analysisData, question);
+      } finally {
+        // Clean up session
+        await session.disconnect();
+      }
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Query failed: ${error.message}`);
@@ -87,11 +105,14 @@ export class SecurityQueryService {
   }
 
   /**
-   * Clear cached context
+   * Clear cached context and stop client
    */
-  clearCache(): void {
+  async clearCache(): Promise<void> {
     this.cachedContext = undefined;
     this.cachedAnalysis = undefined;
+    if (this.client.getState() === 'connected') {
+      await this.client.stop();
+    }
   }
 
   /**
@@ -161,17 +182,11 @@ If asked about something not in the analysis data, clearly state that and sugges
    * Parse Claude's response and extract structured data
    */
   private parseResponse(
-    response: Anthropic.Message,
+    content: string,
     analysisData: AnalysisResult,
     question: string
   ): QueryResult {
-    // Extract text from Claude's response
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
-
-    const answer = content.text;
+    const answer = content;
 
     // Determine confidence based on response characteristics
     const confidence = this.assessConfidence(answer);
