@@ -208,7 +208,9 @@ export class RepositoryListManager {
           description: typeof e.description === 'string' ? e.description : '',
           created: typeof e.created === 'string' ? e.created : now,
           updated: typeof e.updated === 'string' ? e.updated : now,
-          repositories: Array.isArray(e.repositories) ? (e.repositories as string[]) : [],
+          repositories: Array.isArray(e.repositories)
+            ? (e.repositories as unknown[]).filter((r): r is string => typeof r === 'string')
+            : [],
           metadata:
             typeof e.metadata === 'object' && e.metadata !== null
               ? (e.metadata as Record<string, unknown>)
@@ -224,6 +226,7 @@ export class RepositoryListManager {
   }
 
   private saveStorage(): void {
+    // tempPath is declared here (outside try) so the catch block can clean it up
     const tempPath = `${this.storagePath}.tmp`;
     try {
       const data = JSON.stringify(this.storage, null, 2);
