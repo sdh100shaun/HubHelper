@@ -29,9 +29,8 @@ export class ListReportGenerator {
     const allRepos = await this.fetcher.getRepositories();
 
     // Filter to only repos in the list
-    const listRepos = allRepos.filter((repo) =>
-      list.repositories.some((listRepo) => repo.full_name === listRepo)
-    );
+    const listRepositoryNames = new Set(list.repositories);
+    const listRepos = allRepos.filter((repo) => listRepositoryNames.has(repo.full_name));
 
     if (listRepos.length === 0) {
       throw new Error(`No repositories found for list '${listName}'`);
