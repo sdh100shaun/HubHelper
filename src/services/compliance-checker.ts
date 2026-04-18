@@ -106,10 +106,10 @@ export class ComplianceChecker {
     const domain = normalised.slice(atIndex + 1);
 
     // Domain allow-list check
-    if (config.domains.some((d) => d === domain)) return true;
+    if (config.domains.some((d) => d.trim().toLowerCase() === domain)) return true;
 
     // Exact-address allow-list check
-    if (config.exactEmails?.some((e) => e === normalised)) return true;
+    if (config.exactEmails?.some((e) => e.trim().toLowerCase() === normalised)) return true;
 
     return false;
   }
