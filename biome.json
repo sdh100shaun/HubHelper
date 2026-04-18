@@ -31,6 +31,7 @@
   },
   "files": {
     "ignoreUnknown": false,
+    "ignore": ["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lock"],
     "include": ["src/**", "*.ts", "*.js", "*.json"]
   }
 }
