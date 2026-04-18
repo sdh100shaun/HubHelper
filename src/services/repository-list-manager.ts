@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { RepositoryList, RepositoryListStorage } from '../types/index.js';
 
@@ -173,7 +173,21 @@ export class RepositoryListManager {
 
     try {
       const data = readFileSync(this.storagePath, 'utf-8');
-      return JSON.parse(data);
+      const parsed: unknown = JSON.parse(data);
+
+      // Validate shape
+      if (
+        typeof parsed !== 'object' ||
+        parsed === null ||
+        !('lists' in parsed) ||
+        typeof parsed.lists !== 'object' ||
+        parsed.lists === null
+      ) {
+        console.error(`Invalid storage format in ${this.storagePath}, resetting`);
+        return { lists: {} };
+      }
+
+      return parsed as RepositoryListStorage;
     } catch (error) {
       console.error(`Error loading storage from ${this.storagePath}:`, error);
       return { lists: {} };
@@ -188,7 +202,7 @@ export class RepositoryListManager {
       writeFileSync(tempPath, data, 'utf-8');
 
       // Rename is atomic on most filesystems
-      writeFileSync(this.storagePath, data, 'utf-8');
+      renameSync(tempPath, this.storagePath);
     } catch (error) {
       throw new Error(`Failed to save storage: ${error}`);
     }

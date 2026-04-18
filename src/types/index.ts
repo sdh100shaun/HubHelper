@@ -31,6 +31,8 @@ export interface Repository {
   actions_enabled: boolean;
   security_enabled: boolean;
   workflows?: Workflow[];
+  open_issues_count?: number;
+  updated_at?: string;
 }
 
 export interface SecurityIssueDetails {

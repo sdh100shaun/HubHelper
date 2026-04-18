@@ -52,9 +52,9 @@ export class ListReportGenerator {
         url: `https://github.com/${repo.full_name}`,
         actions_enabled: repo.actions_enabled,
         security_enabled: repo.security_enabled,
-        open_issues: 0, // Would need additional API call
+        open_issues: repo.open_issues_count || 0,
         security_issues: repoIssues.total,
-        last_activity: new Date().toISOString(), // Placeholder
+        last_activity: repo.updated_at || new Date().toISOString(),
       });
 
       totalIssues += repoIssues.total;

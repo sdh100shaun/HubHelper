@@ -73,6 +73,8 @@ export class GitHubFetcher {
           actions_enabled: actionsEnabled,
           security_enabled: securityEnabled,
           workflows,
+          open_issues_count: repo.open_issues_count ?? undefined,
+          updated_at: repo.updated_at ?? undefined,
         });
       }
 
@@ -233,40 +235,51 @@ export class GitHubFetcher {
   // -----------------------------------------------------------------------
 
   /**
-   * List every public member of the organisation and resolve each one's
-   * profile (name + email).  Pagination is handled internally.
+   * List all members of the organization and resolve each one's
+   * profile (name + email). Pagination is handled internally.
+   * Uses bounded concurrency to avoid rate limiting.
    */
   async getOrgMembers(): Promise<UserProfile[]> {
     const profiles: UserProfile[] = [];
     let page = 1;
     const perPage = 100;
+    const concurrencyLimit = 5;
 
     while (true) {
       const { data: members } = await this.octokit.orgs.listMembers({
         org: this.org,
         per_page: perPage,
         page,
-        publicOnly: false,
       });
 
       if (members.length === 0) break;
 
-      for (const member of members) {
-        const login = member.login;
+      // Process members in batches to avoid rate limiting
+      for (let i = 0; i < members.length; i += concurrencyLimit) {
+        const batch = members.slice(i, i + concurrencyLimit);
+        const batchProfiles = await Promise.all(
+          batch.map(async (member) => {
+            const login = member.login;
 
-        // Fetch the full user profile to get name and email
-        try {
-          const { data: user } = await this.octokit.users.getByUsername({ username: login });
-          profiles.push({
-            login,
-            name: user.name || null,
-            email: user.email || null,
-          });
-        } catch {
-          // If we cannot fetch a profile, record the member with nulls so the
-          // compliance checker flags them rather than silently dropping them.
-          profiles.push({ login, name: null, email: null });
-        }
+            // Fetch the full user profile to get name and email
+            try {
+              const { data: user } = await this.octokit.users.getByUsername({
+                username: login,
+              });
+              return {
+                login,
+                name: user.name || null,
+                email: user.email || null,
+              };
+            } catch {
+              // If we cannot fetch a profile, record the member with nulls so the
+              // compliance checker flags them rather than silently dropping them.
+              return { login, name: null, email: null };
+            }
+          })
+        );
+
+        profiles.push(...batchProfiles);
       }
 
       if (members.length < perPage) break;
