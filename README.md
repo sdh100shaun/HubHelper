@@ -26,15 +26,19 @@ AI-powered tools to visualize GitHub activity and flag security issues across or
 - JSON export for automation
 - HTML reports for sharing
 
+⚡ **Automation Ready**
+- Schedule security scans with GitHub Actions
+- Use GitHub Apps for automated workflows
+- See [GitHub App Setup](https://sdh100shaun.github.io/gh-tools/pages/github-app/) for automated scanning
+
 ## Requirements
 
 - **Node.js**: 18.x, 20.x, 22.x, or later
   - Tested on Node.js 18, 20, and 22
   - Compatible with Node.js 24+ (future versions)
-- **GitHub Personal Access Token** with appropriate permissions
-  - `repo` - Full control of private repositories
-  - `read:org` - Read org and team membership
-  - `admin:org` - Full control of orgs (for Actions settings)
+- **GitHub Personal Access Token** with read-only permissions
+  - Fine-grained token (recommended) or Classic token
+  - See [Authentication](#authentication) for detailed setup
 
 ## Installation
 
@@ -65,29 +69,76 @@ cd gh-tools
 npm install
 ```
 
-## Configuration
+## Authentication
 
-Create a `.env` file based on `.env.example`:
+Generate a GitHub token with appropriate permissions:
+
+### 🔒 Fine-Grained Personal Access Token (Recommended)
+
+**Most secure option** with minimal read-only permissions:
+
+1. Navigate to [GitHub Settings → Personal Access Tokens → Fine-grained tokens](https://github.com/settings/tokens?type=beta)
+2. Click **"Generate new token"**
+3. Configure:
+   - **Token name**: `gh-security-tools-readonly`
+   - **Resource owner**: Select your organization
+   - **Repository access**: All repositories (or select specific repos)
+   - **Permissions** (all read-only):
+     - ✅ **Actions**: Read
+     - ✅ **Pull requests**: Read
+     - ✅ **Administration**: Read (optional - for security scanning status)
+     - ✅ **Metadata**: Read (automatically included)
+   - **Expiration**: 90 days (recommended)
+4. Click **"Generate token"**
+5. Copy the token (starts with `github_pat_...`)
+
+**Advantages:**
+- ✅ Read-only access (cannot modify anything)
+- ✅ Organization-scoped (limited blast radius)
+- ✅ Repository-specific access possible
+- ✅ Automatic expiration
+- ✅ Detailed audit logs
+
+### 🔓 Classic Personal Access Token (Legacy)
+
+For backward compatibility:
+
+1. Navigate to [GitHub Settings → Tokens](https://github.com/settings/tokens)
+2. Click **"Generate new token"** → **"Generate new token (classic)"**
+3. Select scopes:
+   - ✅ `repo` (if analyzing private repositories)
+   - ✅ `read:org` (read organization membership)
+4. Click **"Generate token"**
+5. Copy the token (starts with `ghp_...`)
+
+**Note:** Classic tokens grant broader access than needed. Fine-grained tokens are strongly recommended.
+
+### Using Your Token
 
 ```bash
-cp .env.example .env
+# Option 1: Environment variable
+export GITHUB_TOKEN="your_token_here"
+gh-security analyze --org your-org
+
+# Option 2: .env file (recommended for local development)
+cat > .env <<EOF
+GITHUB_TOKEN=your_token_here
+GITHUB_ORG=your-org
+EOF
+gh-security analyze
+
+# Option 3: Command line (not recommended - visible in shell history)
+gh-security analyze --org your-org --token your_token_here
 ```
 
-Edit `.env` and add your credentials:
+### Token Security Best Practices
 
-```env
-GITHUB_TOKEN=your_github_personal_access_token
-GITHUB_ORG=your_organization_name
-```
-
-### GitHub Token Permissions
-
-Your GitHub personal access token needs the following scopes:
-- `repo` - Full control of private repositories
-- `read:org` - Read org and team membership
-- `admin:org` - Full control of orgs (for Actions settings)
-
-[Create a token here](https://github.com/settings/tokens/new)
+- 🔒 Use fine-grained tokens with minimum required permissions
+- 🔄 Rotate tokens every 90 days
+- 🗑️ Revoke tokens immediately if compromised
+- 🔐 Store tokens in secure credential managers (1Password, GitHub Secrets)
+- ⏱️ Set expiration dates (enforced with fine-grained tokens)
+- 📝 Audit token usage regularly via Settings → Security log
 
 ## Usage
 
