@@ -9,6 +9,12 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
+import {
+  validateDays,
+  validateGitHubToken,
+  validateOrganizationName,
+} from './utils/input-validator.js';
+import { validateFilePath } from './utils/path-validator.js';
 
 // Load environment variables
 config();
@@ -34,23 +40,35 @@ program
 
     try {
       // Get configuration
-      const token = options.token || process.env.GITHUB_TOKEN;
-      const org = options.org || process.env.GITHUB_ORG;
-      const days = Number.parseInt(options.days, 10);
+      const tokenInput = options.token || process.env.GITHUB_TOKEN;
+      const orgInput = options.org || process.env.GITHUB_ORG;
+      const daysInput = options.days;
 
-      if (!token) {
-        consoleReporter.printError(
-          new Error('GitHub token is required. Set GITHUB_TOKEN env var or use --token')
-        );
+      // Validate token
+      const tokenValidation = validateGitHubToken(tokenInput);
+      if (!tokenValidation.valid) {
+        consoleReporter.printError(new Error(tokenValidation.error!));
+        consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
         process.exit(1);
       }
+      const token = tokenValidation.sanitized as string;
 
-      if (!org) {
-        consoleReporter.printError(
-          new Error('Organization name is required. Set GITHUB_ORG env var or use --org')
-        );
+      // Validate organization
+      const orgValidation = validateOrganizationName(orgInput);
+      if (!orgValidation.valid) {
+        consoleReporter.printError(new Error(orgValidation.error!));
+        consoleReporter.printInfo('Set GITHUB_ORG environment variable or use --org flag');
         process.exit(1);
       }
+      const org = orgValidation.sanitized as string;
+
+      // Validate days
+      const daysValidation = validateDays(daysInput);
+      if (!daysValidation.valid) {
+        consoleReporter.printError(new Error(daysValidation.error!));
+        process.exit(1);
+      }
+      const days = daysValidation.sanitized as number;
 
       consoleReporter.printInfo(`Analyzing organization: ${org}`);
       consoleReporter.printInfo(`Looking back ${days} days\n`);
@@ -93,15 +111,45 @@ program
 
       // Save to files if requested
       if (options.json) {
-        const jsonReporter = new JSONReporter();
-        jsonReporter.saveToFile(analysisResult, options.json);
-        consoleReporter.printSuccess(`Results saved to ${options.json}`);
+        try {
+          const safePath = validateFilePath(options.json, {
+            allowedExtensions: ['.json'],
+          });
+          const jsonReporter = new JSONReporter();
+          jsonReporter.saveToFile(analysisResult, safePath);
+          consoleReporter.printSuccess(`Results saved to ${safePath}`);
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('path traversal')) {
+            consoleReporter.printError(
+              new Error(
+                `Security error: ${error.message}\nFor security, files can only be saved in the current directory or subdirectories.`
+              )
+            );
+          } else {
+            throw error;
+          }
+        }
       }
 
       if (options.html) {
-        const htmlReporter = new HTMLReporter();
-        htmlReporter.saveToFile(analysisResult, options.html, aiInsights);
-        consoleReporter.printSuccess(`HTML report saved to ${options.html}`);
+        try {
+          const safePath = validateFilePath(options.html, {
+            allowedExtensions: ['.html'],
+          });
+          const htmlReporter = new HTMLReporter();
+          htmlReporter.saveToFile(analysisResult, safePath, aiInsights);
+          consoleReporter.printSuccess(`HTML report saved to ${safePath}`);
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('path traversal')) {
+            consoleReporter.printError(
+              new Error(
+                `Security error: ${error.message}\nFor security, files can only be saved in the current directory or subdirectories.`
+              )
+            );
+          } else {
+            throw error;
+          }
+        }
       }
     } catch (error) {
       consoleReporter.printError(error as Error);

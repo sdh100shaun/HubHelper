@@ -1,0 +1,59 @@
+---
+layout: base.njk
+---
+
+<div class="page-layout">
+    <div class="container">
+        {% if breadcrumbs %}
+        <nav aria-label="Breadcrumb" class="breadcrumb">
+            <ol>
+                <li><a href="{{ '/' | url }}">Home</a></li>
+                {% for crumb in breadcrumbs %}
+                <li>
+                    {% if loop.last %}
+                        <span aria-current="page">{{ crumb.title }}</span>
+                    {% else %}
+                        <a href="{{ crumb.url }}">{{ crumb.title }}</a>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+        </nav>
+        {% endif %}
+
+        <article class="page-content">
+            {% if title %}
+            <header class="page-header">
+                <h1>{{ title }}</h1>
+                {% if description %}
+                <p class="page-description">{{ description }}</p>
+                {% endif %}
+                {% if lastModified %}
+                <p class="page-meta">Last updated: <time datetime="{{ lastModified }}">{{ lastModified | dateDisplay }}</time></p>
+                {% endif %}
+            </header>
+            {% endif %}
+
+            <div class="prose">
+                {{ content | safe }}
+            </div>
+
+            {% if githubEdit %}
+            <footer class="page-footer">
+                <a href="https://github.com/sdh100shaun/gh-tools/edit/main/{{ page.inputPath }}" target="_blank" rel="noopener" class="edit-link">
+                    Edit this page on GitHub
+                </a>
+            </footer>
+            {% endif %}
+        </article>
+
+        {% if toc %}
+        <aside class="page-sidebar">
+            <nav aria-label="Table of contents" class="toc">
+                <h2>On this page</h2>
+                {{ toc | safe }}
+            </nav>
+        </aside>
+        {% endif %}
+    </div>
+</div>

@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import { escapeHtml, sanitizeSecurityIssue } from '../utils/html-sanitizer.js';
 
 export class HTMLReporter {
   generateReport(result: AnalysisResult, aiInsights?: string): string {
@@ -7,6 +8,13 @@ export class HTMLReporter {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   style-src 'unsafe-inline';
+                   script-src 'none';
+                   img-src 'self' data:;
+                   object-src 'none';
+                   base-uri 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitHub Security Analysis Report</title>
     <style>
@@ -134,7 +142,7 @@ export class HTMLReporter {
         <div class="content">
             <div class="summary">
                 <h2>📊 Summary</h2>
-                <p>${result.summary}</p>
+                <p>${escapeHtml(result.summary)}</p>
             </div>
 
             <div class="statistics">
@@ -173,7 +181,7 @@ export class HTMLReporter {
                 ? `
             <div class="ai-insights">
                 <strong>🤖 AI-Powered Insights:</strong><br><br>
-                ${aiInsights}
+                ${escapeHtml(aiInsights)}
             </div>
             `
                 : ''
@@ -206,15 +214,16 @@ export class HTMLReporter {
       html += `<h3>${this.formatType(type)} (${typeIssues.length})</h3>`;
 
       for (const issue of typeIssues) {
+        const sanitized = sanitizeSecurityIssue(issue);
         html += `
           <div class="issue">
             <h3>
-              <span class="severity-badge severity-${issue.severity}">${issue.severity}</span>
-              ${issue.description}
+              <span class="severity-badge severity-${escapeHtml(sanitized.severity)}">${escapeHtml(sanitized.severity)}</span>
+              ${sanitized.description}
             </h3>
-            <p><strong>Repository:</strong> ${issue.repository}</p>
-            ${issue.details.url ? `<p><strong>URL:</strong> <a href="${issue.details.url}" target="_blank">${issue.details.url}</a></p>` : ''}
-            ${issue.details.merged_at ? `<p><strong>Merged:</strong> ${new Date(issue.details.merged_at).toLocaleString()}</p>` : ''}
+            <p><strong>Repository:</strong> ${sanitized.repository}</p>
+            ${sanitized.details.url ? `<p><strong>URL:</strong> <a href="${sanitized.details.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(sanitized.details.url)}</a></p>` : ''}
+            ${issue.details.merged_at ? `<p><strong>Merged:</strong> ${escapeHtml(new Date(issue.details.merged_at).toLocaleString())}</p>` : ''}
           </div>
         `;
       }
@@ -229,7 +238,7 @@ export class HTMLReporter {
 
     let html = '<div class="section recommendations"><h2>💡 Recommendations</h2><ul>';
     for (const rec of recommendations) {
-      html += `<li>${rec}</li>`;
+      html += `<li>${escapeHtml(rec)}</li>`;
     }
     html += '</ul></div>';
 

@@ -1,4 +1,4 @@
-# Contributing to GitHub Security Analysis Tools
+# Contributing to HubHelper
 
 Thank you for your interest in contributing! This document provides guidelines and instructions for contributing to this project.
 

@@ -1,12 +1,11 @@
 {
-  "name": "@sdh100shaun/gh-security-tools",
+  "name": "@sdh100shaun/hubhelper",
   "version": "1.0.0",
   "description": "AI-powered tools to visualize GitHub activity and flag security issues across organizations",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "gh-security": "dist/index.js",
-    "gh-security-tools": "dist/index.js"
+    "hubhelper": "dist/index.js"
   },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
@@ -19,6 +18,9 @@
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "docs:build": "eleventy",
+    "docs:serve": "eleventy --serve",
+    "docs:watch": "eleventy --watch",
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
@@ -53,11 +55,20 @@
     "dotenv": "^16.4.1",
     "ora": "^8.0.1"
   },
+  "overrides": {
+    "glob": "^10.4.5",
+    "inflight": "npm:lru-cache@^10.4.3"
+  },
   "devDependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
     "@biomejs/biome": "^1.5.3",
     "@types/jest": "^29.5.11",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^20.11.5",
     "jest": "^29.7.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
     "ts-jest": "^29.1.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"

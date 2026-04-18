@@ -8,3 +8,4 @@ coverage/
 .idea/
 _site/
 .gh-lists/
+.claude/

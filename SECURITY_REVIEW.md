@@ -1,6 +1,6 @@
 # Security Self-Review
 
-**Project:** GitHub Security Analysis Tools
+**Project:** HubHelper
 **Review Date:** 2026-01-23
 **Reviewer:** Automated Security Analysis
 **Scope:** Complete codebase security audit
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This security review identifies potential vulnerabilities and security best practices in the GitHub Security Analysis Tools project. The review covers token management, input validation, XSS prevention, dependency security, and GitHub Actions workflow security.
+This security review identifies potential vulnerabilities and security best practices in the HubHelper project. The review covers token management, input validation, XSS prevention, dependency security, and GitHub Actions workflow security.
 
 **Overall Risk Level:** 🟡 **MEDIUM** (3 High, 5 Medium, 4 Low priority issues found)
 
@@ -95,8 +95,8 @@ if (options.html) {
 
 **Attack Vector:**
 ```bash
-npx gh-security-tools analyze --org test --html ../../../tmp/malicious.html
-npx gh-security-tools analyze --org test --json ../../etc/passwd
+npx hubhelper analyze --org test --html ../../../tmp/malicious.html
+npx hubhelper analyze --org test --json ../../etc/passwd
 ```
 
 **Impact:**
@@ -149,10 +149,10 @@ const days = parseInt(options.days);  // ❌ Can be NaN, negative, or excessivel
 **Attack Vector:**
 ```bash
 # Invalid organization name
-npx gh-security-tools analyze --org "../../../etc" --days -999999
+npx hubhelper analyze --org "../../../etc" --days -999999
 
 # Denial of service via excessive days
-npx gh-security-tools analyze --org test --days 999999999
+npx hubhelper analyze --org test --days 999999999
 ```
 
 **Impact:**
@@ -504,11 +504,11 @@ updates:
 gh repo create test-xss-<script>alert(1)</script>
 
 # 2. Path Traversal Testing
-npx gh-security-tools analyze --org test --html ../../../tmp/test.html
+npx hubhelper analyze --org test --html ../../../tmp/test.html
 
 # 3. Input Validation Testing
-npx gh-security-tools analyze --org "'; DROP TABLE repos;--" --days -1
-npx gh-security-tools analyze --org test --days 999999999
+npx hubhelper analyze --org "'; DROP TABLE repos;--" --days -1
+npx hubhelper analyze --org test --days 999999999
 
 # 4. Rate Limit Testing
 # Run analysis on large org repeatedly
