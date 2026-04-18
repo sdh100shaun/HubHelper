@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname } from 'node:path';
 import type { RepositoryList, RepositoryListStorage } from '../types/index.js';
 
@@ -187,7 +194,29 @@ export class RepositoryListManager {
         return { lists: {} };
       }
 
-      return parsed as RepositoryListStorage;
+      // Coerce each list entry to ensure required fields have safe defaults
+      const rawLists = parsed.lists as Record<string, unknown>;
+      const now = new Date().toISOString();
+      const coercedLists: Record<string, RepositoryList> = {};
+
+      for (const [key, entry] of Object.entries(rawLists)) {
+        if (typeof entry !== 'object' || entry === null) continue;
+
+        const e = entry as Record<string, unknown>;
+        coercedLists[key] = {
+          name: typeof e.name === 'string' ? e.name : key,
+          description: typeof e.description === 'string' ? e.description : '',
+          created: typeof e.created === 'string' ? e.created : now,
+          updated: typeof e.updated === 'string' ? e.updated : now,
+          repositories: Array.isArray(e.repositories) ? (e.repositories as string[]) : [],
+          metadata:
+            typeof e.metadata === 'object' && e.metadata !== null
+              ? (e.metadata as Record<string, unknown>)
+              : {},
+        };
+      }
+
+      return { lists: coercedLists };
     } catch (error) {
       console.error(`Error loading storage from ${this.storagePath}:`, error);
       return { lists: {} };
@@ -195,15 +224,22 @@ export class RepositoryListManager {
   }
 
   private saveStorage(): void {
+    const tempPath = `${this.storagePath}.tmp`;
     try {
-      // Atomic write: write to temp file then rename
-      const tempPath = `${this.storagePath}.tmp`;
       const data = JSON.stringify(this.storage, null, 2);
       writeFileSync(tempPath, data, 'utf-8');
 
       // Rename is atomic on most filesystems
       renameSync(tempPath, this.storagePath);
     } catch (error) {
+      // Clean up orphaned temp file so it doesn't interfere with future writes
+      try {
+        if (existsSync(tempPath)) {
+          unlinkSync(tempPath);
+        }
+      } catch {
+        // Ignore cleanup errors — best effort only
+      }
       throw new Error(`Failed to save storage: ${error}`);
     }
   }

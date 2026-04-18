@@ -235,9 +235,9 @@ export class GitHubFetcher {
   // -----------------------------------------------------------------------
 
   /**
-   * List all members of the organization and resolve each one's
-   * profile (name + email). Pagination is handled internally.
-   * Uses bounded concurrency to avoid rate limiting.
+   * List all members of the organization visible to the authenticated token
+   * and resolve each one's profile (name + email). Pagination is handled
+   * internally. Uses bounded concurrency to avoid rate limiting.
    */
   async getOrgMembers(): Promise<UserProfile[]> {
     const profiles: UserProfile[] = [];
@@ -250,6 +250,7 @@ export class GitHubFetcher {
         org: this.org,
         per_page: perPage,
         page,
+        role: 'all',
       });
 
       if (members.length === 0) break;
