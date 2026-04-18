@@ -127,8 +127,9 @@ If you prefer classic tokens (not recommended for security):
 Verify your token has the correct permissions:
 
 ```bash
-# Set token
-export GITHUB_TOKEN="github_pat_..."
+# Set token without storing it in shell history
+read -s -p "Enter your GitHub token: " GITHUB_TOKEN; echo
+export GITHUB_TOKEN
 
 # Test repository access
 curl -H "Authorization: Bearer $GITHUB_TOKEN" \
