@@ -178,12 +178,12 @@ export interface ListReport {
   list: string;
   generated: string;
   summary: {
-    total_repos: number;
-    actions_enabled: number;
-    security_enabled: number;
-    total_issues: number;
-    critical_issues: number;
-    high_issues: number;
+    totalRepos: number;
+    actionsEnabled: number;
+    securityEnabled: number;
+    totalIssues: number;
+    criticalIssues: number;
+    highIssues: number;
   };
   repositories: RepositoryReportItem[];
   recommendations: string[];
