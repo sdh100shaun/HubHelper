@@ -55,16 +55,18 @@ export class MarkdownReporter {
     // Repository table
     lines.push('## Repositories');
     lines.push('');
-    lines.push(
-      '| Repository | Actions | Security | Issues | Status |'
-    );
+    lines.push('| Repository | Actions | Security | Issues | Status |');
     lines.push('|------------|---------|----------|--------|--------|');
 
     for (const repo of report.repositories) {
       const actionsIcon = repo.actions_enabled ? '✅' : '❌';
       const securityIcon = repo.security_enabled ? '✅' : '❌';
       const status =
-        repo.security_issues === 0 ? '🟢 Good' : repo.security_issues > 2 ? '🔴 Issues' : '🟠 Review';
+        repo.security_issues === 0
+          ? '🟢 Good'
+          : repo.security_issues > 2
+            ? '🔴 Issues'
+            : '🟠 Review';
 
       lines.push(
         `| [${repo.full_name}](${repo.url}) | ${actionsIcon} | ${securityIcon} | ${repo.security_issues} | ${status} |`

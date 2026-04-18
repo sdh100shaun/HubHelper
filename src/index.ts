@@ -36,7 +36,7 @@ program
       // Get configuration
       const token = options.token || process.env.GITHUB_TOKEN;
       const org = options.org || process.env.GITHUB_ORG;
-      const days = Number.parseInt(options.days);
+      const days = Number.parseInt(options.days, 10);
 
       if (!token) {
         consoleReporter.printError(
@@ -79,7 +79,7 @@ program
         const aiAnalyzer = new AIAnalyzer();
         aiInsights = await aiAnalyzer.generateInsights(analysisResult);
 
-        const patterns = await aiAnalyzer.analyzePatterns(analysisResult.issues);
+        const _patterns = await aiAnalyzer.analyzePatterns(analysisResult.issues);
         const recommendations = await aiAnalyzer.generateRecommendations(analysisResult.issues);
 
         // Add AI recommendations to result
@@ -115,7 +115,7 @@ program
   .argument('<owner/repo>', 'Repository in format owner/repo')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-d, --days <number>', 'Number of days to look back', '30')
-  .action(async (repo, options) => {
+  .action(async (repo, _options) => {
     const consoleReporter = new ConsoleReporter();
     consoleReporter.printInfo(`Repository-specific analysis coming soon: ${repo}`);
   });
@@ -126,15 +126,13 @@ program
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-i, --interval <minutes>', 'Check interval in minutes', '60')
-  .action(async (options) => {
+  .action(async (_options) => {
     const consoleReporter = new ConsoleReporter();
     consoleReporter.printInfo('Real-time monitoring coming soon!');
   });
 
 // Repository List Commands
-const listCmd = program
-  .command('list')
-  .description('Manage repository lists');
+const listCmd = program.command('list').description('Manage repository lists');
 
 listCmd
   .command('create <name>')
@@ -318,8 +316,12 @@ program
         console.log(`${'='.repeat(80)}\n`);
         console.log(`📊 Summary:`);
         console.log(`  • Total Repositories: ${report.summary.totalRepos}`);
-        console.log(`  • Actions Enabled: ${report.summary.actionsEnabled}/${report.summary.totalRepos}`);
-        console.log(`  • Security Enabled: ${report.summary.securityEnabled}/${report.summary.totalRepos}`);
+        console.log(
+          `  • Actions Enabled: ${report.summary.actionsEnabled}/${report.summary.totalRepos}`
+        );
+        console.log(
+          `  • Security Enabled: ${report.summary.securityEnabled}/${report.summary.totalRepos}`
+        );
         console.log(`  • Total Issues: ${report.summary.totalIssues}`);
         console.log(`  • Critical Issues: ${report.summary.criticalIssues}`);
         console.log(`  • High Issues: ${report.summary.highIssues}\n`);

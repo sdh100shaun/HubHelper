@@ -22,9 +22,7 @@ export class CSVReporter {
     const lines: string[] = [];
 
     // Header
-    lines.push(
-      'Repository,URL,Actions Enabled,Security Enabled,Security Issues,Last Activity'
-    );
+    lines.push('Repository,URL,Actions Enabled,Security Enabled,Security Issues,Last Activity');
 
     // Data rows
     for (const repo of report.repositories) {

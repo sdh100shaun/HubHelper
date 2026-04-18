@@ -1,6 +1,5 @@
 import type {
   AnalysisResult,
-  OrganizationActivity,
   PullRequest,
   Repository,
   SecurityIssue,

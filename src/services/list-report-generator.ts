@@ -1,7 +1,7 @@
+import { SecurityAnalyzer } from '../analyzers/security-analyzer.js';
 import type { AnalysisResult, ListReport, RepositoryReportItem } from '../types/index.js';
 import { GitHubFetcher } from './github-fetcher.js';
 import { RepositoryListManager } from './repository-list-manager.js';
-import { SecurityAnalyzer } from '../analyzers/security-analyzer.js';
 
 /**
  * ListReportGenerator
@@ -112,12 +112,13 @@ export class ListReportGenerator {
 
   // Private helper methods
 
-  private countSecurityIssues(repo: {
-    actions_enabled: boolean;
-    security_enabled: boolean;
-  }): { total: number; critical: number; high: number } {
+  private countSecurityIssues(repo: { actions_enabled: boolean; security_enabled: boolean }): {
+    total: number;
+    critical: number;
+    high: number;
+  } {
     let total = 0;
-    let critical = 0;
+    const critical = 0;
     let high = 0;
 
     if (!repo.actions_enabled) {
