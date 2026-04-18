@@ -420,10 +420,13 @@ Use this checklist to ensure your tokens are secure:
 **Monitor token usage:**
 
 ```bash
-# Check token permissions
+# Check token validity and permissions (scopes are shown in response headers)
 curl -H "Authorization: Bearer $GITHUB_TOKEN" \
-  https://api.github.com/user/installations
+  https://api.github.com/user
 
+# Alternatively, verify the token is accepted and see rate limits
+curl -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/rate_limit
 # View audit log
 # Go to: https://github.com/settings/security-log
 # Filter by token usage
