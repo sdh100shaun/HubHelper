@@ -12,10 +12,14 @@
  * @module services/watch-orchestrator
  */
 
+import { SecurityAnalyzer } from '../analyzers/security-analyzer.js';
+import type {
+  SecurityIssue as FullSecurityIssue,
+  PullRequest,
+  Repository,
+} from '../types/index.js';
 import type { WatchConfig, WatchScanResult, WatchStatistics } from '../types/watch.js';
 import type { StateManagerConfig } from '../types/watch.js';
-import type { SecurityIssue as FullSecurityIssue, Repository, PullRequest } from '../types/index.js';
-import { SecurityAnalyzer } from '../analyzers/security-analyzer.js';
 import { ChangeDetector } from './change-detector.js';
 import { GitHubFetcher } from './github-fetcher.js';
 import { StateManager } from './state-manager.js';
