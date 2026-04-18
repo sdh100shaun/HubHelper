@@ -31,6 +31,6 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**", "*.ts", "*.js", "*.json"]
+    "include": ["src/**", "*.ts", "*.js", "*.json"]
   }
 }

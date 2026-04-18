@@ -314,7 +314,7 @@ program
         console.log(`\n${'='.repeat(80)}`);
         console.log(`  Repository List Report: ${list}`);
         console.log(`${'='.repeat(80)}\n`);
-        console.log(`📊 Summary:`);
+        console.log('📊 Summary:');
         console.log(`  • Total Repositories: ${report.summary.totalRepos}`);
         console.log(
           `  • Actions Enabled: ${report.summary.actionsEnabled}/${report.summary.totalRepos}`
@@ -327,7 +327,7 @@ program
         console.log(`  • High Issues: ${report.summary.highIssues}\n`);
 
         if (report.recommendations.length > 0) {
-          console.log(`💡 Recommendations:`);
+          console.log('💡 Recommendations:');
           for (const rec of report.recommendations) {
             console.log(`  ${rec}`);
           }
