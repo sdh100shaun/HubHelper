@@ -9,6 +9,7 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
+import type { AnalysisResult } from './types/index.js';
 import {
   validateDays,
   validateGitHubToken,
@@ -177,6 +178,151 @@ program
   .action(async (options) => {
     const consoleReporter = new ConsoleReporter();
     consoleReporter.printInfo('Real-time monitoring coming soon!');
+  });
+
+program
+  .command('query [question]')
+  .description('Ask natural language questions about organization security')
+  .option('-o, --org <organization>', 'GitHub organization name')
+  .option('-t, --token <token>', 'GitHub personal access token')
+  .option('--anthropic-key <key>', 'Anthropic API key')
+  .option('--from <file>', 'Use saved analysis from JSON file')
+  .option('-d, --days <number>', 'Number of days to analyze', '30')
+  .option('-i, --interactive', 'Interactive mode with follow-up questions')
+  .action(async (question, options) => {
+    const consoleReporter = new ConsoleReporter();
+
+    try {
+      const { SecurityQueryService } = await import('./services/security-query-service.js');
+      const { readFileSync } = await import('node:fs');
+      const { createInterface } = await import('node:readline');
+
+      // Get API key
+      const anthropicKey = options.anthropicKey || process.env.ANTHROPIC_API_KEY;
+      if (!anthropicKey) {
+        consoleReporter.printError(
+          new Error('Anthropic API key required. Set ANTHROPIC_API_KEY or use --anthropic-key')
+        );
+        process.exit(1);
+      }
+
+      let analysisResult: AnalysisResult;
+
+      // Load analysis from file or fetch fresh data
+      if (options.from) {
+        consoleReporter.printInfo(`Loading analysis from ${options.from}...`);
+        const data = readFileSync(options.from, 'utf-8');
+        analysisResult = JSON.parse(data);
+      } else {
+        // Get org and token
+        const token = options.token || process.env.GITHUB_TOKEN;
+        const org = options.org || process.env.GITHUB_ORG;
+
+        if (!token || !org) {
+          consoleReporter.printError(
+            new Error('GitHub token and organization required when not using --from')
+          );
+          process.exit(1);
+        }
+
+        const days = Number.parseInt(options.days, 10);
+
+        // Fetch fresh analysis
+        const spinner = ora('Fetching organization data...').start();
+        const fetcher = new GitHubFetcher(token, org);
+
+        const repositories = await fetcher.getRepositories();
+        spinner.text = `Fetched ${repositories.length} repositories, fetching PRs...`;
+
+        const pullRequests = await fetcher.getRecentPullRequests(days);
+        spinner.succeed(`Analyzed ${repositories.length} repos and ${pullRequests.length} PRs`);
+
+        const analyzer = new SecurityAnalyzer();
+        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests);
+      }
+
+      // Initialize query service
+      const queryService = new SecurityQueryService(anthropicKey);
+
+      // Interactive mode
+      if (options.interactive || !question) {
+        const rl = createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+
+        consoleReporter.printSuccess(
+          'Interactive query mode. Type your questions or "exit" to quit.\n'
+        );
+
+        const askQuestion = () => {
+          rl.question("? Ask about your organization's security: ", async (input) => {
+            const trimmed = input.trim();
+
+            if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
+              rl.close();
+              return;
+            }
+
+            if (!trimmed) {
+              askQuestion();
+              return;
+            }
+
+            const spinner = ora('Analyzing...').start();
+            try {
+              const result = await queryService.query(trimmed, analysisResult);
+              spinner.stop();
+
+              console.log(`\n${result.answer}\n`);
+
+              if (result.relatedIssues && result.relatedIssues.length > 0) {
+                console.log(`📋 Related issues: ${result.relatedIssues.length}`);
+                for (const issue of result.relatedIssues.slice(0, 3)) {
+                  console.log(`  • [${issue.severity}] ${issue.repository}: ${issue.description}`);
+                }
+                console.log('');
+              }
+
+              askQuestion();
+            } catch (error) {
+              spinner.stop();
+              consoleReporter.printError(error as Error);
+              askQuestion();
+            }
+          });
+        };
+
+        askQuestion();
+      } else {
+        // Single question mode
+        const spinner = ora('Analyzing your question...').start();
+        const result = await queryService.query(question, analysisResult);
+        spinner.stop();
+
+        console.log(`\n${result.answer}\n`);
+
+        if (result.relatedIssues && result.relatedIssues.length > 0) {
+          console.log(`📋 ${result.relatedIssues.length} related issues found\n`);
+          for (const issue of result.relatedIssues.slice(0, 5)) {
+            console.log(`  • [${issue.severity}] ${issue.repository}`);
+            console.log(`    ${issue.description}`);
+          }
+          console.log('');
+        }
+
+        if (result.recommendations && result.recommendations.length > 0) {
+          console.log('💡 Recommendations:\n');
+          for (const rec of result.recommendations) {
+            console.log(`  • ${rec}`);
+          }
+          console.log('');
+        }
+      }
+    } catch (error) {
+      consoleReporter.printError(error as Error);
+      process.exit(1);
+    }
   });
 
 program.parse();

@@ -48,6 +48,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
     "@github/copilot-sdk": "^0.1.13",
     "@octokit/rest": "^20.0.2",
     "chalk": "^5.3.0",
