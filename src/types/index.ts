@@ -150,3 +150,50 @@ export interface ComplianceResult {
   /** ISO-8601 timestamp when the check ran */
   checkedAt: string;
 }
+
+// -----------------------------------------------------------------------
+// Repository Lists
+// -----------------------------------------------------------------------
+
+export interface RepositoryList {
+  name: string;
+  description: string;
+  created: string; // ISO 8601
+  updated: string; // ISO 8601
+  repositories: string[]; // ["org/repo", ...]
+  metadata: {
+    owner?: string;
+    tags?: string[];
+    [key: string]: unknown;
+  };
+}
+
+export interface RepositoryListStorage {
+  lists: Record<string, RepositoryList>;
+}
+
+export interface ListReport {
+  list: string;
+  generated: string;
+  summary: {
+    totalRepos: number;
+    actionsEnabled: number;
+    securityEnabled: number;
+    totalIssues: number;
+    criticalIssues: number;
+    highIssues: number;
+  };
+  repositories: RepositoryReportItem[];
+  recommendations: string[];
+}
+
+export interface RepositoryReportItem {
+  name: string;
+  full_name: string;
+  url: string;
+  actions_enabled: boolean;
+  security_enabled: boolean;
+  open_issues: number;
+  security_issues: number;
+  last_activity: string;
+}
