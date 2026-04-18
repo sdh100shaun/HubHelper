@@ -168,6 +168,29 @@ export class GitHubFetcher {
             pull_number: pr.number,
           });
 
+          // Fetch reviews to determine if PR was reviewed by others
+          let reviewers: string[] = [];
+          try {
+            const { data: reviews } = await this.octokit.pulls.listReviews({
+              owner: this.org,
+              repo: repo.name,
+              pull_number: pr.number,
+            });
+
+            // Filter out reviews by the author themselves and deduplicate
+            const authorLogin = pr.user?.login;
+            reviewers = [
+              ...new Set(
+                reviews
+                  .filter((review) => review.user?.login && review.user.login !== authorLogin)
+                  .map((review) => review.user!.login)
+              ),
+            ];
+          } catch (_error) {
+            // If we can't fetch reviews, assume no reviews
+            reviewers = [];
+          }
+
           allPRs.push({
             number: pr.number,
             title: pr.title,
@@ -180,6 +203,8 @@ export class GitHubFetcher {
             labels: pr.labels.map((l) => l.name),
             is_security_related: isSecurityRelated,
             files_changed: filesChanged,
+            reviewers,
+            review_count: reviewers.length,
           });
         }
       } catch (error) {

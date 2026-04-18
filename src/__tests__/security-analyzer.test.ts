@@ -9,7 +9,7 @@ describe('SecurityAnalyzer', () => {
   });
 
   describe('analyzeSelfMerges', () => {
-    it('should detect self-merged pull requests', () => {
+    it('should detect self-merged pull requests with no reviews', () => {
       const pullRequests: PullRequest[] = [
         {
           number: 1,
@@ -23,6 +23,8 @@ describe('SecurityAnalyzer', () => {
           labels: [],
           is_security_related: false,
           files_changed: [],
+          reviewers: [],
+          review_count: 0,
         },
       ];
 
@@ -31,9 +33,34 @@ describe('SecurityAnalyzer', () => {
       expect(issues).toHaveLength(1);
       expect(issues[0].type).toBe('self-merge');
       expect(issues[0].severity).toBe('medium');
+      expect(issues[0].description).toContain('no reviews');
     });
 
-    it('should flag security-related self-merges as high severity', () => {
+    it('should NOT flag self-merged PRs that have reviews from others', () => {
+      const pullRequests: PullRequest[] = [
+        {
+          number: 1,
+          title: 'Test PR',
+          url: 'https://github.com/test/repo/pull/1',
+          author: 'user1',
+          merged_by: 'user1',
+          merged_at: '2026-01-01T00:00:00Z',
+          created_at: '2026-01-01T00:00:00Z',
+          repository: 'test/repo',
+          labels: [],
+          is_security_related: false,
+          files_changed: [],
+          reviewers: ['user2', 'user3'],
+          review_count: 2,
+        },
+      ];
+
+      const issues = analyzer.analyzeSelfMerges(pullRequests);
+
+      expect(issues).toHaveLength(0);
+    });
+
+    it('should flag security-related self-merges with no reviews as high severity', () => {
       const pullRequests: PullRequest[] = [
         {
           number: 1,
@@ -47,6 +74,8 @@ describe('SecurityAnalyzer', () => {
           labels: ['security'],
           is_security_related: true,
           files_changed: [],
+          reviewers: [],
+          review_count: 0,
         },
       ];
 
@@ -70,6 +99,8 @@ describe('SecurityAnalyzer', () => {
           labels: [],
           is_security_related: false,
           files_changed: [],
+          reviewers: [],
+          review_count: 0,
         },
       ];
 

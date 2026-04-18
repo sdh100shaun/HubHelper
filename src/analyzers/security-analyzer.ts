@@ -5,12 +5,16 @@ export class SecurityAnalyzer {
     const issues: SecurityIssue[] = [];
 
     for (const pr of pullRequests) {
-      if (pr.author === pr.merged_by && pr.merged_by !== null) {
+      const isSelfMerged = pr.author === pr.merged_by && pr.merged_by !== null;
+      const hasNoReviews = !pr.reviewers || pr.reviewers.length === 0;
+
+      // Only flag if self-merged AND no other reviewers
+      if (isSelfMerged && hasNoReviews) {
         issues.push({
           type: 'self-merge',
           severity: pr.is_security_related ? 'high' : 'medium',
           repository: pr.repository,
-          description: `PR #${pr.number} was self-merged by ${pr.author}`,
+          description: `PR #${pr.number} was self-merged by ${pr.author} with no reviews`,
           details: {
             pr_number: pr.number,
             title: pr.title,
@@ -18,6 +22,7 @@ export class SecurityAnalyzer {
             author: pr.author,
             merged_at: pr.merged_at ?? undefined,
             is_security_related: pr.is_security_related,
+            review_count: pr.review_count ?? 0,
           },
           detected_at: new Date().toISOString(),
         });

@@ -315,16 +315,16 @@ program
         console.log(`  Repository List Report: ${list}`);
         console.log(`${'='.repeat(80)}\n`);
         console.log('📊 Summary:');
-        console.log(`  • Total Repositories: ${report.summary.totalRepos}`);
+        console.log(`  • Total Repositories: ${report.summary.total_repos}`);
         console.log(
-          `  • Actions Enabled: ${report.summary.actionsEnabled}/${report.summary.totalRepos}`
+          `  • Actions Enabled: ${report.summary.actions_enabled}/${report.summary.total_repos}`
         );
         console.log(
-          `  • Security Enabled: ${report.summary.securityEnabled}/${report.summary.totalRepos}`
+          `  • Security Enabled: ${report.summary.security_enabled}/${report.summary.total_repos}`
         );
-        console.log(`  • Total Issues: ${report.summary.totalIssues}`);
-        console.log(`  • Critical Issues: ${report.summary.criticalIssues}`);
-        console.log(`  • High Issues: ${report.summary.highIssues}\n`);
+        console.log(`  • Total Issues: ${report.summary.total_issues}`);
+        console.log(`  • Critical Issues: ${report.summary.critical_issues}`);
+        console.log(`  • High Issues: ${report.summary.high_issues}\n`);
 
         if (report.recommendations.length > 0) {
           console.log('💡 Recommendations:');

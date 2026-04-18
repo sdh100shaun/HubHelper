@@ -30,16 +30,16 @@ export class MarkdownReporter {
     // Summary
     lines.push('## Summary');
     lines.push('');
-    lines.push(`- **Total Repositories:** ${report.summary.totalRepos}`);
+    lines.push(`- **Total Repositories:** ${report.summary.total_repos}`);
     lines.push(
-      `- **Actions Enabled:** ${report.summary.actionsEnabled}/${report.summary.totalRepos} (${Math.round((report.summary.actionsEnabled / report.summary.totalRepos) * 100)}%)`
+      `- **Actions Enabled:** ${report.summary.actions_enabled}/${report.summary.total_repos} (${Math.round((report.summary.actions_enabled / report.summary.total_repos) * 100)}%)`
     );
     lines.push(
-      `- **Security Enabled:** ${report.summary.securityEnabled}/${report.summary.totalRepos} (${Math.round((report.summary.securityEnabled / report.summary.totalRepos) * 100)}%)`
+      `- **Security Enabled:** ${report.summary.security_enabled}/${report.summary.total_repos} (${Math.round((report.summary.security_enabled / report.summary.total_repos) * 100)}%)`
     );
-    lines.push(`- **Total Issues:** ${report.summary.totalIssues}`);
-    lines.push(`- **Critical Issues:** ${report.summary.criticalIssues}`);
-    lines.push(`- **High Issues:** ${report.summary.highIssues}`);
+    lines.push(`- **Total Issues:** ${report.summary.total_issues}`);
+    lines.push(`- **Critical Issues:** ${report.summary.critical_issues}`);
+    lines.push(`- **High Issues:** ${report.summary.high_issues}`);
     lines.push('');
 
     // Recommendations

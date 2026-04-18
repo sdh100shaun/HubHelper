@@ -10,6 +10,8 @@ export interface PullRequest {
   labels: string[];
   is_security_related: boolean;
   files_changed: string[];
+  reviewers?: string[]; // Users who reviewed (excluding author)
+  review_count?: number; // Count of reviews from other users
 }
 
 export interface Workflow {
