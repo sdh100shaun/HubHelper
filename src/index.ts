@@ -286,17 +286,34 @@ program
         }
       } else {
         // Get org and token
-        const token = options.token || process.env.GITHUB_TOKEN;
-        const org = options.org || process.env.GITHUB_ORG;
+        const tokenInput = options.token || process.env.GITHUB_TOKEN;
+        const orgInput = options.org || process.env.GITHUB_ORG;
 
-        if (!token || !org) {
-          consoleReporter.printError(
-            new Error('GitHub token and organization required when not using --from')
-          );
+        // Validate token
+        const tokenValidation = validateGitHubToken(tokenInput);
+        if (!tokenValidation.valid) {
+          consoleReporter.printError(new Error(tokenValidation.error!));
+          consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
           process.exit(1);
         }
+        const token = tokenValidation.sanitized as string;
 
-        const days = Number.parseInt(options.days, 10);
+        // Validate organization
+        const orgValidation = validateOrganizationName(orgInput);
+        if (!orgValidation.valid) {
+          consoleReporter.printError(new Error(orgValidation.error!));
+          consoleReporter.printInfo('Set GITHUB_ORG environment variable or use --org flag');
+          process.exit(1);
+        }
+        const org = orgValidation.sanitized as string;
+
+        // Validate days
+        const daysValidation = validateDays(options.days);
+        if (!daysValidation.valid) {
+          consoleReporter.printError(new Error(daysValidation.error!));
+          process.exit(1);
+        }
+        const days = daysValidation.sanitized as number;
 
         // Fetch fresh analysis
         const spinner = ora('Fetching organization data...').start();
