@@ -9,7 +9,9 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
+import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
+import type { WatchConfig } from './types/watch.js';
 import {
   validateDays,
   validateGitHubToken,
@@ -171,13 +173,101 @@ program
 
 program
   .command('watch')
-  .description('Watch organization activity in real-time (coming soon)')
+  .description('Continuously monitor organization for security issues')
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-i, --interval <minutes>', 'Check interval in minutes', '60')
+  .option('--min-severity <level>', 'Minimum severity to alert (low|medium|high|critical)', 'medium')
+  .option('-d, --days <number>', 'Lookback period for PRs', '7')
+  .option('--once', 'Run single scan and exit (one-shot mode)')
+  .option('--reset', 'Clear previous state before starting')
+  .option('--no-ai', 'Disable AI-powered analysis')
+  .option('-v, --verbose', 'Enable verbose logging')
   .action(async (options) => {
     const consoleReporter = new ConsoleReporter();
-    consoleReporter.printInfo('Real-time monitoring coming soon!');
+
+    try {
+      // Validate token
+      const tokenInput = options.token || process.env.GITHUB_TOKEN;
+      const tokenValidation = validateGitHubToken(tokenInput);
+      if (!tokenValidation.valid) {
+        consoleReporter.printError(new Error(tokenValidation.error!));
+        consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
+        process.exit(1);
+      }
+      const token = tokenValidation.sanitized as string;
+
+      // Validate organization
+      const orgInput = options.org || process.env.GITHUB_ORG;
+      const orgValidation = validateOrganizationName(orgInput);
+      if (!orgValidation.valid) {
+        consoleReporter.printError(new Error(orgValidation.error!));
+        consoleReporter.printInfo('Set GITHUB_ORG environment variable or use --org flag');
+        process.exit(1);
+      }
+      const org = orgValidation.sanitized as string;
+
+      // Validate interval
+      const interval = Number.parseInt(options.interval, 10);
+      if (Number.isNaN(interval) || interval < 1 || interval > 1440) {
+        consoleReporter.printError(
+          new Error('Interval must be between 1 and 1440 minutes (1 day)')
+        );
+        process.exit(1);
+      }
+
+      // Validate severity
+      const validSeverities = ['low', 'medium', 'high', 'critical'];
+      const minSeverity = options.minSeverity?.toLowerCase();
+      if (!validSeverities.includes(minSeverity)) {
+        consoleReporter.printError(
+          new Error(`Invalid severity. Must be one of: ${validSeverities.join(', ')}`)
+        );
+        process.exit(1);
+      }
+
+      // Validate days
+      const daysValidation = validateDays(options.days);
+      if (!daysValidation.valid) {
+        consoleReporter.printError(new Error(daysValidation.error!));
+        process.exit(1);
+      }
+      const days = daysValidation.sanitized as number;
+
+      // Build WatchConfig
+      const config: WatchConfig = {
+        organization: org,
+        token,
+        intervalMinutes: interval,
+        minSeverity: minSeverity as 'low' | 'medium' | 'high' | 'critical',
+        lookbackDays: days,
+        enableAI: options.ai !== false,
+        alertChannels: ['console'],
+        once: options.once || false,
+        resetState: options.reset || false,
+        verbose: options.verbose || false,
+      };
+
+      // Create orchestrator (it creates its own services internally)
+      const orchestrator = new WatchOrchestrator(config);
+
+      // Start watching
+      consoleReporter.printSuccess(
+        `🔍 Starting watch mode for ${org} (interval: ${interval}min, severity: ${minSeverity}+)`
+      );
+
+      if (config.once) {
+        consoleReporter.printInfo('Running one-shot scan...');
+      } else {
+        consoleReporter.printInfo('Press Ctrl+C to stop monitoring gracefully\n');
+      }
+
+      await orchestrator.start();
+
+    } catch (error) {
+      consoleReporter.printError(error as Error);
+      process.exit(1);
+    }
   });
 
 program
