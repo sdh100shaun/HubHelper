@@ -367,7 +367,10 @@ program
             });
           };
 
-          askQuestion();
+          await new Promise<void>((resolve) => {
+            rl.on('close', resolve);
+            askQuestion();
+          });
         } else {
           // Single question mode
           const spinner = ora('Analyzing your question...').start();
