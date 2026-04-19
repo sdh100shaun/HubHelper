@@ -433,16 +433,15 @@ If asked about something not in the analysis data, clearly state that and sugges
       return 'high';
     }
 
-    // Medium confidence for general recommendations
-    if (answer.match(/(recommend|should|consider)/i)) {
-      return 'medium';
-    }
-
-    // Low confidence for uncertain responses
+    // Low confidence for uncertain responses, even if recommendations are present
     if (answer.match(/(might|possibly|unclear|not sure)/i)) {
       return 'low';
     }
 
+    // Medium confidence for general recommendations
+    if (answer.match(/(recommend|should|consider)/i)) {
+      return 'medium';
+    }
     return 'medium';
   }
 }
