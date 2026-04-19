@@ -210,9 +210,40 @@ program
 
       // Load analysis from file or fetch fresh data
       if (options.from) {
-        consoleReporter.printInfo(`Loading analysis from ${options.from}...`);
-        const data = readFileSync(options.from, 'utf-8');
-        analysisResult = JSON.parse(data);
+        try {
+          consoleReporter.printInfo(`Loading analysis from ${options.from}...`);
+
+          // Validate file path to prevent traversal attacks
+          const safePath = validateFilePath(options.from, {
+            allowedExtensions: ['.json'],
+          });
+
+          const data = readFileSync(safePath, 'utf-8');
+          const parsed = JSON.parse(data);
+
+          // Validate JSON structure
+          if (!parsed.statistics || !Array.isArray(parsed.issues)) {
+            throw new Error(
+              'Invalid analysis file format. Expected AnalysisResult with statistics and issues.'
+            );
+          }
+
+          analysisResult = parsed;
+        } catch (error) {
+          if (error instanceof Error) {
+            if (error.message.includes('path traversal')) {
+              consoleReporter.printError(
+                new Error(
+                  `Security error: ${error.message}\n` +
+                    `For security, analysis files must be in the current directory or subdirectories.`
+                )
+              );
+            } else {
+              consoleReporter.printError(new Error(`Failed to load analysis file: ${error.message}`));
+            }
+          }
+          process.exit(1);
+        }
       } else {
         // Get org and token
         const token = options.token || process.env.GITHUB_TOKEN;
