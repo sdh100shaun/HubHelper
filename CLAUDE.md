@@ -51,7 +51,7 @@ GitHubFetcher (src/services/) → SecurityAnalyzer (src/analyzers/) → AIAnalyz
 - **ES Modules** — `"type": "module"` in package.json; TypeScript targets ES2022
 - **Biome** for linting/formatting — 100-char line width, 2-space indent, single quotes, trailing commas (ES5)
 - **Tests** live in `src/__tests__/` matching `*.test.ts`; mocks in `src/__mocks__/`
-- **Node >=18** required; CI tests against 18, 20, 22
+- **Node >=20** required; CI tests against 20, 22
 - **No linter suppression comments** outside of test files — `biome-ignore` and similar suppression comments are only allowed in `src/__tests__/**/*.test.ts` files. Production code in `src/` must pass linting without suppressions.
 
 ## Quality Gates
@@ -61,7 +61,7 @@ All work sessions must satisfy these standards before considering work complete:
 1. **Linting** — `npm run lint` must pass with zero errors or warnings.
 2. **Unit tests** — `npm test` must pass with zero failures.
 3. **Test coverage** — Every new or modified function must have corresponding tests in `src/__tests__/`.
-4. **CI compatibility** — Changes must pass the full GitHub Actions CI matrix (`npm run lint`, `npm run build`, `npm test` across Node 18/20/22). Run `npm run lint && npm run build && npm test` locally before finishing.
+4. **CI compatibility** — Changes must pass the full GitHub Actions CI matrix (`npm run lint`, `npm run build`, `npm test` across Node 20/22). Run `npm run lint && npm run build && npm test` locally before finishing.
 
 ## Environment Variables
 

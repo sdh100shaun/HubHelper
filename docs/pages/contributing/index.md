@@ -61,8 +61,8 @@ Ready to contribute code? Awesome!
 
 ### Prerequisites
 
-- **Node.js** 18.x, 20.x, or 22.x
-- **npm** 8.x or later
+- **Node.js** 20.x or 22.x
+- **npm** 10.x or later
 - **Git** 2.x or later
 - A **GitHub account**
 
