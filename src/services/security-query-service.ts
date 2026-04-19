@@ -111,6 +111,7 @@ export class SecurityQueryService {
           mode: 'replace',
           content: `${this.getSystemPrompt()}\n\n${context}`,
         },
+        // biome-ignore lint/suspicious/noExplicitAny: SDK types not fully defined
         onPermissionRequest: async (request: any) => {
           // Log permission request for audit
           const toolName = String(request.toolName || request.tool || 'unknown');
