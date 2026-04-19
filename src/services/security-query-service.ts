@@ -23,6 +23,12 @@ export class SecurityQueryService {
   private anthropicKey: string;
   private readonly QUERY_TIMEOUT_MS = 30000; // 30 seconds
 
+  // Rate limiting
+  private lastQueryTime = 0;
+  private queryHistory: number[] = [];
+  private readonly MIN_QUERY_INTERVAL_MS = 1000; // 1 second
+  private readonly MAX_QUERIES_PER_HOUR = 60;
+
   constructor(apiKey?: string) {
     const key = apiKey || process.env.ANTHROPIC_API_KEY;
     if (!key) {
@@ -44,9 +50,44 @@ export class SecurityQueryService {
   }
 
   /**
+   * Check and enforce rate limits
+   */
+  private async checkRateLimit(): Promise<void> {
+    const now = Date.now();
+
+    // Enforce minimum interval between queries
+    const timeSinceLastQuery = now - this.lastQueryTime;
+    if (timeSinceLastQuery < this.MIN_QUERY_INTERVAL_MS) {
+      const waitTime = this.MIN_QUERY_INTERVAL_MS - timeSinceLastQuery;
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+
+    // Clean up old query timestamps (older than 1 hour)
+    const oneHourAgo = now - 60 * 60 * 1000;
+    this.queryHistory = this.queryHistory.filter((t) => t > oneHourAgo);
+
+    // Check hourly limit
+    if (this.queryHistory.length >= this.MAX_QUERIES_PER_HOUR) {
+      const oldestQuery = this.queryHistory[0];
+      const waitMinutes = Math.ceil((oldestQuery + 3600000 - now) / 60000);
+      throw new Error(
+        `Rate limit exceeded: Maximum ${this.MAX_QUERIES_PER_HOUR} queries per hour. ` +
+          `Please wait ${waitMinutes} minute(s) before trying again.`
+      );
+    }
+
+    // Record this query
+    this.queryHistory.push(now);
+    this.lastQueryTime = now;
+  }
+
+  /**
    * Query the security analysis using natural language
    */
   async query(question: string, analysisData: AnalysisResult): Promise<QueryResult> {
+    // Check rate limit before processing
+    await this.checkRateLimit();
+
     try {
       // Prepare context for Claude
       const context = this.prepareContext(analysisData);
