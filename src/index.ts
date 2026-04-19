@@ -177,7 +177,11 @@ program
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-i, --interval <minutes>', 'Check interval in minutes', '60')
-  .option('--min-severity <level>', 'Minimum severity to alert (low|medium|high|critical)', 'medium')
+  .option(
+    '--min-severity <level>',
+    'Minimum severity to alert (low|medium|high|critical)',
+    'medium'
+  )
   .option('-d, --days <number>', 'Lookback period for PRs', '7')
   .option('--once', 'Run single scan and exit (one-shot mode)')
   .option('--reset', 'Clear previous state before starting')
@@ -263,7 +267,6 @@ program
       }
 
       await orchestrator.start();
-
     } catch (error) {
       consoleReporter.printError(error as Error);
       process.exit(1);

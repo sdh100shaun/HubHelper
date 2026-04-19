@@ -106,6 +106,8 @@ describe('WatchOrchestrator', () => {
       getRepositories: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
       // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       getRecentPullRequests: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
+      getRecentWorkflowRuns: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
     };
 
     // Apply mocks
