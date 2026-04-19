@@ -21,6 +21,7 @@ export class SecurityQueryService {
   private cachedContext?: string;
   private cachedAnalysis?: AnalysisResult;
   private anthropicKey: string;
+  private readonly QUERY_TIMEOUT_MS = 30000; // 30 seconds
 
   constructor(apiKey?: string) {
     const key = apiKey || process.env.ANTHROPIC_API_KEY;
@@ -96,8 +97,19 @@ export class SecurityQueryService {
       });
 
       try {
-        // Send question and wait for response
-        const response = await session.sendAndWait({ prompt: question });
+        // Create timeout promise
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error('Query timeout: No response after 30 seconds')),
+            this.QUERY_TIMEOUT_MS
+          );
+        });
+
+        // Send question and wait for response with timeout
+        const response = await Promise.race([
+          session.sendAndWait({ prompt: question }),
+          timeoutPromise,
+        ]);
 
         if (!response) {
           throw new Error('No response received from Claude');
