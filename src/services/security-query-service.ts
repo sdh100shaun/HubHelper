@@ -69,7 +69,30 @@ export class SecurityQueryService {
           mode: 'replace',
           content: `${this.getSystemPrompt()}\n\n${context}`,
         },
-        onPermissionRequest: async () => ({ kind: 'approved' }),
+        onPermissionRequest: async (request: any) => {
+          // Log permission request for audit
+          const toolName = String(request.toolName || request.tool || 'unknown');
+          console.warn(`[Security] Permission requested: ${toolName}`);
+
+          // Whitelist of safe read-only operations
+          const safeTools = [
+            'read_file',
+            'list_directory',
+            'search_files',
+            'get_file_info',
+          ];
+
+          if (safeTools.includes(toolName)) {
+            return { kind: 'approved' as const };
+          }
+
+          // Deny write operations and other unsafe tools
+          console.warn(`[Security] Denied tool: ${toolName}`);
+          return {
+            kind: 'denied-by-rules' as const,
+            rules: [`Tool '${toolName}' not allowed in query mode (read-only operations only)`],
+          };
+        },
       });
 
       try {
