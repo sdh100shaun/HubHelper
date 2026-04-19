@@ -52,6 +52,7 @@ GitHubFetcher (src/services/) → SecurityAnalyzer (src/analyzers/) → AIAnalyz
 - **Biome** for linting/formatting — 100-char line width, 2-space indent, single quotes, trailing commas (ES5)
 - **Tests** live in `src/__tests__/` matching `*.test.ts`; mocks in `src/__mocks__/`
 - **Node >=18** required; CI tests against 18, 20, 22
+- **No linter suppression comments** outside of test files — `biome-ignore` and similar suppression comments are only allowed in `src/__tests__/**/*.test.ts` files. Production code in `src/` must pass linting without suppressions.
 
 ## Quality Gates
 

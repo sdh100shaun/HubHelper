@@ -121,10 +121,13 @@ export class SecurityQueryService {
           mode: 'replace',
           content: `${this.getSystemPrompt()}\n\n${context}`,
         },
-        // biome-ignore lint/suspicious/noExplicitAny: SDK types not fully defined
-        onPermissionRequest: async (request: any) => {
+        onPermissionRequest: async (request: unknown) => {
           // Log permission request for audit
-          const toolName = String(request.toolName || request.tool || 'unknown');
+          const toolName = String(
+            (request as { toolName?: string; tool?: string }).toolName ||
+              (request as { toolName?: string; tool?: string }).tool ||
+              'unknown'
+          );
           console.warn(`[Security] Permission requested: ${toolName}`);
 
           // Whitelist of safe read-only operations
