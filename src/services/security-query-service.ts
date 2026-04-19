@@ -42,7 +42,7 @@ export class SecurityQueryService {
 
     // Clear from environment after reading to prevent leaks
     if (!apiKey && process.env.ANTHROPIC_API_KEY) {
-      delete process.env.ANTHROPIC_API_KEY;
+      process.env.ANTHROPIC_API_KEY = undefined;
     }
   }
 
@@ -131,12 +131,7 @@ export class SecurityQueryService {
           console.warn(`[Security] Permission requested: ${toolName}`);
 
           // Whitelist of safe read-only operations
-          const safeTools = [
-            'read_file',
-            'list_directory',
-            'search_files',
-            'get_file_info',
-          ];
+          const safeTools = ['read_file', 'list_directory', 'search_files', 'get_file_info'];
 
           if (safeTools.includes(toolName)) {
             return { kind: 'approved' as const };

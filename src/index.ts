@@ -273,12 +273,13 @@ program
             if (error.message.includes('path traversal')) {
               consoleReporter.printError(
                 new Error(
-                  `Security error: ${error.message}\n` +
-                    `For security, analysis files must be in the current directory or subdirectories.`
+                  `Security error: ${error.message}\nFor security, analysis files must be in the current directory or subdirectories.`
                 )
               );
             } else {
-              consoleReporter.printError(new Error(`Failed to load analysis file: ${error.message}`));
+              consoleReporter.printError(
+                new Error(`Failed to load analysis file: ${error.message}`)
+              );
             }
           }
           process.exit(1);
@@ -318,51 +319,53 @@ program
         // Interactive mode
         if (options.interactive || !question) {
           const rl = createInterface({
-          input: process.stdin,
-          output: process.stdout,
-        });
+            input: process.stdin,
+            output: process.stdout,
+          });
 
-        consoleReporter.printSuccess(
-          'Interactive query mode. Type your questions or "exit" to quit.\n'
-        );
+          consoleReporter.printSuccess(
+            'Interactive query mode. Type your questions or "exit" to quit.\n'
+          );
 
-        const askQuestion = () => {
-          rl.question("? Ask about your organization's security: ", async (input) => {
-            const trimmed = input.trim();
+          const askQuestion = () => {
+            rl.question("? Ask about your organization's security: ", async (input) => {
+              const trimmed = input.trim();
 
-            if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
-              rl.close();
-              return;
-            }
-
-            if (!trimmed) {
-              askQuestion();
-              return;
-            }
-
-            const spinner = ora('Analyzing...').start();
-            try {
-              const result = await queryService.query(trimmed, analysisResult);
-              spinner.stop();
-
-              console.log(`\n${result.answer}\n`);
-
-              if (result.relatedIssues && result.relatedIssues.length > 0) {
-                console.log(`📋 Related issues: ${result.relatedIssues.length}`);
-                for (const issue of result.relatedIssues.slice(0, 3)) {
-                  console.log(`  • [${issue.severity}] ${issue.repository}: ${issue.description}`);
-                }
-                console.log('');
+              if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
+                rl.close();
+                return;
               }
 
-              askQuestion();
-            } catch (error) {
-              spinner.stop();
-              consoleReporter.printError(error as Error);
-              askQuestion();
-            }
-          });
-        };
+              if (!trimmed) {
+                askQuestion();
+                return;
+              }
+
+              const spinner = ora('Analyzing...').start();
+              try {
+                const result = await queryService.query(trimmed, analysisResult);
+                spinner.stop();
+
+                console.log(`\n${result.answer}\n`);
+
+                if (result.relatedIssues && result.relatedIssues.length > 0) {
+                  console.log(`📋 Related issues: ${result.relatedIssues.length}`);
+                  for (const issue of result.relatedIssues.slice(0, 3)) {
+                    console.log(
+                      `  • [${issue.severity}] ${issue.repository}: ${issue.description}`
+                    );
+                  }
+                  console.log('');
+                }
+
+                askQuestion();
+              } catch (error) {
+                spinner.stop();
+                consoleReporter.printError(error as Error);
+                askQuestion();
+              }
+            });
+          };
 
           askQuestion();
         } else {
