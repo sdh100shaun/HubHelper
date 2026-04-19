@@ -22,6 +22,7 @@ export class SecurityQueryService {
   private cachedAnalysis?: AnalysisResult;
   private anthropicKey: string;
   private readonly QUERY_TIMEOUT_MS = 30000; // 30 seconds
+  private isDisposed = false;
 
   // Rate limiting
   private lastQueryTime = 0;
@@ -38,6 +39,11 @@ export class SecurityQueryService {
     }
     this.anthropicKey = key;
     this.client = new CopilotClient({ autoStart: false });
+
+    // Clear from environment after reading to prevent leaks
+    if (!apiKey && process.env.ANTHROPIC_API_KEY) {
+      delete process.env.ANTHROPIC_API_KEY;
+    }
   }
 
   /**
@@ -85,6 +91,10 @@ export class SecurityQueryService {
    * Query the security analysis using natural language
    */
   async query(question: string, analysisData: AnalysisResult): Promise<QueryResult> {
+    if (this.isDisposed) {
+      throw new Error('Service has been disposed. Create a new instance.');
+    }
+
     // Check rate limit before processing
     await this.checkRateLimit();
 
@@ -190,6 +200,28 @@ export class SecurityQueryService {
     if (this.client.getState() === 'connected') {
       await this.client.stop();
     }
+  }
+
+  /**
+   * Securely dispose of service and clear sensitive data
+   */
+  async dispose(): Promise<void> {
+    if (this.isDisposed) {
+      return;
+    }
+
+    // Overwrite API key in memory before clearing
+    if (this.anthropicKey) {
+      // Overwrite with zeros
+      this.anthropicKey = '0'.repeat(this.anthropicKey.length);
+      // Clear reference
+      this.anthropicKey = '';
+    }
+
+    // Clear cached data
+    await this.clearCache();
+
+    this.isDisposed = true;
   }
 
   /**

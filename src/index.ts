@@ -275,9 +275,10 @@ program
       // Initialize query service
       const queryService = new SecurityQueryService(anthropicKey);
 
-      // Interactive mode
-      if (options.interactive || !question) {
-        const rl = createInterface({
+      try {
+        // Interactive mode
+        if (options.interactive || !question) {
+          const rl = createInterface({
           input: process.stdin,
           output: process.stdout,
         });
@@ -324,31 +325,35 @@ program
           });
         };
 
-        askQuestion();
-      } else {
-        // Single question mode
-        const spinner = ora('Analyzing your question...').start();
-        const result = await queryService.query(question, analysisResult);
-        spinner.stop();
+          askQuestion();
+        } else {
+          // Single question mode
+          const spinner = ora('Analyzing your question...').start();
+          const result = await queryService.query(question, analysisResult);
+          spinner.stop();
 
-        console.log(`\n${result.answer}\n`);
+          console.log(`\n${result.answer}\n`);
 
-        if (result.relatedIssues && result.relatedIssues.length > 0) {
-          console.log(`📋 ${result.relatedIssues.length} related issues found\n`);
-          for (const issue of result.relatedIssues.slice(0, 5)) {
-            console.log(`  • [${issue.severity}] ${issue.repository}`);
-            console.log(`    ${issue.description}`);
+          if (result.relatedIssues && result.relatedIssues.length > 0) {
+            console.log(`📋 ${result.relatedIssues.length} related issues found\n`);
+            for (const issue of result.relatedIssues.slice(0, 5)) {
+              console.log(`  • [${issue.severity}] ${issue.repository}`);
+              console.log(`    ${issue.description}`);
+            }
+            console.log('');
           }
-          console.log('');
-        }
 
-        if (result.recommendations && result.recommendations.length > 0) {
-          console.log('💡 Recommendations:\n');
-          for (const rec of result.recommendations) {
-            console.log(`  • ${rec}`);
+          if (result.recommendations && result.recommendations.length > 0) {
+            console.log('💡 Recommendations:\n');
+            for (const rec of result.recommendations) {
+              console.log(`  • ${rec}`);
+            }
+            console.log('');
           }
-          console.log('');
         }
+      } finally {
+        // Always cleanup, even on error
+        await queryService.dispose();
       }
     } catch (error) {
       consoleReporter.printError(error as Error);
