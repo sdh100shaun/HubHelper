@@ -189,6 +189,7 @@ program
   .option('--from <file>', 'Use saved analysis from JSON file')
   .option('-d, --days <number>', 'Number of days to analyze', '30')
   .option('-i, --interactive', 'Interactive mode with follow-up questions')
+  .option('--skip-warning', 'Skip data sharing consent warning')
   .action(async (question, options) => {
     const consoleReporter = new ConsoleReporter();
 
@@ -204,6 +205,44 @@ program
           new Error('Anthropic API key required. Set ANTHROPIC_API_KEY or use --anthropic-key')
         );
         process.exit(1);
+      }
+
+      // Check for explicit consent
+      const hasConsent = process.env.CONSENT_AI_SHARING === 'true' || options.skipWarning;
+
+      if (!hasConsent) {
+        console.log('');
+        console.log('⚠️  DATA SHARING NOTICE');
+        console.log('━'.repeat(60));
+        console.log("This command will send your organization's security analysis data to");
+        console.log('the Anthropic API (Claude AI) for natural language processing.');
+        console.log('');
+        console.log('Data shared includes:');
+        console.log('  • Repository names and statistics');
+        console.log('  • Security issue descriptions and severity levels');
+        console.log('  • Pull request and workflow information');
+        console.log('');
+        console.log('To skip this warning in the future, set:');
+        console.log('  export CONSENT_AI_SHARING=true');
+        console.log('');
+
+        const rl = createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+
+        const consent = await new Promise<string>((resolve) => {
+          rl.question('Do you want to continue? (y/N): ', (answer) => {
+            rl.close();
+            resolve(answer.trim().toLowerCase());
+          });
+        });
+
+        if (consent !== 'y' && consent !== 'yes') {
+          console.log('Cancelled by user.');
+          process.exit(0);
+        }
+        console.log('');
       }
 
       let analysisResult: AnalysisResult;
