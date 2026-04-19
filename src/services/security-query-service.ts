@@ -208,11 +208,10 @@ export class SecurityQueryService {
       return;
     }
 
-    // Overwrite API key in memory before clearing
+    // JavaScript strings cannot be securely overwritten in memory because they
+    // are immutable and may have additional runtime-managed copies. Clear this
+    // reference so the key is no longer accessible from the service instance.
     if (this.anthropicKey) {
-      // Overwrite with zeros
-      this.anthropicKey = '0'.repeat(this.anthropicKey.length);
-      // Clear reference
       this.anthropicKey = '';
     }
 
