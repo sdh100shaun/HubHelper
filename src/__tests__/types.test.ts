@@ -1,6 +1,6 @@
+import { describe, expect, it } from '@jest/globals';
 import type {
   AnalysisResult,
-  OrganizationActivity,
   PullRequest,
   Repository,
   SecurityIssue,
