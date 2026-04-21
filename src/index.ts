@@ -7,6 +7,7 @@ import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
 import { PolicyEngine } from './policy/engine.js';
 import type { PolicyEngineResult } from './policy/engine.js';
+import { ComplianceReporter } from './reporters/compliance-reporter.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
@@ -43,6 +44,12 @@ program
   .option('--json <file>', 'Save results as JSON to file')
   .option('--html <file>', 'Save results as HTML to file')
   .option('--sarif <file>', 'Save results as SARIF for GitHub Code Scanning')
+  .option('--compliance <file>', 'Save compliance framework report (JSON)')
+  .option(
+    '--compliance-format <format>',
+    'Compliance report format: json, text, markdown, html',
+    'json'
+  )
   .option('--no-ai', 'Disable AI-powered insights')
   .action(async (options) => {
     const consoleReporter = new ConsoleReporter();
@@ -233,6 +240,57 @@ program
             const sarifReporter = new SarifReporter();
             sarifReporter.saveToFile(engineResultForSarif, safePath);
             consoleReporter.printSuccess(`SARIF report saved to ${safePath}`);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('path traversal')) {
+              consoleReporter.printError(
+                new Error(
+                  `Security error: ${error.message}\nFor security, files can only be saved in the current directory or subdirectories.`
+                )
+              );
+            } else {
+              throw error;
+            }
+          }
+        }
+      }
+
+      if (options.compliance) {
+        if (!engineResultForSarif) {
+          consoleReporter.printError(
+            new Error(
+              'Compliance reporting is not available in legacy mode. Use policy-driven analysis (default).'
+            )
+          );
+        } else {
+          try {
+            const format = options.complianceFormat || 'json';
+            const validFormats = ['json', 'text', 'markdown', 'html'];
+
+            if (!validFormats.includes(format)) {
+              consoleReporter.printError(
+                new Error(`Invalid compliance format. Must be one of: ${validFormats.join(', ')}`)
+              );
+            } else {
+              // Determine file extension based on format
+              const extensionMap: Record<string, string[]> = {
+                json: ['.json'],
+                text: ['.txt'],
+                markdown: ['.md'],
+                html: ['.html'],
+              };
+
+              const safePath = validateFilePath(options.compliance, {
+                allowedExtensions: extensionMap[format],
+              });
+
+              const complianceReporter = new ComplianceReporter();
+              complianceReporter.saveToFile(
+                engineResultForSarif,
+                safePath,
+                format as 'json' | 'text' | 'markdown' | 'html'
+              );
+              consoleReporter.printSuccess(`Compliance report (${format}) saved to ${safePath}`);
+            }
           } catch (error) {
             if (error instanceof Error && error.message.includes('path traversal')) {
               consoleReporter.printError(
