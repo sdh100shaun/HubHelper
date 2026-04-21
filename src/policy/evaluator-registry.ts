@@ -82,8 +82,7 @@ export const evaluatorRegistry = new EvaluatorRegistry();
  * Register an evaluator (decorator or direct call)
  */
 export function registerEvaluator(detectorType: DetectorType) {
-  return (target: new () => Evaluator) => {
+  return (target: new () => Evaluator): void => {
     evaluatorRegistry.register(detectorType, target);
-    return target;
   };
 }

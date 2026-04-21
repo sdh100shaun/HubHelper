@@ -4,6 +4,7 @@
  * YAML-based declarative policy system for security analysis.
  *
  * Main exports:
+ * - PolicyEngine - Main orchestrator for policy-driven evaluation
  * - loadCatalog, loadProfile, loadCatalogForProfile - Load and validate YAML files
  * - resolvePolicy - Merge catalog + profile into resolved policy
  * - evaluatorRegistry, registerEvaluator - Evaluator registration
@@ -12,6 +13,10 @@
  *
  * @module policy
  */
+
+// Policy engine
+export { PolicyEngine } from './engine.js';
+export type { PolicyEngineResult } from './engine.js';
 
 // Type definitions and schemas
 export type {

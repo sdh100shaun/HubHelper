@@ -1,6 +1,7 @@
 export interface PullRequest {
   number: number;
   title: string;
+  body?: string;
   url: string;
   author: string;
   merged_by: string | null;
@@ -38,8 +39,8 @@ export interface SecurityIssueDetails {
   title?: string;
   url?: string;
   author?: string;
-  merged_by?: string;
-  merged_at?: string;
+  merged_by?: string | null;
+  merged_at?: string | null;
   was_self_merged?: boolean;
   labels?: string[];
   files_changed?: string[];
