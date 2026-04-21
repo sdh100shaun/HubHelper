@@ -79,7 +79,7 @@ const ParameterSchema = z.object({
   description: z.string().optional(),
   type: ParameterTypeSchema,
   'item-type': z.string().optional(), // For arrays, the type of array items
-  default: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).optional(),
+  default: z.unknown().optional(), // Can be any type - validated by resolver based on 'type' field
   values: z.array(z.string()).optional(), // Allowed values (enum)
   required: z.boolean().optional().default(false),
 });
@@ -156,10 +156,7 @@ const CatalogReferenceSchema = z.object({
 /**
  * Parameter value override in profile
  */
-const ParameterValueSchema = z.record(
-  z.string(),
-  z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])
-);
+const ParameterValueSchema = z.record(z.string(), z.unknown()); // Values can be any type
 
 export type ParameterValue = z.infer<typeof ParameterValueSchema>;
 
@@ -228,7 +225,7 @@ export type Profile = z.infer<typeof ProfileSchema>;
  * Resolved parameter with value
  */
 export interface ResolvedParameter extends Parameter {
-  value: string | number | boolean | string[];
+  value: unknown; // Type depends on parameter 'type' field
 }
 
 /**

@@ -155,11 +155,11 @@ function resolveParameters(
   const resolved: ResolvedParameter[] = [];
 
   for (const param of parameterDefs) {
-    let value: string | number | boolean | string[];
+    let value: unknown;
 
     // Use override if provided, otherwise use default
     if (param.id in overrides) {
-      value = overrides[param.id] as string | number | boolean | string[];
+      value = overrides[param.id];
     } else if (param.default !== undefined) {
       value = param.default;
     } else if (param.required) {
