@@ -6,9 +6,11 @@ import ora from 'ora';
 import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
 import { PolicyEngine } from './policy/engine.js';
+import type { PolicyEngineResult } from './policy/engine.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
+import { SarifReporter } from './reporters/sarif-reporter.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
@@ -40,6 +42,7 @@ program
   .option('--legacy', 'Use legacy hardcoded analysis (deprecated)')
   .option('--json <file>', 'Save results as JSON to file')
   .option('--html <file>', 'Save results as HTML to file')
+  .option('--sarif <file>', 'Save results as SARIF for GitHub Code Scanning')
   .option('--no-ai', 'Disable AI-powered insights')
   .action(async (options) => {
     const consoleReporter = new ConsoleReporter();
@@ -96,6 +99,7 @@ program
 
       // Analyze data
       let analysisResult: AnalysisResult;
+      let engineResultForSarif: PolicyEngineResult | undefined;
 
       if (options.legacy) {
         // Legacy hardcoded analysis
@@ -121,6 +125,9 @@ program
         spinner.start('Analyzing with policy-driven evaluation...');
         const engineResult = await policyEngine.evaluate(repositories, pullRequests, workflowRuns);
         spinner.succeed('Policy-driven analysis complete');
+
+        // Store for SARIF reporter
+        engineResultForSarif = engineResult;
 
         // Convert PolicyEngineResult to AnalysisResult for compatibility
         analysisResult = {
@@ -207,6 +214,35 @@ program
             );
           } else {
             throw error;
+          }
+        }
+      }
+
+      if (options.sarif) {
+        if (!engineResultForSarif) {
+          consoleReporter.printError(
+            new Error(
+              'SARIF export is not available in legacy mode. Use policy-driven analysis (default).'
+            )
+          );
+        } else {
+          try {
+            const safePath = validateFilePath(options.sarif, {
+              allowedExtensions: ['.sarif'],
+            });
+            const sarifReporter = new SarifReporter();
+            sarifReporter.saveToFile(engineResultForSarif, safePath);
+            consoleReporter.printSuccess(`SARIF report saved to ${safePath}`);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('path traversal')) {
+              consoleReporter.printError(
+                new Error(
+                  `Security error: ${error.message}\nFor security, files can only be saved in the current directory or subdirectories.`
+                )
+              );
+            } else {
+              throw error;
+            }
           }
         }
       }
