@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import ora from 'ora';
 import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
+import { PolicyEngine } from './policy/engine.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
@@ -35,6 +36,8 @@ program
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-d, --days <number>', 'Number of days to look back', '30')
+  .option('--profile <file>', 'Policy profile to use (default: policies/default.yaml)')
+  .option('--legacy', 'Use legacy hardcoded analysis (deprecated)')
   .option('--json <file>', 'Save results as JSON to file')
   .option('--html <file>', 'Save results as HTML to file')
   .option('--no-ai', 'Disable AI-powered insights')
@@ -87,11 +90,64 @@ program
       const pullRequests = await fetcher.getRecentPullRequests(days);
       spinner.succeed(`Fetched ${pullRequests.length} pull requests`);
 
+      spinner.start('Fetching workflow runs...');
+      const workflowRuns = await fetcher.getRecentWorkflowRuns(days);
+      spinner.succeed(`Fetched ${workflowRuns.length} workflow runs`);
+
       // Analyze data
-      spinner.start('Analyzing security issues...');
-      const analyzer = new SecurityAnalyzer();
-      const analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests);
-      spinner.succeed('Analysis complete');
+      let analysisResult: AnalysisResult;
+
+      if (options.legacy) {
+        // Legacy hardcoded analysis
+        spinner.start('Analyzing security issues (legacy mode)...');
+        const analyzer = new SecurityAnalyzer();
+        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
+        spinner.succeed('Analysis complete (legacy mode)');
+      } else {
+        // Policy-driven analysis (default)
+        const profilePath = options.profile || 'policies/default.yaml';
+
+        spinner.start(`Loading policy: ${profilePath}...`);
+        const policyEngine = new PolicyEngine();
+
+        try {
+          await policyEngine.loadPolicy(profilePath);
+          spinner.succeed(`Policy loaded: ${profilePath}`);
+        } catch (error) {
+          spinner.fail('Failed to load policy');
+          throw error;
+        }
+
+        spinner.start('Analyzing with policy-driven evaluation...');
+        const engineResult = await policyEngine.evaluate(repositories, pullRequests, workflowRuns);
+        spinner.succeed('Policy-driven analysis complete');
+
+        // Convert PolicyEngineResult to AnalysisResult for compatibility
+        analysisResult = {
+          summary: `Found ${engineResult.issues.length} security issues across ${repositories.length} repositories`,
+          issues: engineResult.issues,
+          recommendations: [],
+          statistics: {
+            total_repos: repositories.length,
+            total_prs: pullRequests.length,
+            self_merges: engineResult.issues.filter((i) => i.type === 'self-merge').length,
+            security_prs: engineResult.issues.filter((i) => i.type === 'security-pr').length,
+            repos_with_disabled_actions: engineResult.issues.filter(
+              (i) => i.type === 'disabled-actions'
+            ).length,
+            paused_workflows: engineResult.issues.filter((i) => i.type === 'paused-workflow')
+              .length,
+            disabled_workflows: engineResult.issues.filter((i) => i.type === 'disabled-workflow')
+              .length,
+          },
+        };
+
+        consoleReporter.printInfo(`\nPolicy: ${engineResult.policy.metadata.profileTitle}`);
+        consoleReporter.printInfo(
+          `Controls evaluated: ${engineResult.statistics.controlsEvaluated}`
+        );
+        consoleReporter.printInfo(`Execution time: ${engineResult.statistics.executionTimeMs}ms\n`);
+      }
 
       // Generate AI insights
       let aiInsights: string | undefined;
