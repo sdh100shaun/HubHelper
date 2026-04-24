@@ -110,7 +110,7 @@ export class SecurityPRClassifier extends BaseEvaluator {
     keywordSeverityMap: SeverityKeywordMap[],
     baseSeverity: Severity
   ): ClassifiedPR | null {
-    const text = `${pr.title} ${pr.body || ''}`.toLowerCase();
+    const text = pr.title.toLowerCase();
     const matchedKeywords: string[] = [];
     const matchedLabels: string[] = [];
     const matchedFiles: string[] = [];

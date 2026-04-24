@@ -566,10 +566,15 @@ program
         spinner.text = `Fetched ${repositories.length} repositories, fetching PRs...`;
 
         const pullRequests = await fetcher.getRecentPullRequests(days);
-        spinner.succeed(`Analyzed ${repositories.length} repos and ${pullRequests.length} PRs`);
+        spinner.text = `Fetched ${pullRequests.length} PRs, fetching workflow runs...`;
+
+        const workflowRuns = await fetcher.getRecentWorkflowRuns(days);
+        spinner.succeed(
+          `Analyzed ${repositories.length} repos, ${pullRequests.length} PRs, and ${workflowRuns.length} workflow runs`
+        );
 
         const analyzer = new SecurityAnalyzer();
-        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests);
+        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
       }
 
       // Initialize query service

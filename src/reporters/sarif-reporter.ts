@@ -262,6 +262,7 @@ export class SarifReporter {
       'disabled-workflow': 'HH-GH-006',
       repeated_action_failure: 'HH-GH-007',
       action_failure: 'HH-GH-008',
+      'security-pr-volume': 'HH-GH-009',
     };
 
     return typeToControlId[issueType] || 'HH-GH-000';

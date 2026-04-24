@@ -75,7 +75,8 @@ export interface SecurityIssue {
     | 'paused-workflow'
     | 'disabled-workflow'
     | 'action_failure'
-    | 'repeated_action_failure';
+    | 'repeated_action_failure'
+    | 'security-pr-volume';
   severity: 'low' | 'medium' | 'high' | 'critical';
   repository: string;
   description: string;
