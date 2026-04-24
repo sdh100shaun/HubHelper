@@ -1,4 +1,10 @@
-import type { AnalysisResult, PullRequest, Repository, SecurityIssue } from '../types/index.js';
+import type {
+  AnalysisResult,
+  PullRequest,
+  Repository,
+  SecurityIssue,
+  WorkflowRun,
+} from '../types/index.js';
 
 export class SecurityAnalyzer {
   analyzeSelfMerges(pullRequests: PullRequest[]): SecurityIssue[] {
@@ -180,13 +186,80 @@ export class SecurityAnalyzer {
     return issues;
   }
 
-  generateAnalysisResult(repositories: Repository[], pullRequests: PullRequest[]): AnalysisResult {
+  analyzeActionFailures(runs: WorkflowRun[]): SecurityIssue[] {
+    const issues: SecurityIssue[] = [];
+
+    // Group failures by repository and workflow
+    const failuresByRepo = new Map<string, WorkflowRun[]>();
+
+    for (const run of runs) {
+      if (run.conclusion === 'failure') {
+        const key = `${run.repository}:${run.workflow_name}`;
+        if (!failuresByRepo.has(key)) {
+          failuresByRepo.set(key, []);
+        }
+        failuresByRepo.get(key)!.push(run);
+      }
+    }
+
+    // Detect repeated failures (same workflow failing multiple times)
+    for (const [key, failures] of failuresByRepo) {
+      const [repo, workflow] = key.split(':');
+
+      if (failures.length >= 3) {
+        // High severity: 3+ consecutive failures
+        issues.push({
+          type: 'repeated_action_failure',
+          severity: 'high',
+          repository: repo,
+          description: `Workflow "${workflow}" failed ${failures.length} times in recent runs`,
+          details: {
+            workflow_name: workflow,
+            failure_count: failures.length,
+            recent_runs: failures.slice(0, 5).map((r) => ({
+              run_number: r.run_number,
+              created_at: r.created_at,
+              head_branch: r.head_branch,
+            })),
+          },
+          detected_at: new Date().toISOString(),
+        });
+      } else if (failures.length >= 1) {
+        // Medium: Single failure
+        const failure = failures[0];
+        issues.push({
+          type: 'action_failure',
+          severity: 'medium',
+          repository: repo,
+          description: `Workflow "${workflow}" run #${failure.run_number} failed on ${failure.head_branch}`,
+          details: {
+            workflow_name: workflow,
+            run_number: failure.run_number,
+            run_id: failure.id,
+            head_branch: failure.head_branch,
+            head_sha: failure.head_sha,
+            event: failure.event,
+          },
+          detected_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  generateAnalysisResult(
+    repositories: Repository[],
+    pullRequests: PullRequest[],
+    workflowRuns?: WorkflowRun[]
+  ): AnalysisResult {
     const selfMergeIssues = this.analyzeSelfMerges(pullRequests);
     const securityPRIssues = this.analyzeSecurityPRs(pullRequests);
     const disabledActionsIssues = this.analyzeDisabledActions(repositories);
     const unreviewedSecurityIssues = this.analyzeUnreviewedSecurityPRs(pullRequests);
     const pausedWorkflowIssues = this.analyzePausedWorkflows(repositories);
     const disabledWorkflowIssues = this.analyzeDisabledWorkflows(repositories);
+    const actionFailureIssues = workflowRuns ? this.analyzeActionFailures(workflowRuns) : [];
 
     const allIssues = [
       ...selfMergeIssues,
@@ -195,6 +268,7 @@ export class SecurityAnalyzer {
       ...unreviewedSecurityIssues,
       ...pausedWorkflowIssues,
       ...disabledWorkflowIssues,
+      ...actionFailureIssues,
     ];
 
     // Sort by severity

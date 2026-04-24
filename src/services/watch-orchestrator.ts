@@ -17,6 +17,7 @@ import type {
   SecurityIssue as FullSecurityIssue,
   PullRequest,
   Repository,
+  WorkflowRun,
 } from '../types/index.js';
 import type { WatchConfig, WatchScanResult, WatchStatistics } from '../types/watch.js';
 import type { StateManagerConfig } from '../types/watch.js';
@@ -179,17 +180,25 @@ export class WatchOrchestrator {
       const previousFingerprints = previousState?.knownIssues || [];
 
       // Fetch data from GitHub
-      console.log('📡 Fetching repositories and pull requests...');
+      console.log('📡 Fetching repositories, pull requests, and workflow runs...');
       const repositories = await this.githubFetcher.getRepositories();
       const pullRequests = await this.githubFetcher.getRecentPullRequests(this.config.lookbackDays);
+      const workflowRuns = await this.githubFetcher.getRecentWorkflowRuns(this.config.lookbackDays);
 
       console.log(`   ├─ Repositories: ${repositories.length}`);
       console.log(
-        `   └─ Pull requests (last ${this.config.lookbackDays} days): ${pullRequests.length}`
+        `   ├─ Pull requests (last ${this.config.lookbackDays} days): ${pullRequests.length}`
+      );
+      console.log(
+        `   └─ Workflow runs (last ${this.config.lookbackDays} days): ${workflowRuns.length}`
       );
 
       // Analyze for security issues using SecurityAnalyzer
-      const currentIssues = await this.analyzeSecurityIssues(repositories, pullRequests);
+      const currentIssues = await this.analyzeSecurityIssues(
+        repositories,
+        pullRequests,
+        workflowRuns
+      );
 
       // Detect changes
       const newIssues = this.changeDetector.detectNewIssues(currentIssues, previousFingerprints);
@@ -400,23 +409,30 @@ export class WatchOrchestrator {
       'paused-workflow': '⏸️',
       'security-pr': '🔒',
       'unreviewed-security': '👁️',
+      action_failure: '❌',
+      repeated_action_failure: '🔴',
     };
 
     return icons[type] || '⚠️';
   }
 
   /**
-   * Analyze repositories and PRs for security issues
+   * Analyze repositories, PRs, and workflow runs for security issues
    * Uses SecurityAnalyzer to detect security risks
    */
   private async analyzeSecurityIssues(
     repositories: Repository[],
-    pullRequests: PullRequest[]
+    pullRequests: PullRequest[],
+    workflowRuns: WorkflowRun[]
   ): Promise<SecurityIssue[]> {
     console.log('🔍 Analyzing for security issues...');
 
     // Use SecurityAnalyzer to generate analysis result
-    const analysisResult = this.securityAnalyzer.generateAnalysisResult(repositories, pullRequests);
+    const analysisResult = this.securityAnalyzer.generateAnalysisResult(
+      repositories,
+      pullRequests,
+      workflowRuns
+    );
 
     // Update API calls counter
     this.statistics.apiCallsMade += analysisResult.statistics.total_repos;

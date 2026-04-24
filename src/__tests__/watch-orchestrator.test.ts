@@ -5,7 +5,6 @@
  * signal handling, and graceful shutdown.
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: Test mocks use any types
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -22,11 +21,11 @@ describe('WatchOrchestrator', () => {
   let orchestrator: WatchOrchestrator;
   let testDir: string;
   let config: WatchConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Test mocks use any types
   let mockStateManager: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Test mocks use any types
   let mockChangeDetector: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Test mocks use any types
   let mockGitHubFetcher: any;
 
   beforeEach(() => {
@@ -52,9 +51,11 @@ describe('WatchOrchestrator', () => {
     mockStateManager = {
       acquireLock: jest.fn<() => Promise<void>>().mockResolvedValue(undefined as undefined),
       releaseLock: jest.fn<() => Promise<void>>().mockResolvedValue(undefined as undefined),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       loadState: jest.fn<() => Promise<any>>().mockResolvedValue(null),
       saveState: jest.fn<() => Promise<void>>().mockResolvedValue(undefined as undefined),
       clearState: jest.fn<() => Promise<void>>().mockResolvedValue(undefined as undefined),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       createEmptyState: jest.fn<() => any>().mockReturnValue({
         version: '1.0.0',
         organization: 'test-org',
@@ -69,32 +70,44 @@ describe('WatchOrchestrator', () => {
       }),
       generateConfigHash: jest.fn<() => string>().mockReturnValue('test-hash'),
       updateKnownIssues: jest
+        // biome-ignore lint/suspicious/noExplicitAny: Mock function parameters and return
         .fn<(state: any, issues: any) => any>()
+        // biome-ignore lint/suspicious/noExplicitAny: Mock implementation parameters
         .mockImplementation((state: any, issues: any) => ({
           ...state,
           knownIssues: issues,
         })),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock function parameters and return
       pruneOldIssues: jest.fn<(state: any) => any>().mockImplementation((state: any) => state),
     };
 
     // Mock ChangeDetector
     mockChangeDetector = {
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       detectNewIssues: jest.fn<() => any[]>().mockReturnValue([]),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       detectResolvedIssues: jest.fn<() => any[]>().mockReturnValue([]),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       filterBySeverity: jest.fn<() => any[]>().mockReturnValue([]),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       groupBySeverity: jest.fn<() => any>().mockReturnValue({
         critical: [],
         high: [],
         medium: [],
         low: [],
       }),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       createFingerprints: jest.fn<() => any[]>().mockReturnValue([]),
     };
 
     // Mock GitHubFetcher
     mockGitHubFetcher = {
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       getRepositories: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
       getRecentPullRequests: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
+      // biome-ignore lint/suspicious/noExplicitAny: Mock return type
+      getRecentWorkflowRuns: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
     };
 
     // Apply mocks
