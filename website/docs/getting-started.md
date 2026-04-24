@@ -345,8 +345,8 @@ Add to your CI pipeline (e.g., GitHub Actions):
 - name: Run Security Analysis
   run: |
     npx @sdh100shaun/hubhelper analyze \
-      --org ${ github.repository_owner } \
-      --token ${ secrets.GITHUB_TOKEN } \
+      --org ${{ github.repository_owner }} \
+      --token ${{ secrets.GITHUB_TOKEN }} \
       --json security-report.json
 
 - name: Upload Report
