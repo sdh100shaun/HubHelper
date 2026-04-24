@@ -217,6 +217,15 @@ export class CopilotService {
 
       'unreviewed-security-pr': (i) =>
         `Critical: This security-related PR (${i.details.title}) was merged by its author without external review. Security changes should always be reviewed by security-knowledgeable team members to prevent introducing vulnerabilities.`,
+
+      action_failure: (i) =>
+        `The workflow "${i.details.workflow_name}" (run #${i.details.run_number}) failed on branch ${i.details.head_branch}. Failed workflows may indicate broken tests, build issues, or security scanning failures that need investigation.`,
+
+      repeated_action_failure: (i) =>
+        `Critical: The workflow "${i.details.workflow_name}" has failed ${i.details.failure_count} times recently. Repeated failures suggest a persistent issue that is preventing automated security scans, tests, or deployments from completing successfully.`,
+
+      'security-pr-volume': (i) =>
+        `High volume of security-related PRs detected (${i.details.security_pr_count} PRs). This may indicate an ongoing security incident or a need for additional security review resources.`,
     };
 
     const explanation = explanations[issue.type]?.(issue) || issue.description;

@@ -6,9 +6,8 @@ This document outlines the Node.js version compatibility for HubHelper.
 
 | Node.js Version | Status | Tested | Notes |
 |----------------|--------|--------|-------|
-| 18.x (LTS) | ✅ Supported | Yes | Minimum required version |
-| 20.x (LTS) | ✅ Supported | Yes | Recommended for production |
-| 22.x (Current) | ✅ Supported | Yes | Latest features and performance |
+| 20.x (LTS) | ✅ Supported | Yes | Minimum required version |
+| 22.x (Current) | ✅ Supported | Yes | Recommended for production |
 | 24.x | ✅ Compatible | CI* | Future-ready |
 | Latest | ✅ Compatible | CI* | Continuous compatibility testing |
 
@@ -16,8 +15,8 @@ This document outlines the Node.js version compatibility for HubHelper.
 
 ## Minimum Requirements
 
-- **Node.js**: >= 18.0.0
-- **npm**: >= 9.0.0 (bundled with Node.js 18+)
+- **Node.js**: >= 20.0.0
+- **npm**: >= 10.0.0 (bundled with Node.js 20+)
 
 ## Tested Features
 
@@ -52,21 +51,20 @@ This configuration ensures compatibility with all supported Node.js versions whi
 
 ## Dependency Compatibility
 
-All dependencies are tested for compatibility with Node.js 18+:
+All dependencies are tested for compatibility with Node.js 20+:
 
-- `@github/copilot-sdk`: Supports Node.js 18+
-- `@octokit/rest`: Supports Node.js 18+
-- `chalk`: v5.x uses ES modules, requires Node.js 12+
-- `commander`: Supports Node.js 14+
+- `@github/copilot-sdk`: Supports Node.js 20+
+- `@octokit/rest`: Supports Node.js 20+
+- `chalk`: v5.x uses ES modules, fully supported
+- `commander`: Fully supported
 - `dotenv`: Supports all Node.js versions
-- `ora`: v8.x requires Node.js 18+
+- `ora`: v8.x fully supported
 
 ## CI/CD Testing
 
 ### Standard CI (ci.yml)
 
 Tests on every push and pull request:
-- Node.js 18.x
 - Node.js 20.x
 - Node.js 22.x
 
@@ -85,12 +83,12 @@ npm packages are built and published using Node.js 22 to ensure compatibility wi
 
 ## Troubleshooting
 
-### Node.js 18.x Issues
+### Version Check
 
-If you encounter issues with Node.js 18.x, ensure you're using at least 18.0.0:
+Ensure you're using a supported Node.js version:
 
 ```bash
-node --version  # Should be >= v18.0.0
+node --version  # Should be >= v20.0.0
 ```
 
 ### Module Resolution
@@ -98,7 +96,7 @@ node --version  # Should be >= v18.0.0
 If you see `ERR_MODULE_NOT_FOUND` errors, ensure your Node.js version supports ES modules properly:
 
 ```bash
-node --version  # ES modules fully supported in Node 18+
+node --version  # ES modules fully supported in Node 20+
 ```
 
 ### Native Dependencies
@@ -109,7 +107,7 @@ All dependencies are pure JavaScript. No native modules are used, ensuring compa
 
 If you encounter compatibility issues with a specific Node.js version:
 
-1. Check that you're using a supported version (>= 18.0.0)
+1. Check that you're using a supported version (>= 20.0.0)
 2. Try updating to the latest patch version of your Node.js major version
 3. Report the issue at https://github.com/sdh100shaun/gh-tools/issues with:
    - Node.js version (`node --version`)
@@ -120,8 +118,8 @@ If you encounter compatibility issues with a specific Node.js version:
 ## Future Support
 
 We aim to support:
-- Current LTS versions (18.x, 20.x, 22.x)
+- Current LTS versions (20.x, 22.x)
 - Current stable version
 - Future versions (tested in extended CI)
 
-Older versions (< 18) are not supported as they lack modern ES module features and security updates.
+Older versions (< 20) are not supported to ensure modern features, performance, and security updates.

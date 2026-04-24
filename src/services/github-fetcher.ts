@@ -5,11 +5,14 @@ import type {
   Repository,
   UserProfile,
   Workflow,
+  WorkflowJob,
+  WorkflowRun,
 } from '../types/index.js';
 
 export class GitHubFetcher {
   private octokit: Octokit;
   private org: string;
+  private cachedRepos: Repository[] | null = null;
 
   constructor(token: string, organization: string) {
     this.octokit = new Octokit({ auth: token });
@@ -81,6 +84,9 @@ export class GitHubFetcher {
       if (data.length < perPage) break;
       page++;
     }
+
+    // Cache repos for workflow run fetching
+    this.cachedRepos = repos;
 
     return repos;
   }
@@ -230,6 +236,89 @@ export class GitHubFetcher {
     return hasKeyword || hasLabel || hasSecurityFile;
   }
 
+  async getRecentWorkflowRuns(lookbackDays: number): Promise<WorkflowRun[]> {
+    const since = new Date();
+    since.setDate(since.getDate() - lookbackDays);
+
+    const allRuns: WorkflowRun[] = [];
+
+    // Use cached repos if available, otherwise fetch them
+    const repos = this.cachedRepos || (await this.getRepositories(false));
+
+    for (const repo of repos) {
+      try {
+        const { data: runs } = await this.octokit.actions.listWorkflowRunsForRepo({
+          owner: this.org,
+          repo: repo.name.includes('/') ? repo.name.split('/')[1] : repo.name,
+          status: 'completed',
+          per_page: 100,
+        });
+
+        const recentRuns = runs.workflow_runs
+          .filter((run) => new Date(run.created_at) >= since)
+          .map((run) => ({
+            id: run.id,
+            name: run.name || null,
+            head_branch: run.head_branch,
+            head_sha: run.head_sha,
+            status: run.status as 'completed',
+            conclusion: run.conclusion as
+              | 'success'
+              | 'failure'
+              | 'cancelled'
+              | 'skipped'
+              | 'timed_out'
+              | null,
+            created_at: run.created_at,
+            updated_at: run.updated_at,
+            repository: repo.full_name,
+            workflow_id: run.workflow_id,
+            workflow_name: run.name || 'Unknown Workflow',
+            run_number: run.run_number,
+            event: run.event,
+            run_attempt: run.run_attempt || 1,
+          }));
+
+        allRuns.push(...recentRuns);
+      } catch (error) {
+        console.warn(`Failed to fetch workflow runs for ${repo.name}:`, error);
+      }
+    }
+
+    return allRuns;
+  }
+
+  async getFailedJobDetails(runId: number, repo: string): Promise<WorkflowJob[]> {
+    try {
+      const { data: jobs } = await this.octokit.actions.listJobsForWorkflowRun({
+        owner: this.org,
+        repo,
+        run_id: runId,
+      });
+
+      return jobs.jobs
+        .filter((job) => job.conclusion === 'failure')
+        .map((job) => ({
+          id: job.id,
+          run_id: runId,
+          name: job.name,
+          status: job.status as 'queued' | 'in_progress' | 'completed',
+          conclusion: job.conclusion as 'success' | 'failure' | 'cancelled' | 'skipped' | null,
+          started_at: job.started_at,
+          completed_at: job.completed_at,
+          steps:
+            job.steps?.map((step) => ({
+              name: step.name,
+              status: step.status,
+              conclusion: step.conclusion,
+            })) || [],
+        }));
+    } catch (error) {
+      console.warn(`Failed to fetch jobs for run ${runId}:`, error);
+      return [];
+    }
+  }
+
   // -----------------------------------------------------------------------
   // Compliance helpers
   // -----------------------------------------------------------------------
@@ -327,9 +416,9 @@ export class GitHubFetcher {
     const config = parsed as ApprovedEmailConfig;
 
     // Normalise: lower-case every domain and exact email
-    config.domains = config.domains.map((d) => d.toLowerCase().replace(/^\./, ''));
+    config.domains = config.domains.map((d: string) => d.toLowerCase().replace(/^\./, ''));
     if (config.exactEmails) {
-      config.exactEmails = config.exactEmails.map((e) => e.toLowerCase());
+      config.exactEmails = config.exactEmails.map((e: string) => e.toLowerCase());
     }
 
     return config;

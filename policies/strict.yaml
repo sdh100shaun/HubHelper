@@ -1,0 +1,119 @@
+metadata:
+  title: HubHelper Strict Security Profile
+  version: "1.0.0"
+  owner: HubHelper Team
+  description: >
+    Strict security profile with elevated severity levels and lower thresholds.
+    Suitable for high-security environments or compliance-driven organizations.
+
+catalog-ref:
+  href: ./catalog.yaml
+  version: "1.0.0"
+
+controls:
+  # Include all controls
+  include:
+    - HH-GH-001
+    - HH-GH-002
+    - HH-GH-003
+    - HH-GH-004
+    - HH-GH-005
+    - HH-GH-006
+    - HH-GH-007
+    - HH-GH-008
+    - HH-GH-009
+
+  # Tailor controls for stricter enforcement
+  tailoring:
+    # All self-merges are high severity
+    - control-id: HH-GH-001
+      severity: high
+      parameter-values:
+        severity_if_security: critical
+        severity_default: high
+
+    # Unreviewed security PRs remain critical
+    - control-id: HH-GH-002
+      severity: critical
+
+    # Security PR classifier with expanded keywords
+    - control-id: HH-GH-003
+      parameter-values:
+        keywords:
+          - security
+          - vulnerability
+          - cve
+          - xss
+          - sql injection
+          - csrf
+          - auth
+          - authentication
+          - authorization
+          - encrypt
+          - secret
+          - token
+          - credential
+          - dependabot
+          - snyk
+          - password
+          - privilege
+          - permission
+          - backdoor
+          - malware
+          - injection
+          - dos
+          - rce
+        keyword_severity_map:
+          - keywords:
+              - critical
+              - cve
+              - rce
+              - backdoor
+            severity: critical
+          - keywords:
+              - high
+              - vulnerability
+              - injection
+            severity: high
+          - keywords:
+              - dependabot
+            severity: medium  # Elevated from low
+
+    # Disabled Actions is high severity
+    - control-id: HH-GH-004
+      severity: high
+
+    # Paused workflows are medium severity even if not scheduled
+    - control-id: HH-GH-005
+      parameter-values:
+        severity_if_scheduled: high
+        severity_default: medium
+
+    # Manually disabled workflows warrant investigation
+    - control-id: HH-GH-006
+      severity: medium
+
+    # Lower threshold for repeated failures
+    - control-id: HH-GH-007
+      severity: critical
+      parameter-values:
+        threshold: 2  # Alert after 2 failures instead of 3
+
+    # Single failures are more significant
+    - control-id: HH-GH-008
+      severity: high
+
+    # Lower threshold for security PR volume
+    - control-id: HH-GH-009
+      parameter-values:
+        threshold: 3  # Alert after 3 security PRs instead of 5
+
+scope:
+  lookback-days: 30
+
+reporting:
+  formats:
+    - console
+    - json
+  include-recommendations: true
+  fail-threshold: high  # Exit with error if any high/critical issues found

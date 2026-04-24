@@ -1,6 +1,7 @@
 export interface PullRequest {
   number: number;
   title: string;
+  body?: string;
   url: string;
   author: string;
   merged_by: string | null;
@@ -40,8 +41,8 @@ export interface SecurityIssueDetails {
   title?: string;
   url?: string;
   author?: string;
-  merged_by?: string;
-  merged_at?: string;
+  merged_by?: string | null;
+  merged_at?: string | null;
   was_self_merged?: boolean;
   labels?: string[];
   files_changed?: string[];
@@ -55,6 +56,13 @@ export interface SecurityIssueDetails {
   is_scheduled?: boolean;
   updated_at?: string;
   reason?: string;
+  failure_count?: number;
+  recent_runs?: Array<{ run_number: number; created_at: string; head_branch: string | null }>;
+  run_number?: number;
+  run_id?: number;
+  head_branch?: string | null;
+  head_sha?: string;
+  event?: string;
   [key: string]: unknown;
 }
 
@@ -65,7 +73,10 @@ export interface SecurityIssue {
     | 'disabled-actions'
     | 'unreviewed-security-pr'
     | 'paused-workflow'
-    | 'disabled-workflow';
+    | 'disabled-workflow'
+    | 'action_failure'
+    | 'repeated_action_failure'
+    | 'security-pr-volume';
   severity: 'low' | 'medium' | 'high' | 'critical';
   repository: string;
   description: string;
@@ -94,6 +105,38 @@ export interface AnalysisResult {
     paused_workflows: number;
     disabled_workflows: number;
   };
+}
+
+export interface WorkflowRun {
+  id: number;
+  name: string | null;
+  head_branch: string | null;
+  head_sha: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion: 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | null;
+  created_at: string;
+  updated_at: string;
+  repository: string;
+  workflow_id: number;
+  workflow_name: string;
+  run_number: number;
+  event: string;
+  run_attempt: number;
+}
+
+export interface WorkflowJob {
+  id: number;
+  run_id: number;
+  name: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion: 'success' | 'failure' | 'cancelled' | 'skipped' | null;
+  started_at: string;
+  completed_at: string | null;
+  steps: Array<{
+    name: string;
+    status: string;
+    conclusion: string | null;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
