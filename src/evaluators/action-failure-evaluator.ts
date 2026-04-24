@@ -51,7 +51,10 @@ export class RepeatedActionFailureEvaluator extends BaseEvaluator {
     for (const [key, failures] of failuresByWorkflow) {
       if (failures.length >= threshold) {
         const [repository, workflowName] = key.split(':');
-        const recentRuns = failures.slice(0, recentLimit).map((run) => ({
+        const sortedFailures = [...failures].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        const recentRuns = sortedFailures.slice(0, recentLimit).map((run) => ({
           run_number: run.run_number,
           created_at: run.created_at,
           head_branch: run.head_branch,
