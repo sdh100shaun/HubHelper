@@ -5,3 +5,4 @@ import { jest } from '@jest/globals';
 export const CopilotClient = jest.fn();
 export const CopilotSession = jest.fn();
 export const defineTool = jest.fn();
+export const approveAll = jest.fn();
