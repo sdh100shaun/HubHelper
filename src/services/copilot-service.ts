@@ -1,4 +1,4 @@
-import { CopilotClient } from '@github/copilot-sdk';
+import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { AssistantMessageEvent } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
@@ -94,7 +94,10 @@ export class CopilotService {
       return this.fallbackAnalysis(analysisResult);
     }
 
-    const session = await this.client.createSession({ model: 'claude-sonnet-4-5' });
+    const session = await this.client.createSession({
+      model: 'claude-sonnet-4-5',
+      onPermissionRequest: approveAll,
+    });
     try {
       const event: AssistantMessageEvent | undefined = await session.sendAndWait({
         prompt: buildAnalysisPrompt(analysisResult),
@@ -117,7 +120,10 @@ export class CopilotService {
       return this.fallbackExplain(issue);
     }
 
-    const session = await this.client.createSession({ model: 'claude-sonnet-4-5' });
+    const session = await this.client.createSession({
+      model: 'claude-sonnet-4-5',
+      onPermissionRequest: approveAll,
+    });
     try {
       const prompt = `Explain this GitHub security issue in 2-3 sentences for a developer. Be specific and actionable.\n\n${JSON.stringify(issue, null, 2)}`;
       const event: AssistantMessageEvent | undefined = await session.sendAndWait({ prompt });
