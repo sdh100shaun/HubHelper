@@ -8,7 +8,7 @@ description: Complete guide to installing and using HubHelper
 
 Before you begin, ensure you have:
 
-- **Node.js** 18.x, 20.x, 22.x, or later installed
+- **Node.js** 20.x, 22.x, or later installed
 - A **GitHub Personal Access Token** with read-only permissions
   - Fine-grained token (recommended) or Classic token
   - See [Creating a GitHub Token](#creating-a-github-token) below
