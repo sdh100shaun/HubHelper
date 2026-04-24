@@ -12,6 +12,7 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
+import { CopilotService } from './services/copilot-service.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
@@ -165,18 +166,21 @@ program
 
       // Generate AI insights
       let aiInsights: string | undefined;
-      if (options.ai !== false) {
-        spinner.start('Generating AI-powered insights...');
-        const aiAnalyzer = new AIAnalyzer();
-        aiInsights = await aiAnalyzer.generateInsights(analysisResult);
+      const copilotService = new CopilotService();
+      try {
+        if (options.ai !== false) {
+          spinner.start('Generating AI-powered insights...');
+          const aiAnalyzer = new AIAnalyzer(copilotService);
+          aiInsights = await aiAnalyzer.generateInsights(analysisResult);
 
-        const _patterns = await aiAnalyzer.analyzePatterns(analysisResult.issues);
-        const recommendations = await aiAnalyzer.generateRecommendations(analysisResult.issues);
+          const _patterns = await aiAnalyzer.analyzePatterns(analysisResult.issues);
+          const recommendations = await aiAnalyzer.generateRecommendations(analysisResult.issues);
 
-        // Add AI recommendations to result
-        analysisResult.recommendations.push(...recommendations);
-
-        spinner.succeed('AI insights generated');
+          analysisResult.recommendations.push(...recommendations);
+          spinner.succeed('AI insights generated');
+        }
+      } finally {
+        await copilotService.dispose();
       }
 
       // Display results

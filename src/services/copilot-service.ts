@@ -1,191 +1,226 @@
-/**
- * GitHub Copilot SDK Integration
- *
- * This service integrates with the GitHub Copilot SDK to provide
- * AI-powered analysis and recommendations for security issues.
- *
- * Note: The Copilot SDK is in technical preview and requires
- * GitHub Copilot CLI to be installed and authenticated.
- */
-
+import { CopilotClient } from '@github/copilot-sdk';
+import type { AssistantMessageEvent } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
+type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export interface AIOutput {
+  insights: string;
+  risk_level: RiskLevel;
+  action_items: string[];
+}
+
+const RISK_LEVELS = new Set<RiskLevel>(['low', 'medium', 'high', 'critical']);
+
+function isRiskLevel(value: unknown): value is RiskLevel {
+  return typeof value === 'string' && RISK_LEVELS.has(value as RiskLevel);
+}
+
+function parseAIResponse(content: string): AIOutput | null {
+  // Strip markdown fences if the model wraps output in ```json ... ```
+  const stripped = content.replace(/```(?:json)?\n?/g, '').trim();
+  const match = stripped.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(match[0]);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+
+    const obj = parsed as Record<string, unknown>;
+    const risk_level = isRiskLevel(obj.risk_level) ? obj.risk_level : 'low';
+    const insights = typeof obj.insights === 'string' ? obj.insights : '';
+    const action_items = Array.isArray(obj.action_items)
+      ? obj.action_items.filter((i): i is string => typeof i === 'string')
+      : [];
+
+    return { insights, risk_level, action_items };
+  } catch {
+    return null;
+  }
+}
+
+function buildAnalysisPrompt(result: AnalysisResult): string {
+  const summary = {
+    statistics: result.statistics,
+    issue_count_by_type: result.issues.reduce<Record<string, number>>((acc, i) => {
+      acc[i.type] = (acc[i.type] ?? 0) + 1;
+      return acc;
+    }, {}),
+    issue_count_by_severity: result.issues.reduce<Record<string, number>>((acc, i) => {
+      acc[i.severity] = (acc[i.severity] ?? 0) + 1;
+      return acc;
+    }, {}),
+    sample_issues: result.issues.slice(0, 5),
+  };
+
+  return `You are a GitHub security analyst. Analyze the following security findings for a GitHub organization.
+Respond with ONLY valid JSON — no markdown fences, no extra text.
+
+${JSON.stringify(summary, null, 2)}
+
+Respond with exactly this structure:
+{
+  "risk_level": "critical" | "high" | "medium" | "low",
+  "insights": "2-4 sentence summary of the key security concerns and patterns observed",
+  "action_items": ["highest priority action", "second action", "...up to 6 items total"]
+}`;
+}
+
 export class CopilotService {
-  private isAvailable = false;
+  private client: CopilotClient | null = null;
+  private initPromise: Promise<boolean> | null = null;
 
-  constructor() {
-    // Check if Copilot SDK is available
-    this.checkAvailability();
-  }
-
-  private async checkAvailability(): Promise<void> {
+  private async init(): Promise<boolean> {
     try {
-      // In a full implementation, this would initialize the Copilot SDK client
-      // For now, we'll use structured analysis
-      this.isAvailable = false;
-    } catch (_error) {
-      this.isAvailable = false;
+      this.client = new CopilotClient();
+      await this.client.start();
+      return true;
+    } catch {
+      this.client = null;
+      return false;
     }
   }
 
-  /**
-   * Use Copilot AI to analyze security issues and provide insights
-   */
-  async analyzeWithAI(analysisResult: AnalysisResult): Promise<{
-    insights: string;
-    risk_level: 'low' | 'medium' | 'high' | 'critical';
-    action_items: string[];
-  }> {
-    if (!this.isAvailable) {
+  private ensureClient(): Promise<boolean> {
+    if (!this.initPromise) {
+      this.initPromise = this.init();
+    }
+    return this.initPromise;
+  }
+
+  async analyzeWithAI(analysisResult: AnalysisResult): Promise<AIOutput> {
+    const available = await this.ensureClient();
+    if (!available || !this.client) {
       return this.fallbackAnalysis(analysisResult);
     }
 
+    const session = await this.client.createSession({ model: 'claude-sonnet-4-5' });
     try {
-      // In a full implementation with Copilot SDK:
-      //
-      // import { CopilotClient } from '@github/copilot-sdk';
-      //
-      // const client = new CopilotClient();
-      // const session = await client.createSession();
-      //
-      // const prompt = `Analyze the following GitHub security findings and provide insights:
-      //
-      // ${JSON.stringify(analysisResult, null, 2)}
-      //
-      // Please provide:
-      // 1. Key security risks
-      // 2. Risk level (low/medium/high/critical)
-      // 3. Actionable recommendations
-      // 4. Patterns and trends`;
-      //
-      // const response = await session.send(prompt);
-      // const aiAnalysis = response.message;
-      //
-      // await session.close();
+      const event: AssistantMessageEvent | undefined = await session.sendAndWait({
+        prompt: buildAnalysisPrompt(analysisResult),
+      });
 
+      if (!event) return this.fallbackAnalysis(analysisResult);
+
+      const parsed = parseAIResponse(event.data.content);
+      return parsed ?? this.fallbackAnalysis(analysisResult);
+    } catch {
       return this.fallbackAnalysis(analysisResult);
-    } catch (error) {
-      console.error('Error using Copilot AI:', error);
-      return this.fallbackAnalysis(analysisResult);
+    } finally {
+      await session.destroy().catch(() => {});
     }
   }
 
-  /**
-   * Fallback analysis when Copilot SDK is not available
-   */
-  private fallbackAnalysis(analysisResult: AnalysisResult): {
-    insights: string;
-    risk_level: 'low' | 'medium' | 'high' | 'critical';
-    action_items: string[];
-  } {
+  async explainIssue(issue: SecurityIssue): Promise<string> {
+    const available = await this.ensureClient();
+    if (!available || !this.client) {
+      return this.fallbackExplain(issue);
+    }
+
+    const session = await this.client.createSession({ model: 'claude-sonnet-4-5' });
+    try {
+      const prompt = `Explain this GitHub security issue in 2-3 sentences for a developer. Be specific and actionable.\n\n${JSON.stringify(issue, null, 2)}`;
+      const event: AssistantMessageEvent | undefined = await session.sendAndWait({ prompt });
+      return event?.data.content ?? this.fallbackExplain(issue);
+    } catch {
+      return this.fallbackExplain(issue);
+    } finally {
+      await session.destroy().catch(() => {});
+    }
+  }
+
+  async dispose(): Promise<void> {
+    if (this.client) {
+      await this.client.stop().catch(() => {});
+      this.client = null;
+      this.initPromise = null;
+    }
+  }
+
+  // ── Fallback analysis (no SDK required) ──────────────────────────────────
+
+  private fallbackAnalysis(analysisResult: AnalysisResult): AIOutput {
     const { issues, statistics } = analysisResult;
 
-    // Calculate risk level
     const criticalCount = issues.filter((i) => i.severity === 'critical').length;
     const highCount = issues.filter((i) => i.severity === 'high').length;
 
-    let risk_level: 'low' | 'medium' | 'high' | 'critical' = 'low';
-    if (criticalCount > 0) {
-      risk_level = 'critical';
-    } else if (highCount > 3) {
-      risk_level = 'high';
-    } else if (issues.length > 10) {
-      risk_level = 'medium';
-    }
+    let risk_level: RiskLevel = 'low';
+    if (criticalCount > 0) risk_level = 'critical';
+    else if (highCount > 3) risk_level = 'high';
+    else if (issues.length > 10) risk_level = 'medium';
 
-    // Generate insights
-    const insights = this.generateInsights(analysisResult);
-
-    // Generate action items
-    const action_items = this.generateActionItems(issues, statistics);
-
-    return { insights, risk_level, action_items };
+    return {
+      insights: this.buildFallbackInsights(analysisResult),
+      risk_level,
+      action_items: this.buildFallbackActions(issues, statistics),
+    };
   }
 
-  private generateInsights(analysisResult: AnalysisResult): string {
+  private buildFallbackInsights(analysisResult: AnalysisResult): string {
     const { statistics, issues } = analysisResult;
-    const insights: string[] = [];
+    const lines: string[] = ['Security Analysis Summary:\n'];
 
-    insights.push('Security Analysis Summary:\n');
-
-    // Repository health
-    const actionsDisabledRate =
-      (statistics.repos_with_disabled_actions / statistics.total_repos) * 100;
-    if (actionsDisabledRate > 20) {
-      insights.push(
-        `⚠️ ${actionsDisabledRate.toFixed(0)}% of repositories have Actions disabled, limiting automated security scanning capabilities.`
+    const disabledRate = (statistics.repos_with_disabled_actions / statistics.total_repos) * 100;
+    if (disabledRate > 20) {
+      lines.push(
+        `⚠️ ${disabledRate.toFixed(0)}% of repositories have Actions disabled, limiting automated security scanning.`
       );
     }
 
-    // Self-merge analysis
     if (statistics.self_merges > 0) {
-      const selfMergeRate = (statistics.self_merges / statistics.total_prs) * 100;
-      insights.push(
-        `🔀 ${selfMergeRate.toFixed(1)}% of PRs were self-merged, indicating potential gaps in code review processes.`
+      const rate = (statistics.self_merges / statistics.total_prs) * 100;
+      lines.push(
+        `🔀 ${rate.toFixed(1)}% of PRs were self-merged, indicating potential gaps in code review processes.`
       );
-
-      const securitySelfMerges = issues.filter((i) => i.type === 'unreviewed-security-pr').length;
-
-      if (securitySelfMerges > 0) {
-        insights.push(
-          `🚨 ${securitySelfMerges} security-related PRs were merged without external review - this is a critical security risk!`
+      const unreviewed = issues.filter((i) => i.type === 'unreviewed-security-pr').length;
+      if (unreviewed > 0) {
+        lines.push(
+          `🚨 ${unreviewed} security-related PRs were merged without external review - this is a critical security risk!`
         );
       }
     }
 
-    // Security PR trends
     if (statistics.security_prs > 0) {
-      insights.push(
-        `🔒 ${statistics.security_prs} security-related PRs identified, suggesting active dependency management.`
-      );
+      lines.push(`🔒 ${statistics.security_prs} security-related PRs identified.`);
     }
 
-    // Pattern detection
     const reposWithIssues = new Set(issues.map((i) => i.repository));
-    const issueConcentration = (reposWithIssues.size / statistics.total_repos) * 100;
-
-    insights.push(
-      `\n📊 Issues are concentrated in ${reposWithIssues.size} repositories ` +
-        `(${issueConcentration.toFixed(0)}% of total).`
+    lines.push(
+      `\n📊 Issues concentrated in ${reposWithIssues.size} of ${statistics.total_repos} repositories.`
     );
 
-    return insights.join('\n');
+    return lines.join('\n');
   }
 
-  private generateActionItems(
+  private buildFallbackActions(
     issues: SecurityIssue[],
-    statistics: { [key: string]: number }
+    statistics: Record<string, number>
   ): string[] {
     const actions: string[] = [];
 
-    // Critical actions
     const criticalIssues = issues.filter((i) => i.severity === 'critical');
     if (criticalIssues.length > 0) {
       actions.push(
         `[URGENT] Review and address ${criticalIssues.length} critical security issues immediately`
       );
-
-      const unreviewedSecurity = issues.filter((i) => i.type === 'unreviewed-security-pr');
-      if (unreviewedSecurity.length > 0) {
+      if (issues.some((i) => i.type === 'unreviewed-security-pr')) {
         actions.push(
           '[URGENT] Implement mandatory review requirements for security-related changes'
         );
       }
     }
 
-    // Self-merge actions
     if (statistics.self_merges > 0) {
       actions.push('Enable branch protection rules requiring at least one approving review');
     }
 
-    // Actions disabled
     if (statistics.repos_with_disabled_actions > 0) {
       actions.push(
         `Enable GitHub Actions on ${statistics.repos_with_disabled_actions} repositories for automated security scanning`
       );
     }
 
-    // General security hardening
     actions.push(
       'Consider implementing CODEOWNERS for critical paths',
       'Set up automated security scanning with CodeQL or Snyk',
@@ -195,26 +230,18 @@ export class CopilotService {
     return actions;
   }
 
-  /**
-   * Generate natural language description of a security issue
-   */
-  async explainIssue(issue: SecurityIssue): Promise<string> {
-    const explanations: Record<SecurityIssue['type'], (i: SecurityIssue) => string> = {
+  private fallbackExplain(issue: SecurityIssue): string {
+    const map: Record<SecurityIssue['type'], (i: SecurityIssue) => string> = {
       'self-merge': (i) =>
-        `This PR was merged by ${i.details.author} who was also the author. Self-merges bypass the code review process and can introduce security vulnerabilities. ${i.severity === 'high' ? 'This is particularly concerning as it involves security-related changes.' : ''}`,
-
+        `This PR was merged by ${i.details.author} who was also its author, bypassing code review. ${i.severity === 'high' ? 'This is particularly concerning as it involves security-related changes.' : ''}`,
       'security-pr': (i) =>
-        `This PR contains security-related changes (${i.details.title}). Security changes require careful review to ensure they don't introduce new vulnerabilities. ${i.details.was_self_merged ? 'Additionally, this PR was self-merged without external review.' : ''}`,
-
+        `This PR contains security-related changes (${i.details.title}). ${i.details.was_self_merged ? 'It was self-merged without external review.' : 'Ensure it was thoroughly reviewed.'}`,
       'disabled-actions': (i) =>
-        `GitHub Actions is disabled on ${i.details.repo_name}. This prevents automated security scanning, testing, and CI/CD workflows that help catch issues early.`,
-
+        `GitHub Actions is disabled on ${i.details.repo_name}, preventing automated security scanning and CI/CD workflows.`,
       'paused-workflow': (i) =>
-        `The workflow "${i.details.workflow_name}" has been automatically paused due to repository inactivity. ${i.details.reason || 'GitHub disables scheduled workflows after 60 days of no repository activity.'}`,
-
+        `The workflow "${i.details.workflow_name}" was automatically paused after 60 days of repository inactivity.`,
       'disabled-workflow': (i) =>
-        `The workflow "${i.details.workflow_name}" has been manually disabled. Consider re-enabling if this workflow is still needed for automated testing or deployment.`,
-
+        `The workflow "${i.details.workflow_name}" has been manually disabled. Re-enable it if still needed.`,
       'unreviewed-security-pr': (i) =>
         `Critical: This security-related PR (${i.details.title}) was merged by its author without external review. Security changes should always be reviewed by security-knowledgeable team members to prevent introducing vulnerabilities.`,
 
@@ -227,8 +254,6 @@ export class CopilotService {
       'security-pr-volume': (i) =>
         `High volume of security-related PRs detected (${i.details.security_pr_count} PRs). This may indicate an ongoing security incident or a need for additional security review resources.`,
     };
-
-    const explanation = explanations[issue.type]?.(issue) || issue.description;
-    return explanation;
+    return map[issue.type]?.(issue) ?? issue.description;
   }
 }
