@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { CopilotService } from '../services/copilot-service';
-import type { AnalysisResult, SecurityIssue } from '../types/index';
+import { CopilotService } from '../services/copilot-service.js';
+import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 // ── SDK mock setup ────────────────────────────────────────────────────────────
 
