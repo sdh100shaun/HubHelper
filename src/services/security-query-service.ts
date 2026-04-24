@@ -42,7 +42,7 @@ export class SecurityQueryService {
 
     // Clear from environment after reading to prevent leaks
     if (!apiKey && process.env.ANTHROPIC_API_KEY) {
-      process.env.ANTHROPIC_API_KEY = undefined;
+      Reflect.deleteProperty(process.env, 'ANTHROPIC_API_KEY');
     }
   }
 
@@ -99,8 +99,11 @@ export class SecurityQueryService {
     await this.checkRateLimit();
 
     try {
-      // Prepare context for Claude
-      const context = this.prepareContext(analysisData);
+      // Reuse cached context when the analysis data hasn't changed (e.g. follow-ups)
+      const context =
+        this.cachedContext && this.cachedAnalysis === analysisData
+          ? this.cachedContext
+          : this.prepareContext(analysisData);
 
       // Cache analysis for follow-up questions
       this.cachedAnalysis = analysisData;
@@ -147,9 +150,10 @@ export class SecurityQueryService {
       });
 
       try {
-        // Create timeout promise
+        // Create timeout promise with clearable handle
+        let timeoutHandle: ReturnType<typeof setTimeout>;
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(
+          timeoutHandle = setTimeout(
             () => reject(new Error('Query timeout: No response after 30 seconds')),
             this.QUERY_TIMEOUT_MS
           );
@@ -161,6 +165,8 @@ export class SecurityQueryService {
           timeoutPromise,
         ]);
 
+        clearTimeout(timeoutHandle!);
+
         if (!response) {
           throw new Error('No response received from Claude');
         }
@@ -169,7 +175,7 @@ export class SecurityQueryService {
         return this.parseResponse(response.data.content, analysisData, question);
       } finally {
         // Clean up session
-        await session.disconnect();
+        await session.destroy();
       }
     } catch (error) {
       if (error instanceof Error) {

@@ -23,7 +23,7 @@ export class CopilotService {
       // In a full implementation, this would initialize the Copilot SDK client
       // For now, we'll use structured analysis
       this.isAvailable = false;
-    } catch (error) {
+    } catch (_error) {
       this.isAvailable = false;
     }
   }
@@ -223,6 +223,9 @@ export class CopilotService {
 
       repeated_action_failure: (i) =>
         `Critical: The workflow "${i.details.workflow_name}" has failed ${i.details.failure_count} times recently. Repeated failures suggest a persistent issue that is preventing automated security scans, tests, or deployments from completing successfully.`,
+
+      'security-pr-volume': (i) =>
+        `High volume of security-related PRs detected (${i.details.security_pr_count} PRs). This may indicate an ongoing security incident or a need for additional security review resources.`,
     };
 
     const explanation = explanations[issue.type]?.(issue) || issue.description;

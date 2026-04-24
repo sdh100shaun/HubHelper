@@ -7,4 +7,5 @@ coverage/
 .vscode/
 .idea/
 _site/
+.gh-lists/
 .claude/

@@ -124,7 +124,8 @@ function resolveControl(control: Control, tailoring?: ControlTailoring): Resolve
   // Resolve parameters
   const parameters = resolveParameters(
     control.parameter || [],
-    tailoring?.['parameter-values'] || {}
+    tailoring?.['parameter-values'] || {},
+    control.id
   );
 
   // Determine severity (tailoring > control default)
@@ -150,7 +151,8 @@ function resolveControl(control: Control, tailoring?: ControlTailoring): Resolve
  */
 function resolveParameters(
   parameterDefs: Parameter[],
-  overrides: Record<string, unknown>
+  overrides: Record<string, unknown>,
+  controlId = '<unknown>'
 ): ResolvedParameter[] {
   const resolved: ResolvedParameter[] = [];
 
@@ -165,7 +167,7 @@ function resolveParameters(
     } else if (param.required) {
       throw new ParameterValidationError(
         `Required parameter '${param.id}' has no value and no default`,
-        '<unknown>', // Control ID will be added by caller
+        controlId,
         param.id
       );
     } else {
@@ -303,19 +305,25 @@ function topologicalSort(
     }
   }
 
-  // Kahn's algorithm for topological sort
+  // Topological sort using DFS with cycle detection
   const sorted: ResolvedControl[] = [];
   const visited = new Set<string>();
+  const visiting = new Set<string>();
   const controlMap = new Map(resolvedControls.map((c) => [c.id, c]));
 
   function visit(controlId: string): void {
     if (visited.has(controlId)) return;
+    if (visiting.has(controlId)) {
+      throw new PolicyResolutionError(`Dependency cycle detected involving control '${controlId}'`);
+    }
 
+    visiting.add(controlId);
     const deps = dependencyMap.get(controlId) || [];
     for (const dep of deps) {
       visit(dep);
     }
 
+    visiting.delete(controlId);
     visited.add(controlId);
     const control = controlMap.get(controlId);
     if (control) {

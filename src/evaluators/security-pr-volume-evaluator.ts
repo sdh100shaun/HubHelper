@@ -70,7 +70,7 @@ export class SecurityPRVolumeEvaluator extends BaseEvaluator {
         .join(', ');
 
       issues.push({
-        type: 'security-pr',
+        type: 'security-pr-volume',
         severity,
         repository: 'organization-wide',
         description: `High volume of security PRs detected (${securityPRCount} PRs). ${recommendation}`,
