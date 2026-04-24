@@ -105,7 +105,7 @@ test.describe('HTML Report Security', () => {
     const reportPath = await generateTestReport({
       issues: [
         {
-          type: 'test',
+          type: 'self-merge',
           severity: 'low',
           repository: 'test/repo',
           description: 'Test issue',
@@ -135,7 +135,7 @@ test.describe('HTML Report Security', () => {
     const reportPath = await generateTestReport({
       issues: [
         {
-          type: 'test',
+          type: 'self-merge',
           severity: 'low',
           repository: '<script>alert("repo")</script>',
           description: 'Test issue',
@@ -157,7 +157,7 @@ test.describe('HTML Report Security', () => {
     const reportPath = await generateTestReport({
       issues: [
         {
-          type: 'test',
+          type: 'self-merge',
           severity: 'low',
           repository: 'test/repo',
           description: '<img src=x onerror=alert(1)>',
@@ -192,7 +192,7 @@ test.describe('HTML Report Security', () => {
     const reportPath = await generateTestReport({
       issues: [
         {
-          type: 'test',
+          type: 'self-merge',
           severity: 'low',
           repository: 'test/repo',
           description: 'Test with <, >, &, ", and \' characters',
