@@ -362,7 +362,7 @@ Add to your CI pipeline (e.g., GitHub Actions):
 
 **Error**: "Bad credentials" or "Not Found"
 
-**Solution**: Ensure your token has the required scopes (`repo`, `read:org`, `admin:org`). Regenerate if necessary.
+**Solution**: Ensure your token has the minimum required read-only access for the command you're running. Prefer a fine-grained token with read-only repository access, and add read-only organization access only if needed to read organization membership or metadata. For classic tokens, use `repo` only when you need access to private repositories and `read:org` only when organization read access is required. `admin:org` is not required for normal read-only analysis. Regenerate the token if necessary.
 
 ### Rate Limiting
 
