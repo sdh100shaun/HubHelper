@@ -267,7 +267,7 @@ export class GitHubFetcher {
               | null,
             created_at: run.created_at,
             updated_at: run.updated_at,
-            repository: repo.name,
+            repository: repo.full_name,
             workflow_id: run.workflow_id,
             workflow_name: run.name || 'Unknown Workflow',
             run_number: run.run_number,
