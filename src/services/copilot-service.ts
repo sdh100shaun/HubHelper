@@ -23,7 +23,7 @@ export class CopilotService {
       // In a full implementation, this would initialize the Copilot SDK client
       // For now, we'll use structured analysis
       this.isAvailable = false;
-    } catch (error) {
+    } catch (_error) {
       this.isAvailable = false;
     }
   }

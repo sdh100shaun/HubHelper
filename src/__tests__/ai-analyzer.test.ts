@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import { AIAnalyzer } from '../analyzers/ai-analyzer';
 import type { AnalysisResult, SecurityIssue } from '../types/index';
 

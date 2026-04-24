@@ -42,7 +42,7 @@ export class GitHubFetcher {
               repo: repo.name,
             });
           actionsEnabled = actionsData.enabled;
-        } catch (error) {
+        } catch (_error) {
           // If we get a 404, Actions might not be enabled
           actionsEnabled = false;
         }
@@ -57,7 +57,7 @@ export class GitHubFetcher {
           securityEnabled =
             securityData.security_and_analysis?.secret_scanning?.status === 'enabled' ||
             securityData.security_and_analysis?.dependabot_security_updates?.status === 'enabled';
-        } catch (error) {
+        } catch (_error) {
           securityEnabled = false;
         }
 
@@ -74,6 +74,8 @@ export class GitHubFetcher {
           actions_enabled: actionsEnabled,
           security_enabled: securityEnabled,
           workflows,
+          open_issues_count: repo.open_issues_count ?? undefined,
+          updated_at: repo.updated_at ?? undefined,
         });
       }
 
@@ -111,7 +113,7 @@ export class GitHubFetcher {
           is_scheduled: isScheduled,
         };
       });
-    } catch (error) {
+    } catch (_error) {
       // If we can't fetch workflows, return empty array
       return [];
     }
