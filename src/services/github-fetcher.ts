@@ -249,7 +249,7 @@ export class GitHubFetcher {
       try {
         const { data: runs } = await this.octokit.actions.listWorkflowRunsForRepo({
           owner: this.org,
-          repo: repo.name,
+          repo: repo.name.includes('/') ? repo.name.split('/')[1] : repo.name,
           status: 'completed',
           per_page: 100,
         });

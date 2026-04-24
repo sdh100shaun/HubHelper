@@ -1,0 +1,321 @@
+metadata:
+  title: HubHelper Security Control Catalog
+  version: "1.0.0"
+  last-modified: "2026-04-21T00:00:00Z"
+  oscal-version: "1.1.2"
+
+controls:
+  # ========================================================================
+  # HH-GH-001: Self-Merged Pull Requests
+  # ========================================================================
+  - id: HH-GH-001
+    statement: >
+      Pull requests SHOULD be reviewed by another team member before merging.
+      Self-merged pull requests bypass code review processes and increase risk
+      of introducing security vulnerabilities or defects.
+    family: Code Review
+    evaluator:
+      kind: github.pull-request
+      detector: self-merge
+      depends-on:
+        - HH-GH-003  # Security PR classifier
+    parameter:
+      - id: severity_if_security
+        label: Severity for security-related self-merges
+        type: severity
+        default: high
+        values:
+          - low
+          - medium
+          - high
+          - critical
+      - id: severity_default
+        label: Severity for non-security self-merges
+        type: severity
+        default: medium
+        values:
+          - low
+          - medium
+          - high
+          - critical
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - CM-3  # Configuration Change Control
+        - SA-11 # Developer Testing and Evaluation
+      CIS-Controls:
+        - "16.2" # Establish and Maintain a Secure Application Development Process
+
+  # ========================================================================
+  # HH-GH-002: Unreviewed Security Pull Requests
+  # ========================================================================
+  - id: HH-GH-002
+    statement: >
+      Security-related pull requests MUST be reviewed by a security-knowledgeable
+      team member before merging. Self-merging security changes is a critical
+      security risk that can introduce vulnerabilities.
+    family: Security Review
+    evaluator:
+      kind: github.pull-request
+      detector: unreviewed-security-pr
+      depends-on:
+        - HH-GH-003  # Security PR classifier
+    parameter:
+      - id: file_limit
+        label: Maximum number of files to display in details
+        type: number
+        default: 10
+    default-severity: critical
+    mappings:
+      NIST-800-53:
+        - SA-11 # Developer Testing and Evaluation
+        - CA-2  # Security Assessments
+      CIS-Controls:
+        - "16.2" # Establish and Maintain a Secure Application Development Process
+
+  # ========================================================================
+  # HH-GH-003: Security PR Classification (Classifier)
+  # ========================================================================
+  - id: HH-GH-003
+    statement: >
+      Identify pull requests that contain security-related changes based on
+      keywords, labels, and file patterns. This classifier is used by other
+      controls to determine security relevance.
+    family: Classification
+    evaluator:
+      kind: classifier
+      detector: security-pr-classifier
+    parameter:
+      - id: keywords
+        label: Security keywords to match in PR title/body
+        type: string-array
+        item-type: string
+        default:
+          - security
+          - vulnerability
+          - cve
+          - xss
+          - sql injection
+          - csrf
+          - auth
+          - authentication
+          - authorization
+          - encrypt
+          - secret
+          - token
+          - credential
+          - dependabot
+          - snyk
+          - password
+          - privilege
+          - permission
+      - id: labels
+        label: Security labels to match
+        type: string-array
+        item-type: string
+        default:
+          - security
+          - vulnerability
+          - dependabot
+      - id: file_patterns
+        label: File paths that indicate security changes
+        type: string-array
+        item-type: string
+        default:
+          - .github/workflows/
+          - security.md
+          - Dockerfile
+          - .env
+      - id: keyword_severity_map
+        label: Keyword-based severity mapping
+        type: severity-map
+        default:
+          - keywords:
+              - critical
+              - cve
+            severity: critical
+          - keywords:
+              - high
+              - vulnerability
+            severity: high
+          - keywords:
+              - dependabot
+            severity: low
+      - id: base_severity
+        label: Default severity for security PRs
+        type: severity
+        default: medium
+      - id: file_limit
+        label: Maximum number of files to display
+        type: number
+        default: 10
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - SA-11 # Developer Testing and Evaluation
+      CIS-Controls:
+        - "2.3" # Address Unauthorized Software
+
+  # ========================================================================
+  # HH-GH-004: Disabled GitHub Actions
+  # ========================================================================
+  - id: HH-GH-004
+    statement: >
+      GitHub Actions SHOULD be enabled on repositories to support automated
+      testing, security scanning, and CI/CD workflows. Disabled Actions prevent
+      automated security controls from running.
+    family: Automation
+    evaluator:
+      kind: github.repository
+      detector: disabled-actions
+    parameter: []
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - CA-2 # Security Assessments
+        - SA-11 # Developer Testing and Evaluation
+      CIS-Controls:
+        - "16.3" # Perform Root Cause Analysis on Security Vulnerabilities
+
+  # ========================================================================
+  # HH-GH-005: Paused Workflows (Inactivity)
+  # ========================================================================
+  - id: HH-GH-005
+    statement: >
+      Workflows paused due to repository inactivity should be reviewed and
+      re-enabled if still needed. Paused scheduled workflows may indicate
+      abandoned security scanning or monitoring processes.
+    family: Automation
+    evaluator:
+      kind: github.workflow
+      detector: paused-workflow
+    parameter:
+      - id: workflow_state
+        label: Workflow state to detect
+        type: string
+        default: disabled_inactivity
+        values:
+          - disabled_inactivity
+      - id: severity_if_scheduled
+        label: Severity for scheduled workflows
+        type: severity
+        default: medium
+      - id: severity_default
+        label: Severity for non-scheduled workflows
+        type: severity
+        default: low
+      - id: inactivity_period_days
+        label: Inactivity period before auto-pause
+        type: number
+        default: 60
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - CA-7 # Continuous Monitoring
+      CIS-Controls:
+        - "8.2" # Collect Audit Logs
+
+  # ========================================================================
+  # HH-GH-006: Manually Disabled Workflows
+  # ========================================================================
+  - id: HH-GH-006
+    statement: >
+      Manually disabled workflows should be reviewed to ensure they are
+      intentionally disabled and not needed for automated testing or
+      deployment processes.
+    family: Automation
+    evaluator:
+      kind: github.workflow
+      detector: disabled-workflow
+    parameter:
+      - id: workflow_state
+        label: Workflow state to detect
+        type: string
+        default: disabled_manually
+        values:
+          - disabled_manually
+    default-severity: low
+    mappings:
+      NIST-800-53:
+        - CA-7 # Continuous Monitoring
+      CIS-Controls:
+        - "8.2" # Collect Audit Logs
+
+  # ========================================================================
+  # HH-GH-007: Repeated Action Failures
+  # ========================================================================
+  - id: HH-GH-007
+    statement: >
+      Workflows that fail repeatedly indicate persistent issues that prevent
+      automated security scans, tests, or deployments from completing. These
+      should be investigated and resolved promptly.
+    family: Automation
+    evaluator:
+      kind: github.workflow
+      detector: repeated-action-failure
+    parameter:
+      - id: threshold
+        label: Number of consecutive failures to trigger alert
+        type: number
+        default: 3
+      - id: recent_limit
+        label: Number of recent runs to display
+        type: number
+        default: 5
+    default-severity: high
+    mappings:
+      NIST-800-53:
+        - SI-4 # System Monitoring
+        - CA-7 # Continuous Monitoring
+      CIS-Controls:
+        - "8.2" # Collect Audit Logs
+        - "8.11" # Conduct Audit Log Reviews
+
+  # ========================================================================
+  # HH-GH-008: Single Action Failures
+  # ========================================================================
+  - id: HH-GH-008
+    statement: >
+      Individual workflow failures may indicate broken tests, build issues,
+      or security scanning failures that need investigation.
+    family: Automation
+    evaluator:
+      kind: github.workflow
+      detector: action-failure
+    parameter: []
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - SI-4 # System Monitoring
+      CIS-Controls:
+        - "8.2" # Collect Audit Logs
+
+  # ========================================================================
+  # HH-GH-009: Security PR Volume Recommendation (Meta)
+  # ========================================================================
+  - id: HH-GH-009
+    statement: >
+      High volume of security-related pull requests may indicate dependency
+      management issues. Consider implementing automated dependency update
+      tools like Dependabot.
+    family: Recommendations
+    evaluator:
+      kind: meta
+      detector: security-pr-volume
+      depends-on:
+        - HH-GH-003  # Security PR classifier
+    parameter:
+      - id: threshold
+        label: Number of security PRs to trigger recommendation
+        type: number
+        default: 5
+      - id: recommendation
+        label: Recommendation text
+        type: string
+        default: Consider implementing automated dependency updates with Dependabot
+    default-severity: low
+    mappings:
+      NIST-800-53:
+        - SI-2 # Flaw Remediation
+      CIS-Controls:
+        - "7.2" # Establish and Maintain a Remediation Process

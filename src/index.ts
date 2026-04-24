@@ -5,9 +5,13 @@ import { config } from 'dotenv';
 import ora from 'ora';
 import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
+import { PolicyEngine } from './policy/engine.js';
+import type { PolicyEngineResult } from './policy/engine.js';
+import { ComplianceReporter } from './reporters/compliance-reporter.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
+import { SarifReporter } from './reporters/sarif-reporter.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
@@ -35,8 +39,17 @@ program
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-d, --days <number>', 'Number of days to look back', '30')
+  .option('--profile <file>', 'Policy profile to use (default: policies/default.yaml)')
+  .option('--legacy', 'Use legacy hardcoded analysis (deprecated)')
   .option('--json <file>', 'Save results as JSON to file')
   .option('--html <file>', 'Save results as HTML to file')
+  .option('--sarif <file>', 'Save results as SARIF for GitHub Code Scanning')
+  .option('--compliance <file>', 'Save compliance framework report (JSON)')
+  .option(
+    '--compliance-format <format>',
+    'Compliance report format: json, text, markdown, html',
+    'json'
+  )
   .option('--no-ai', 'Disable AI-powered insights')
   .action(async (options) => {
     const consoleReporter = new ConsoleReporter();
@@ -87,11 +100,68 @@ program
       const pullRequests = await fetcher.getRecentPullRequests(days);
       spinner.succeed(`Fetched ${pullRequests.length} pull requests`);
 
+      spinner.start('Fetching workflow runs...');
+      const workflowRuns = await fetcher.getRecentWorkflowRuns(days);
+      spinner.succeed(`Fetched ${workflowRuns.length} workflow runs`);
+
       // Analyze data
-      spinner.start('Analyzing security issues...');
-      const analyzer = new SecurityAnalyzer();
-      const analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests);
-      spinner.succeed('Analysis complete');
+      let analysisResult: AnalysisResult;
+      let engineResultForSarif: PolicyEngineResult | undefined;
+
+      if (options.legacy) {
+        // Legacy hardcoded analysis
+        spinner.start('Analyzing security issues (legacy mode)...');
+        const analyzer = new SecurityAnalyzer();
+        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
+        spinner.succeed('Analysis complete (legacy mode)');
+      } else {
+        // Policy-driven analysis (default)
+        const profilePath = options.profile || 'policies/default.yaml';
+
+        spinner.start(`Loading policy: ${profilePath}...`);
+        const policyEngine = new PolicyEngine();
+
+        try {
+          await policyEngine.loadPolicy(profilePath);
+          spinner.succeed(`Policy loaded: ${profilePath}`);
+        } catch (error) {
+          spinner.fail('Failed to load policy');
+          throw error;
+        }
+
+        spinner.start('Analyzing with policy-driven evaluation...');
+        const engineResult = await policyEngine.evaluate(repositories, pullRequests, workflowRuns);
+        spinner.succeed('Policy-driven analysis complete');
+
+        // Store for SARIF reporter
+        engineResultForSarif = engineResult;
+
+        // Convert PolicyEngineResult to AnalysisResult for compatibility
+        analysisResult = {
+          summary: `Found ${engineResult.issues.length} security issues across ${repositories.length} repositories`,
+          issues: engineResult.issues,
+          recommendations: [],
+          statistics: {
+            total_repos: repositories.length,
+            total_prs: pullRequests.length,
+            self_merges: engineResult.issues.filter((i) => i.type === 'self-merge').length,
+            security_prs: engineResult.issues.filter((i) => i.type === 'security-pr').length,
+            repos_with_disabled_actions: engineResult.issues.filter(
+              (i) => i.type === 'disabled-actions'
+            ).length,
+            paused_workflows: engineResult.issues.filter((i) => i.type === 'paused-workflow')
+              .length,
+            disabled_workflows: engineResult.issues.filter((i) => i.type === 'disabled-workflow')
+              .length,
+          },
+        };
+
+        consoleReporter.printInfo(`\nPolicy: ${engineResult.policy.metadata.profileTitle}`);
+        consoleReporter.printInfo(
+          `Controls evaluated: ${engineResult.statistics.controlsEvaluated}`
+        );
+        consoleReporter.printInfo(`Execution time: ${engineResult.statistics.executionTimeMs}ms\n`);
+      }
 
       // Generate AI insights
       let aiInsights: string | undefined;
@@ -151,6 +221,86 @@ program
             );
           } else {
             throw error;
+          }
+        }
+      }
+
+      if (options.sarif) {
+        if (!engineResultForSarif) {
+          consoleReporter.printError(
+            new Error(
+              'SARIF export is not available in legacy mode. Use policy-driven analysis (default).'
+            )
+          );
+        } else {
+          try {
+            const safePath = validateFilePath(options.sarif, {
+              allowedExtensions: ['.sarif'],
+            });
+            const sarifReporter = new SarifReporter();
+            sarifReporter.saveToFile(engineResultForSarif, safePath);
+            consoleReporter.printSuccess(`SARIF report saved to ${safePath}`);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('path traversal')) {
+              consoleReporter.printError(
+                new Error(
+                  `Security error: ${error.message}\nFor security, files can only be saved in the current directory or subdirectories.`
+                )
+              );
+            } else {
+              throw error;
+            }
+          }
+        }
+      }
+
+      if (options.compliance) {
+        if (!engineResultForSarif) {
+          consoleReporter.printError(
+            new Error(
+              'Compliance reporting is not available in legacy mode. Use policy-driven analysis (default).'
+            )
+          );
+        } else {
+          try {
+            const format = options.complianceFormat || 'json';
+            const validFormats = ['json', 'text', 'markdown', 'html'];
+
+            if (!validFormats.includes(format)) {
+              consoleReporter.printError(
+                new Error(`Invalid compliance format. Must be one of: ${validFormats.join(', ')}`)
+              );
+            } else {
+              // Determine file extension based on format
+              const extensionMap: Record<string, string[]> = {
+                json: ['.json'],
+                text: ['.txt'],
+                markdown: ['.md'],
+                html: ['.html'],
+              };
+
+              const safePath = validateFilePath(options.compliance, {
+                allowedExtensions: extensionMap[format],
+              });
+
+              const complianceReporter = new ComplianceReporter();
+              complianceReporter.saveToFile(
+                engineResultForSarif,
+                safePath,
+                format as 'json' | 'text' | 'markdown' | 'html'
+              );
+              consoleReporter.printSuccess(`Compliance report (${format}) saved to ${safePath}`);
+            }
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('path traversal')) {
+              consoleReporter.printError(
+                new Error(
+                  `Security error: ${error.message}\nFor security, files can only be saved in the current directory or subdirectories.`
+                )
+              );
+            } else {
+              throw error;
+            }
           }
         }
       }
@@ -416,10 +566,15 @@ program
         spinner.text = `Fetched ${repositories.length} repositories, fetching PRs...`;
 
         const pullRequests = await fetcher.getRecentPullRequests(days);
-        spinner.succeed(`Analyzed ${repositories.length} repos and ${pullRequests.length} PRs`);
+        spinner.text = `Fetched ${pullRequests.length} PRs, fetching workflow runs...`;
+
+        const workflowRuns = await fetcher.getRecentWorkflowRuns(days);
+        spinner.succeed(
+          `Analyzed ${repositories.length} repos, ${pullRequests.length} PRs, and ${workflowRuns.length} workflow runs`
+        );
 
         const analyzer = new SecurityAnalyzer();
-        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests);
+        analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
       }
 
       // Initialize query service

@@ -1,0 +1,36 @@
+metadata:
+  title: HubHelper Default Security Profile
+  version: "1.0.0"
+  owner: HubHelper Team
+  description: >
+    Default security profile that matches the original hardcoded behavior.
+    Includes all controls with standard severity levels and thresholds.
+
+catalog-ref:
+  href: ./catalog.yaml
+  version: "1.0.0"
+
+controls:
+  # Include all controls
+  include:
+    - HH-GH-001  # Self-merged PRs
+    - HH-GH-002  # Unreviewed security PRs
+    - HH-GH-003  # Security PR classifier
+    - HH-GH-004  # Disabled Actions
+    - HH-GH-005  # Paused workflows
+    - HH-GH-006  # Disabled workflows
+    - HH-GH-007  # Repeated action failures
+    - HH-GH-008  # Single action failures
+    - HH-GH-009  # Security PR volume recommendation
+
+  # No tailoring - use catalog defaults
+  tailoring: []
+
+scope:
+  # Apply to all repositories in organization
+  lookback-days: 30
+
+reporting:
+  formats:
+    - console
+  include-recommendations: true
