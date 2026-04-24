@@ -1,0 +1,304 @@
+---
+sidebar_position: 1
+title: Bring Your Own Policy
+description: Define custom compliance rules in a repository you control. HubHelper reads your policy at runtime — no source changes required.
+---
+
+# Bring Your Own Policy
+
+HubHelper's compliance engine lets you define exactly what "compliant" means for your organization. You write the rules; HubHelper enforces them.
+
+:::tip What this means in practice
+Your policy lives in a JSON file in a repository you control. Update the file and the next scan automatically picks up the new rules — no HubHelper version update, no code change, no redeployment.
+:::
+
+---
+
+## How It Works
+
+The compliance pipeline has three layers:
+
+```
+Policy Repository (.hubhelper/approved-emails.json)
+        │
+        ▼
+GitHubFetcher.getApprovedEmailConfig()   ← fetches & parses your policy
+        │
+        ▼
+ComplianceChecker.checkAll()             ← pure logic, no network calls
+        │
+        ▼
+ComplianceResult                         ← structured violations report
+```
+
+The `ComplianceAnalyzer` orchestrates the fetcher and the checker, then returns a `ComplianceResult` you can consume in any reporter.
+
+---
+
+## Setting Up Your Policy Repository
+
+### Step 1 — Create the config file
+
+In any repository inside your organization, create the directory and file:
+
+```
+your-policy-repo/
+└── .hubhelper/
+    └── approved-emails.json
+```
+
+### Step 2 — Write your policy
+
+```json title=".hubhelper/approved-emails.json"
+{
+  "domains": [
+    "acme.com",
+    "subsidiary.acme.com"
+  ],
+  "exactEmails": [
+    "contractor@external.dev",
+    "partner@vendor.io"
+  ]
+}
+```
+
+### Step 3 — Commit and push
+
+```bash
+git add .hubhelper/approved-emails.json
+git commit -m "chore: add HubHelper compliance policy"
+git push
+```
+
+That's it. HubHelper will fetch this file via the GitHub API each time a compliance check runs.
+
+---
+
+## Policy Schema Reference
+
+The policy file must be valid JSON matching the `ApprovedEmailConfig` interface:
+
+```typescript
+interface ApprovedEmailConfig {
+  domains: string[];        // Required — approved email domains
+  exactEmails?: string[];   // Optional — individual address exceptions
+}
+```
+
+### `domains` (required)
+
+An array of approved email domains. All comparisons are **case-insensitive**.
+
+```json
+{
+  "domains": ["acme.com", "partner.io"]
+}
+```
+
+A member passes the email check if their GitHub profile email ends with `@<domain>` where `<domain>` appears in this list.
+
+### `exactEmails` (optional)
+
+An array of individual email addresses that are always approved, regardless of domain. Useful for contractors, consultants, or long-term partners who use personal or external addresses.
+
+```json
+{
+  "domains": ["acme.com"],
+  "exactEmails": ["trusted-contractor@external.dev"]
+}
+```
+
+---
+
+## Compliance Rules
+
+### Rule: `missing_full_name`
+
+**Passes** when the member's GitHub profile has a non-empty full name (trimmed).  
+**Fails** when `name` is `null` or contains only whitespace.
+
+```json
+// ✓ Passes
+{ "name": "Jane Smith", "email": "jane@acme.com" }
+
+// ✗ Fails
+{ "name": null, "email": "jane@acme.com" }
+{ "name": "   ", "email": "jane@acme.com" }
+```
+
+### Rule: `missing_approved_email`
+
+**Passes** when the email domain is in `domains` OR the full address is in `exactEmails`.  
+**Fails** when email is `null`, empty, malformed (no `@`), or the domain/address is not approved.
+
+```json
+// ✓ Passes (domain match)
+{ "email": "jane@acme.com" }
+
+// ✓ Passes (exact match)
+{ "email": "contractor@external.dev" }
+
+// ✗ Fails
+{ "email": "jane@personal.email" }
+{ "email": null }
+```
+
+---
+
+## Running a Compliance Check
+
+Use the `compliance` sub-command (pass the repo name that contains your policy):
+
+```bash
+npx @sdh100shaun/hubhelper analyze \
+  --org acme-corp \
+  --token $GITHUB_TOKEN \
+  --compliance-repo policy-repo
+```
+
+You can also specify a custom path to the config file:
+
+```bash
+npx @sdh100shaun/hubhelper analyze \
+  --org acme-corp \
+  --compliance-repo policy-repo \
+  --compliance-config security/hubhelper-policy.json
+```
+
+The default path is `.hubhelper/approved-emails.json`.
+
+---
+
+## Interpreting Results
+
+A compliance run returns a `ComplianceResult`:
+
+```json
+{
+  "organization": "acme-corp",
+  "totalMembers": 42,
+  "compliantMembers": 39,
+  "nonCompliantMembers": [
+    {
+      "user": "jsmith99",
+      "violations": ["missing_approved_email"],
+      "details": {
+        "name": "John Smith",
+        "email": "john@personal.email"
+      }
+    },
+    {
+      "user": "devx42",
+      "violations": ["missing_full_name"],
+      "details": {
+        "name": null,
+        "email": "dev@acme.com"
+      }
+    }
+  ],
+  "checkedAt": "2026-04-24T09:15:00.000Z"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `organization` | `string` | The GitHub organization name |
+| `totalMembers` | `number` | All org members checked |
+| `compliantMembers` | `number` | Members with zero violations |
+| `nonCompliantMembers` | `ComplianceViolation[]` | Members with at least one violation |
+| `checkedAt` | `string` | ISO 8601 timestamp of the check |
+
+Each `ComplianceViolation` contains:
+
+| Field | Type | Description |
+|---|---|---|
+| `user` | `string` | GitHub login handle |
+| `violations` | `ComplianceViolationType[]` | One or more rule failures |
+| `details.name` | `string \| null` | Current profile name |
+| `details.email` | `string \| null` | Current profile email |
+
+---
+
+## Real-World Examples
+
+### Small Startup — Single Domain
+
+```json
+{
+  "domains": ["startup.io"]
+}
+```
+
+Every team member must use their `@startup.io` address. No exceptions needed yet.
+
+### Enterprise — Multiple Domains + Contractors
+
+```json
+{
+  "domains": [
+    "bigcorp.com",
+    "bigcorp-eu.com",
+    "acquired-startup.com"
+  ],
+  "exactEmails": [
+    "consultant@partner-firm.com",
+    "auditor@external-audit.org"
+  ]
+}
+```
+
+Covers all org email domains after an acquisition, plus two recurring external contacts.
+
+### Strict Security Team
+
+```json
+{
+  "domains": ["secureteam.io"],
+  "exactEmails": []
+}
+```
+
+No exceptions — every member must have an approved domain address. Empty `exactEmails` is valid (or omit the field entirely).
+
+---
+
+## CI/CD Integration
+
+Run compliance checks automatically on a schedule:
+
+```yaml title=".github/workflows/compliance.yml"
+name: Compliance Check
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Every Monday at 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run HubHelper Compliance Check
+        run: |
+          npx @sdh100shaun/hubhelper analyze \
+            --org ${{ vars.GITHUB_ORG }} \
+            --token ${{ secrets.HUBHELPER_TOKEN }} \
+            --compliance-repo policy-repo \
+            --json compliance-report.json
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: compliance-report.json
+          retention-days: 90
+```
+
+---
+
+## Security Considerations
+
+- **Keep your policy repo private** if it contains sensitive domain information.
+- HubHelper needs only **read access** to the policy repo (`contents: read`).
+- The token used for compliance checks never writes back to any repository.
+- Policy JSON is fetched fresh on every run — no caching of stale rules.

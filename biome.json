@@ -39,7 +39,8 @@
       "node_modules",
       "dist",
       "coverage",
-      "_site"
+      "_site",
+      "website"
     ],
     "include": ["src/**", "*.ts", "*.js", "*.json"]
   }

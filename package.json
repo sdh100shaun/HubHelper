@@ -18,9 +18,9 @@
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "docs:build": "eleventy",
-    "docs:serve": "eleventy --serve",
-    "docs:watch": "eleventy --watch",
+    "docs:build": "cd website && npm run build",
+    "docs:start": "cd website && npm run start",
+    "docs:serve": "cd website && npm run serve",
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
