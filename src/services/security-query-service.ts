@@ -42,7 +42,7 @@ export class SecurityQueryService {
 
     // Clear from environment after reading to prevent leaks
     if (!apiKey && process.env.ANTHROPIC_API_KEY) {
-      delete process.env.ANTHROPIC_API_KEY;
+      Reflect.deleteProperty(process.env, 'ANTHROPIC_API_KEY');
     }
   }
 
