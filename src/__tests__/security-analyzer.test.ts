@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import { SecurityAnalyzer } from '../analyzers/security-analyzer';
 import type { PullRequest, Repository } from '../types/index';
 

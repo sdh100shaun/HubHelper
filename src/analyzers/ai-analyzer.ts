@@ -10,7 +10,7 @@ export class AIAnalyzer {
    */
   async generateInsights(analysisResult: AnalysisResult): Promise<string> {
     // Prepare context for AI analysis
-    const context = this.prepareAnalysisContext(analysisResult);
+    const _context = this.prepareAnalysisContext(analysisResult);
 
     // For now, we'll generate structured insights based on patterns
     // In a full implementation, this would use the Copilot SDK to generate

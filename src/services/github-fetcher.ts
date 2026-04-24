@@ -1,7 +1,9 @@
 import { Octokit } from '@octokit/rest';
 import type {
+  ApprovedEmailConfig,
   PullRequest,
   Repository,
+  UserProfile,
   Workflow,
   WorkflowJob,
   WorkflowRun,
@@ -42,7 +44,7 @@ export class GitHubFetcher {
               repo: repo.name,
             });
           actionsEnabled = actionsData.enabled;
-        } catch (error) {
+        } catch (_error) {
           // If we get a 404, Actions might not be enabled
           actionsEnabled = false;
         }
@@ -57,7 +59,7 @@ export class GitHubFetcher {
           securityEnabled =
             securityData.security_and_analysis?.secret_scanning?.status === 'enabled' ||
             securityData.security_and_analysis?.dependabot_security_updates?.status === 'enabled';
-        } catch (error) {
+        } catch (_error) {
           securityEnabled = false;
         }
 
@@ -74,6 +76,8 @@ export class GitHubFetcher {
           actions_enabled: actionsEnabled,
           security_enabled: securityEnabled,
           workflows,
+          open_issues_count: repo.open_issues_count ?? undefined,
+          updated_at: repo.updated_at ?? undefined,
         });
       }
 
@@ -111,7 +115,7 @@ export class GitHubFetcher {
           is_scheduled: isScheduled,
         };
       });
-    } catch (error) {
+    } catch (_error) {
       // If we can't fetch workflows, return empty array
       return [];
     }
@@ -267,7 +271,7 @@ export class GitHubFetcher {
               | null,
             created_at: run.created_at,
             updated_at: run.updated_at,
-            repository: repo.name,
+            repository: repo.full_name,
             workflow_id: run.workflow_id,
             workflow_name: run.name || 'Unknown Workflow',
             run_number: run.run_number,
@@ -313,5 +317,110 @@ export class GitHubFetcher {
       console.warn(`Failed to fetch jobs for run ${runId}:`, error);
       return [];
     }
+  }
+
+  // -----------------------------------------------------------------------
+  // Compliance helpers
+  // -----------------------------------------------------------------------
+
+  /**
+   * List all members of the organization visible to the authenticated token
+   * and resolve each one's profile (name + email). Pagination is handled
+   * internally. Uses bounded concurrency to avoid rate limiting.
+   */
+  async getOrgMembers(): Promise<UserProfile[]> {
+    const profiles: UserProfile[] = [];
+    let page = 1;
+    const perPage = 100;
+    const concurrencyLimit = 5;
+
+    while (true) {
+      const { data: members } = await this.octokit.orgs.listMembers({
+        org: this.org,
+        per_page: perPage,
+        page,
+        role: 'all',
+      });
+
+      if (members.length === 0) break;
+
+      // Process members in batches to avoid rate limiting
+      for (let i = 0; i < members.length; i += concurrencyLimit) {
+        const batch = members.slice(i, i + concurrencyLimit);
+        const batchProfiles = await Promise.all(
+          batch.map(async (member) => {
+            const login = member.login;
+
+            // Fetch the full user profile to get name and email
+            try {
+              const { data: user } = await this.octokit.users.getByUsername({
+                username: login,
+              });
+              return {
+                login,
+                name: user.name || null,
+                email: user.email || null,
+              };
+            } catch {
+              // If we cannot fetch a profile, record the member with nulls so the
+              // compliance checker flags them rather than silently dropping them.
+              return { login, name: null, email: null };
+            }
+          })
+        );
+
+        profiles.push(...batchProfiles);
+      }
+
+      if (members.length < perPage) break;
+      page++;
+    }
+
+    return profiles;
+  }
+
+  /**
+   * Read the approved-emails JSON config from a repository.
+   *
+   * @param repoName  Repository inside the org that hosts the config file.
+   * @param filePath  Path within the repo (default `.hubhelper/approved-emails.json`).
+   * @returns         Parsed config.  Throws if the file is missing or malformed.
+   */
+  async getApprovedEmailConfig(
+    repoName: string,
+    filePath = '.hubhelper/approved-emails.json'
+  ): Promise<ApprovedEmailConfig> {
+    const { data } = await this.octokit.repos.getContent({
+      owner: this.org,
+      repo: repoName,
+      path: filePath,
+    });
+
+    // The API returns a single file object when the path is a file
+    if (Array.isArray(data) || !('content' in data)) {
+      throw new Error(`${filePath} is not a file or has no content`);
+    }
+
+    const raw = Buffer.from(data.content, 'base64').toString('utf-8');
+    const parsed: unknown = JSON.parse(raw);
+
+    // Minimal shape validation
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      !Array.isArray((parsed as ApprovedEmailConfig).domains)
+    ) {
+      throw new Error(`${filePath} does not contain a valid ApprovedEmailConfig`);
+    }
+
+    const config = parsed as ApprovedEmailConfig;
+
+    // Normalise: lower-case every domain and exact email
+    config.domains = config.domains.map((d: string) => d.toLowerCase().replace(/^\./, ''));
+    if (config.exactEmails) {
+      config.exactEmails = config.exactEmails.map((e: string) => e.toLowerCase());
+    }
+
+    return config;
   }
 }
