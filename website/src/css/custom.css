@@ -43,7 +43,7 @@
   --ifm-color-primary-light: #b5c2f6;
   --ifm-color-primary-lighter: #c8d2f9;
   --ifm-color-primary-lightest: #d4dcfb;
-  --ifm-heading-color: #c084fc;
+  --ifm-heading-color: #c890ff;
   --docusaurus-highlighted-code-line-bg: rgba(102, 126, 234, 0.2);
 
   --ifm-background-color: #0d0d1a;
@@ -143,7 +143,7 @@
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 .btn-hero-primary {
   background: #fff;
-  color: #4f6ae3;
+  color: #3348ae;
   border: 2px solid transparent;
   padding: 0.85rem 2rem;
   border-radius: 0.5rem;
@@ -159,7 +159,7 @@
 .btn-hero-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  color: #3d5edf;
+  color: #2c3e99;
   text-decoration: none;
 }
 
@@ -620,7 +620,7 @@
 
 /* ─── Focus indicators (WCAG 2.4.7 / 2.4.13) ───────────────────────────── */
 :focus-visible {
-  outline: 2px solid #c084fc;
+  outline: 2px solid #c890ff;
   outline-offset: 2px;
 }
 
@@ -632,7 +632,7 @@
 }
 
 .policy-panel__tab:focus-visible {
-  outline: 2px solid #c084fc;
+  outline: 2px solid #c890ff;
   outline-offset: -2px;
 }
 

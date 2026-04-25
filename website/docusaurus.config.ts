@@ -117,7 +117,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} HubHelper. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} HubHelper. Built with open source.`,
     },
     prism: {
       theme: prismThemes.oneDark,

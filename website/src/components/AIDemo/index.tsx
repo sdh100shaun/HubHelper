@@ -97,7 +97,7 @@ export default function AIDemo(): React.ReactElement {
               style={{
                 background: i === active ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.08)',
                 border: '1px solid ' + (i === active ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.15)'),
-                color: i === active ? '#c8d2f9' : '#ababbb',
+                color: i === active ? '#c8d2f9' : '#c0c0ce',
                 borderRadius: '4px',
                 padding: '0.2rem 0.6rem',
                 fontSize: '0.7rem',

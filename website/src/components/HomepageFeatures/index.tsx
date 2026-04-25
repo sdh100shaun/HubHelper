@@ -50,7 +50,7 @@ export default function HomepageFeatures(): React.ReactElement {
     <section className="section section--surface">
       <div className="section__header">
         <span className="section__eyebrow">Everything You Need</span>
-        <h2 className="section__title">Built for Security-Conscious Teams</h2>
+        <h2 className="section__title">Built for Your Best Practice</h2>
         <p className="section__subtitle">
           From custom compliance policies to AI-powered analysis, HubHelper gives
           your team the visibility it needs without adding friction.

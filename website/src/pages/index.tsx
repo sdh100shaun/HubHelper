@@ -15,7 +15,7 @@ function Hero(): React.ReactElement {
         className="hero__logo"
       />
       <h1 className="hero__title">
-        Your Rules.<br />Your Intelligence.<br />Your Security.
+        Your Rules.<br />Your Intelligence.<br />Your Compliance.
       </h1>
       <p className="hero__subtitle">
         Define custom compliance policies and harness GitHub Copilot AI to
@@ -71,7 +71,7 @@ function PolicySpotlight(): React.ReactElement {
         <PolicyShowcase />
         <div className="spotlight__copy">
           <span className="section__eyebrow">Bring Your Own Policy</span>
-          <h2>Your Organization's Rules, Not Ours</h2>
+          <h2>Your Organization's Rules, as Well as Others</h2>
           <p>
             Store a single JSON file in a repository you control. HubHelper
             reads it at runtime — no forks, no source changes, no vendor
