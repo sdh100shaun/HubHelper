@@ -1,6 +1,8 @@
 import { Octokit } from '@octokit/rest';
 import type { GitHubEvent } from '../types/index.js';
 
+const MAX_SEEN_IDS = 5000;
+
 function isGitHubEvent(item: unknown): item is GitHubEvent {
   if (typeof item !== 'object' || item === null) return false;
   const obj = item as Record<string, unknown>;
@@ -21,6 +23,7 @@ export class GitHubEventsFetcher {
   private etag: string | null = null;
   private lastPollInterval = 30;
   private readonly seenEventIds = new Set<string>();
+  private readonly seenEventIdQueue: string[] = [];
 
   constructor(token: string, org: string) {
     this.octokit = new Octokit({ auth: token });
@@ -58,7 +61,7 @@ export class GitHubEventsFetcher {
         .filter((event) => !this.seenEventIds.has(event.id));
 
       for (const event of events) {
-        this.seenEventIds.add(event.id);
+        this.trackSeenId(event.id);
       }
 
       return events;
@@ -80,7 +83,18 @@ export class GitHubEventsFetcher {
 
   seedSeenIds(events: GitHubEvent[]): void {
     for (const event of events) {
-      this.seenEventIds.add(event.id);
+      this.trackSeenId(event.id);
+    }
+  }
+
+  private trackSeenId(id: string): void {
+    this.seenEventIds.add(id);
+    this.seenEventIdQueue.push(id);
+    if (this.seenEventIdQueue.length > MAX_SEEN_IDS) {
+      const oldest = this.seenEventIdQueue.shift();
+      if (oldest !== undefined) {
+        this.seenEventIds.delete(oldest);
+      }
     }
   }
 }

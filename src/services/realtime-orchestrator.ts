@@ -20,6 +20,9 @@ import { GitHubFetcher } from './github-fetcher.js';
 const MAX_HISTORY = 500;
 const DEDUP_TTL_MS = 5 * 60 * 1000;
 const REPO_REFRESH_MS = 15 * 60 * 1000;
+const DEDUP_PRUNE_INTERVAL_MS = 60 * 1000;
+const FETCH_BACKOFF_BASE_MS = 1000;
+const FETCH_BACKOFF_MAX_MS = 60 * 1000;
 
 const SEVERITY_ORDER: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
 
@@ -45,11 +48,15 @@ export class RealtimeOrchestrator {
   private isShuttingDown = false;
   private shutdownHandler: (() => void) | null = null;
   private repoRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private dedupPruneTimer: ReturnType<typeof setInterval> | null = null;
 
   private repoCache: Repository[] = [];
   private prHistory: PullRequest[] = [];
   private workflowRunHistory: WorkflowRun[] = [];
   private readonly recentlyReported = new Map<string, number>();
+
+  // Exponential backoff state for fetch errors
+  private consecutiveFetchErrors = 0;
 
   private eventsProcessed = 0;
   private violationsFound = 0;
@@ -77,6 +84,7 @@ export class RealtimeOrchestrator {
 
     this.repoCache = await this.ghFetcher.getRepositories(false);
     this.scheduleRepoRefresh();
+    this.startDedupPruning();
 
     const initial = await this.fetcher.fetchNewEvents();
     this.fetcher.seedSeenIds(initial);
@@ -111,16 +119,28 @@ export class RealtimeOrchestrator {
       clearTimeout(this.repoRefreshTimer);
       this.repoRefreshTimer = null;
     }
+    if (this.dedupPruneTimer) {
+      clearInterval(this.dedupPruneTimer);
+      this.dedupPruneTimer = null;
+    }
   }
 
   private async tick(): Promise<void> {
     let events: GitHubEvent[];
     try {
       events = await this.fetcher.fetchNewEvents();
+      this.consecutiveFetchErrors = 0;
     } catch (error) {
+      this.consecutiveFetchErrors++;
       this.reporter.printInlineError(
-        `Failed to fetch events: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to fetch events (attempt ${this.consecutiveFetchErrors}): ${error instanceof Error ? error.message : String(error)}`
       );
+      // Backoff: 1s, 2s, 4s … up to 60s
+      const backoffMs = Math.min(
+        FETCH_BACKOFF_BASE_MS * 2 ** (this.consecutiveFetchErrors - 1),
+        FETCH_BACKOFF_MAX_MS
+      );
+      await this.sleep(backoffMs);
       return;
     }
 
@@ -171,7 +191,6 @@ export class RealtimeOrchestrator {
 
     const scoped = this.scopeToEvent(event, artifact, engineResult.issues);
     const now = Date.now();
-    this.pruneDedup(now);
 
     const newViolations = scoped.filter((issue) => {
       const fp = fingerprint(issue);
@@ -268,6 +287,12 @@ export class RealtimeOrchestrator {
     });
   }
 
+  private startDedupPruning(): void {
+    this.dedupPruneTimer = setInterval(() => {
+      this.pruneDedup(Date.now());
+    }, DEDUP_PRUNE_INTERVAL_MS).unref();
+  }
+
   private pruneDedup(now: number): void {
     for (const [fp, ts] of this.recentlyReported) {
       if (now - ts > DEDUP_TTL_MS) {
@@ -311,6 +336,10 @@ export class RealtimeOrchestrator {
 }
 
 function appendCapped<T>(arr: T[], item: T, max: number): T[] {
-  const next = [...arr, item];
-  return next.length > max ? next.slice(next.length - max) : next;
+  if (arr.length < max) {
+    return [...arr, item];
+  }
+  const result = arr.slice(1);
+  result.push(item);
+  return result;
 }

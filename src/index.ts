@@ -928,12 +928,32 @@ program
         process.exit(1);
       }
 
+      // Validate profile path to prevent path traversal
+      const profilePathResult = (() => {
+        try {
+          return validateFilePath(options.profile as string, {
+            allowedExtensions: ['.yaml', '.yml'],
+            createDirIfMissing: false,
+          });
+        } catch {
+          return null;
+        }
+      })();
+      if (!profilePathResult) {
+        consoleReporter.printError(
+          new Error(
+            'Invalid --profile path: must be a .yaml or .yml file inside the current directory'
+          )
+        );
+        process.exit(1);
+      }
+
       const streamConfig: StreamConfig = {
         organization: org,
         token,
         pollIntervalSeconds: intervalSec,
         minSeverity: minSeverity as 'low' | 'medium' | 'high' | 'critical',
-        profilePath: options.profile as string,
+        profilePath: profilePathResult,
         showCompliant: options.showCompliant === true,
         verbose: options.verbose === true,
       };
