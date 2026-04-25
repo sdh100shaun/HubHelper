@@ -251,9 +251,26 @@
 }
 
 .section--gradient {
-  background: var(--hubhelper-gradient-subtle);
-  border-top: 1px solid var(--hubhelper-dark-border);
-  border-bottom: 1px solid var(--hubhelper-dark-border);
+  background: linear-gradient(135deg, #f0edff 0%, #f7f0ff 100%);
+  border-top: 1px solid #e0d8f0;
+  border-bottom: 1px solid #e0d8f0;
+}
+
+.section--gradient .spotlight__copy h2 {
+  color: #1a1a2e;
+}
+
+.section--gradient .spotlight__copy p,
+.section--gradient .spotlight__bullets li {
+  color: #1a1a2e;
+}
+
+.section--gradient .section__eyebrow {
+  color: #6b21a8;
+}
+
+.section--gradient .spotlight__bullets li::before {
+  color: #6b21a8;
 }
 
 .section__eyebrow {
