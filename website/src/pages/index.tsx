@@ -178,7 +178,7 @@ function ArchitectureStrip(): React.ReactElement {
           );
         })}
       </div>
-      <div style={{ textAlign: 'center', marginTop: '1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>
+      <div style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--hubhelper-text-dim)', fontSize: '0.82rem' }}>
         Policy Repo feeds into GitHubFetcher · Copilot SDK powers AIAnalyzer
       </div>
     </section>

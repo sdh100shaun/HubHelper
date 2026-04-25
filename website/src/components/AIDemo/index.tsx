@@ -67,6 +67,14 @@ const RISK_LABELS: Record<RiskLevel, string> = {
   low: 'Low Risk',
 };
 
+/* AAA-accessible risk colours — verified ≥ 7:1 on tinted dark backgrounds */
+const RISK_COLOURS: Record<RiskLevel, string> = {
+  critical: '#ffa070',
+  high: '#f6ad55',
+  medium: '#a8b5f5',
+  low: '#48c78e',
+};
+
 export default function AIDemo(): React.ReactElement {
   const [active, setActive] = useState(0);
   const scenario = SCENARIOS[active];
@@ -87,7 +95,7 @@ export default function AIDemo(): React.ReactElement {
               style={{
                 background: i === active ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.08)',
                 border: '1px solid ' + (i === active ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.15)'),
-                color: i === active ? '#b5c2f6' : 'rgba(255,255,255,0.5)',
+                color: i === active ? '#c8d2f9' : '#ababbb',
                 borderRadius: '4px',
                 padding: '0.2rem 0.6rem',
                 fontSize: '0.7rem',
@@ -141,13 +149,7 @@ export default function AIDemo(): React.ReactElement {
 }
 
 function RiskBadge({ level }: { level: RiskLevel }): React.ReactElement {
-  const colours: Record<RiskLevel, string> = {
-    critical: '#fc814a',
-    high: '#f6ad55',
-    medium: '#8fa0f0',
-    low: '#48c78e',
-  };
-  const colour = colours[level];
+  const colour = RISK_COLOURS[level];
   return (
     <span style={{
       display: 'inline-flex',
