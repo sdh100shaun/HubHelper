@@ -1,20 +1,27 @@
+import type { CopilotService } from '../services/copilot-service.js';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 /**
- * AI-powered analyzer using GitHub Copilot SDK
- * This provides enhanced analysis and natural language insights
+ * AI-powered analyzer using GitHub Copilot SDK.
+ * Pass a CopilotService instance to enable live AI insights; omit it to use
+ * the built-in structured fallback (useful in tests and --no-ai mode).
  */
 export class AIAnalyzer {
+  private copilotService?: CopilotService;
+
+  constructor(copilotService?: CopilotService) {
+    this.copilotService = copilotService;
+  }
+
   /**
-   * Generate AI-powered insights from security issues
+   * Generate AI-powered insights. Delegates to CopilotService when available,
+   * otherwise produces structured pattern-based output.
    */
   async generateInsights(analysisResult: AnalysisResult): Promise<string> {
-    // Prepare context for AI analysis
-    const _context = this.prepareAnalysisContext(analysisResult);
-
-    // For now, we'll generate structured insights based on patterns
-    // In a full implementation, this would use the Copilot SDK to generate
-    // more sophisticated AI-powered recommendations
+    if (this.copilotService) {
+      const output = await this.copilotService.analyzeWithAI(analysisResult);
+      return output.insights;
+    }
     return this.generateStructuredInsights(analysisResult);
   }
 
@@ -116,19 +123,6 @@ export class AIAnalyzer {
     }
 
     return recommendations;
-  }
-
-  private prepareAnalysisContext(analysisResult: AnalysisResult): string {
-    return JSON.stringify(
-      {
-        summary: analysisResult.summary,
-        statistics: analysisResult.statistics,
-        issue_count_by_type: this.groupIssuesByType(analysisResult.issues),
-        issue_count_by_severity: this.groupIssuesBySeverity(analysisResult.issues),
-      },
-      null,
-      2
-    );
   }
 
   private generateStructuredInsights(analysisResult: AnalysisResult): string {

@@ -12,6 +12,7 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
+import { CopilotService } from './services/copilot-service.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
@@ -165,18 +166,21 @@ program
 
       // Generate AI insights
       let aiInsights: string | undefined;
-      if (options.ai !== false) {
-        spinner.start('Generating AI-powered insights...');
-        const aiAnalyzer = new AIAnalyzer();
-        aiInsights = await aiAnalyzer.generateInsights(analysisResult);
+      const copilotService = new CopilotService();
+      try {
+        if (options.ai !== false) {
+          spinner.start('Generating AI-powered insights...');
+          const aiAnalyzer = new AIAnalyzer(copilotService);
+          aiInsights = await aiAnalyzer.generateInsights(analysisResult);
 
-        const _patterns = await aiAnalyzer.analyzePatterns(analysisResult.issues);
-        const recommendations = await aiAnalyzer.generateRecommendations(analysisResult.issues);
+          const _patterns = await aiAnalyzer.analyzePatterns(analysisResult.issues);
+          const recommendations = await aiAnalyzer.generateRecommendations(analysisResult.issues);
 
-        // Add AI recommendations to result
-        analysisResult.recommendations.push(...recommendations);
-
-        spinner.succeed('AI insights generated');
+          analysisResult.recommendations.push(...recommendations);
+          spinner.succeed('AI insights generated');
+        }
+      } finally {
+        await copilotService.dispose();
       }
 
       // Display results
@@ -428,11 +432,9 @@ program
   .description('Ask natural language questions about organization security')
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
-  .option('--anthropic-key <key>', 'Anthropic API key')
   .option('--from <file>', 'Use saved analysis from JSON file')
   .option('-d, --days <number>', 'Number of days to analyze', '30')
   .option('-i, --interactive', 'Interactive mode with follow-up questions')
-  .option('--skip-warning', 'Skip data sharing consent warning')
   .action(async (question, options) => {
     const consoleReporter = new ConsoleReporter();
 
@@ -441,61 +443,14 @@ program
       const { readFileSync } = await import('node:fs');
       const { createInterface } = await import('node:readline');
 
-      // Get API key
-      const anthropicKey = options.anthropicKey || process.env.ANTHROPIC_API_KEY;
-      if (!anthropicKey) {
-        consoleReporter.printError(
-          new Error('Anthropic API key required. Set ANTHROPIC_API_KEY or use --anthropic-key')
-        );
-        process.exit(1);
-      }
-
-      // Check for explicit consent
-      const hasConsent = process.env.CONSENT_AI_SHARING === 'true' || options.skipWarning;
-
-      if (!hasConsent) {
-        console.log('');
-        console.log('⚠️  DATA SHARING NOTICE');
-        console.log('━'.repeat(60));
-        console.log("This command will send your organization's security analysis data to");
-        console.log('the Anthropic API (Claude AI) for natural language processing.');
-        console.log('');
-        console.log('Data shared includes:');
-        console.log('  • Repository names and statistics');
-        console.log('  • Security issue descriptions and severity levels');
-        console.log('  • Pull request and workflow information');
-        console.log('');
-        console.log('To skip this warning in the future, set:');
-        console.log('  export CONSENT_AI_SHARING=true');
-        console.log('');
-
-        const rl = createInterface({
-          input: process.stdin,
-          output: process.stdout,
-        });
-
-        const consent = await new Promise<string>((resolve) => {
-          rl.question('Do you want to continue? (y/N): ', (answer) => {
-            rl.close();
-            resolve(answer.trim().toLowerCase());
-          });
-        });
-
-        if (consent !== 'y' && consent !== 'yes') {
-          console.log('Cancelled by user.');
-          process.exit(0);
-        }
-        console.log('');
-      }
-
       let analysisResult: AnalysisResult;
+      let githubToken: string | undefined;
 
       // Load analysis from file or fetch fresh data
       if (options.from) {
         try {
           consoleReporter.printInfo(`Loading analysis from ${options.from}...`);
 
-          // Validate file path to prevent traversal attacks
           const safePath = validateFilePath(options.from, {
             allowedExtensions: ['.json'],
           });
@@ -503,7 +458,6 @@ program
           const data = readFileSync(safePath, 'utf-8');
           const parsed = JSON.parse(data);
 
-          // Validate JSON structure
           if (!parsed.statistics || !Array.isArray(parsed.issues)) {
             throw new Error(
               'Invalid analysis file format. Expected AnalysisResult with statistics and issues.'
@@ -528,20 +482,17 @@ program
           process.exit(1);
         }
       } else {
-        // Get org and token
         const tokenInput = options.token || process.env.GITHUB_TOKEN;
         const orgInput = options.org || process.env.GITHUB_ORG;
 
-        // Validate token
         const tokenValidation = validateGitHubToken(tokenInput);
         if (!tokenValidation.valid) {
           consoleReporter.printError(new Error(tokenValidation.error!));
           consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
           process.exit(1);
         }
-        const token = tokenValidation.sanitized as string;
+        githubToken = tokenValidation.sanitized as string;
 
-        // Validate organization
         const orgValidation = validateOrganizationName(orgInput);
         if (!orgValidation.valid) {
           consoleReporter.printError(new Error(orgValidation.error!));
@@ -550,7 +501,6 @@ program
         }
         const org = orgValidation.sanitized as string;
 
-        // Validate days
         const daysValidation = validateDays(options.days);
         if (!daysValidation.valid) {
           consoleReporter.printError(new Error(daysValidation.error!));
@@ -558,9 +508,8 @@ program
         }
         const days = daysValidation.sanitized as number;
 
-        // Fetch fresh analysis
         const spinner = ora('Fetching organization data...').start();
-        const fetcher = new GitHubFetcher(token, org);
+        const fetcher = new GitHubFetcher(githubToken, org);
 
         const repositories = await fetcher.getRepositories();
         spinner.text = `Fetched ${repositories.length} repositories, fetching PRs...`;
@@ -570,15 +519,15 @@ program
 
         const workflowRuns = await fetcher.getRecentWorkflowRuns(days);
         spinner.succeed(
-          `Analyzed ${repositories.length} repos, ${pullRequests.length} PRs, and ${workflowRuns.length} workflow runs`
+          `Analyzed ${repositories.length} repos, ${pullRequests.length} PRs, ${workflowRuns.length} workflow runs`
         );
 
         const analyzer = new SecurityAnalyzer();
         analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
       }
 
-      // Initialize query service
-      const queryService = new SecurityQueryService(anthropicKey);
+      // Copilot SDK — no separate API key required; passes GitHub token for MCP
+      const queryService = new SecurityQueryService(githubToken);
 
       try {
         // Interactive mode
