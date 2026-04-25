@@ -82,7 +82,7 @@
   display: block;
   width: clamp(180px, 25vw, 320px);
   height: auto;
-  margin: 0 auto 2rem;
+  margin: 0 auto 0.75rem;
   filter: drop-shadow(0 4px 24px rgba(102, 126, 234, 0.35));
 }
 
