@@ -18,6 +18,9 @@
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "docs:build": "cd website && npm run build",
+    "docs:start": "cd website && npm run start",
+    "docs:serve": "cd website && npm run serve",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
@@ -25,9 +28,6 @@
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:report": "playwright show-report",
     "test:all": "npm test && npm run test:e2e",
-    "docs:build": "cd website && npm run build",
-    "docs:start": "cd website && npm run start",
-    "docs:serve": "cd website && npm run serve",
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
@@ -65,11 +65,11 @@
   },
   "overrides": {
     "glob": "^10.4.5",
-    "inflight": "npm:lru-cache@^10.4.3"
+    "inflight": "npm:lru-cache@^10.4.3",
+    "minimatch": "^10.2.5",
+    "brace-expansion": "^5.0.5"
   },
   "devDependencies": {
-    "@11ty/eleventy": "^3.1.2",
-    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
     "@axe-core/playwright": "^4.11.2",
     "@biomejs/biome": "^1.5.3",
     "@playwright/test": "^1.59.1",
