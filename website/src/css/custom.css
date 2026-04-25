@@ -321,7 +321,7 @@
 .spotlight__copy p {
   font-size: 1.05rem;
   line-height: 1.7;
-  color: var(--hubhelper-text-muted);
+  color: #e0e0ee;
   margin-bottom: 1.5rem;
 }
 
@@ -337,7 +337,7 @@
   gap: 0.65rem;
   padding: 0.45rem 0;
   font-size: 0.98rem;
-  color: var(--hubhelper-text-muted);
+  color: #e0e0ee;
 }
 
 .spotlight__bullets li::before {
