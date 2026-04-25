@@ -9,6 +9,11 @@ import AIDemo from '@site/src/components/AIDemo';
 function Hero(): React.ReactElement {
   return (
     <header className="hero-hubhelper">
+      <img
+        src="/HubHelper/img/logo.svg"
+        alt="HubHelper Logo"
+        className="hero__logo"
+      />
       <h1 className="hero__title">
         Your Rules.<br />Your Intelligence.<br />Your Security.
       </h1>

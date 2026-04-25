@@ -55,6 +55,11 @@
   --ifm-color-emphasis-300: rgba(255, 255, 255, 0.12);
 }
 
+/* ─── Navbar logo ─────────────────────────────────────────────────────────── */
+.navbar__logo img {
+  height: 40px;
+}
+
 /* ─── GitHub navbar icon ─────────────────────────────────────────────────── */
 .header-github-link::before {
   content: '';
@@ -71,6 +76,14 @@
   text-align: center;
   position: relative;
   overflow: hidden;
+}
+
+.hero__logo {
+  display: block;
+  width: clamp(120px, 18vw, 200px);
+  height: auto;
+  margin: 0 auto 2rem;
+  filter: drop-shadow(0 4px 24px rgba(102, 126, 234, 0.35));
 }
 
 .hero-hubhelper::before {
