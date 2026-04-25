@@ -121,21 +121,91 @@ docs/                # Documentation
 
 ## Git Workflow
 
+All branches, commit messages, and pull request titles **MUST** follow the [Conventional Commits v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+
+### Conventional Commits Format
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Allowed types:**
+
+| Type | When to use |
+|------|-------------|
+| `feat` | New feature (triggers MINOR version bump) |
+| `fix` | Bug fix (triggers PATCH version bump) |
+| `docs` | Documentation changes only |
+| `style` | Formatting, whitespace — no logic change |
+| `refactor` | Code restructure with no feature/fix |
+| `perf` | Performance improvement |
+| `test` | Adding or correcting tests |
+| `build` | Build system or dependency changes |
+| `ci` | CI/CD configuration changes |
+| `chore` | Maintenance tasks (no src/test change) |
+| `security` | Security improvements |
+| `revert` | Reverts a previous commit |
+
+**Breaking changes** — append `!` after the type or add a `BREAKING CHANGE:` footer:
+```
+feat(api)!: remove deprecated endpoint
+```
+Breaking changes correlate with a MAJOR semver bump.
+
+**Scope** — optional, in parentheses, describes the module affected:
+```
+fix(auth): handle expired token refresh correctly
+```
+
 ### Branch Naming
-- Feature branches: `claude/<feature-name>-H5bVu`
-- All branches must end with `-H5bVu` for tracking
+
+Branches must embed the conventional commit type in the name:
+
+```
+claude/<type>/<short-description>-<suffix>
+```
+
+Examples:
+- `claude/feat/realtime-stream-PcL6i`
+- `claude/fix/token-refresh-H5bVu`
+- `claude/chore/update-deps-H5bVu`
+
+Rules:
+- Must start with `claude/`
+- Must include the conventional commit `<type>` segment
+- Must end with a short unique suffix (e.g. `-H5bVu`) for tracking
+
+### Pull Request Titles
+
+PR titles **must** follow the same format as a conventional commit subject line:
+
+```
+<type>[optional scope]: <description>
+```
+
+Examples:
+- `feat(stream): add realtime GitHub activity stream with policy evaluation`
+- `fix(auth): handle expired token edge case`
+- `chore(deps): bump @octokit/rest to 21.x`
+
+The PR title is used as the squash-merge commit message, so it must be valid on its own.
 
 ### Pushing Changes
 - Always use: `git push -u origin <branch-name>`
 - If push fails due to network, retry up to 4 times with exponential backoff
-- Branch must start with `claude/` and end with `-H5bVu`
 
 ### Before Creating PR
 1. ✅ All checks pass (lint, build, test)
-2. ✅ Commit messages follow conventional format
-3. ✅ Documentation updated (if applicable)
-4. ✅ CHANGELOG updated (for user-facing changes)
-5. ✅ No sensitive data in commits
+2. ✅ Branch name follows `claude/<type>/<description>-<suffix>` pattern
+3. ✅ PR title follows conventional commit format
+4. ✅ Commit messages follow conventional commit format
+5. ✅ Documentation updated (if applicable)
+6. ✅ CHANGELOG updated (for user-facing changes)
+7. ✅ No sensitive data in commits
 
 ## Security Practices
 
