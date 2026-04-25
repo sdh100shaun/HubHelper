@@ -14,8 +14,8 @@ hubhelper <command> [options]
 
 Available commands:
 - `analyze` - Analyze organization activity and detect security issues
-- `check-repo` - Check a specific repository (coming soon)
-- `watch` - Real-time monitoring (coming soon)
+- `check-repo` - Check a specific repository for security issues
+- `watch` - Continuously monitor an organization for security issues
 
 ## analyze
 
@@ -246,7 +246,7 @@ Displays:
 }
 ```
 
-## check-repo (Coming Soon)
+## check-repo
 
 Check a specific repository for security issues.
 
@@ -256,16 +256,27 @@ Check a specific repository for security issues.
 hubhelper check-repo <owner/repo> [options]
 ```
 
-### Planned Options
+### Options
 
-- `-t, --token <token>` - GitHub token
-- `-d, --days <number>` - Days to look back
-- `--json <file>` - Save as JSON
-- `--html <file>` - Save as HTML
+#### `<owner/repo>` (required)
 
-## watch (Coming Soon)
+Repository to check, in `owner/repo` format.
 
-Monitor an organization in real-time for security issues.
+```bash
+npx @sdh100shaun/hubhelper check-repo myorg/my-app
+```
+
+#### `-t, --token <token>`
+
+GitHub Personal Access Token. Falls back to `GITHUB_TOKEN` environment variable.
+
+#### `-d, --days <number>`
+
+Number of days to look back. Default: `30`.
+
+## watch
+
+Continuously monitor an organization for security issues. Runs periodic scans and alerts on new findings above a severity threshold.
 
 ### Synopsis
 
@@ -273,12 +284,72 @@ Monitor an organization in real-time for security issues.
 hubhelper watch [options]
 ```
 
-### Planned Options
+### Options
 
-- `-o, --org <organization>` - Organization to watch
-- `-t, --token <token>` - GitHub token
-- `-i, --interval <minutes>` - Check interval (default: 60)
-- `--alert-on <severity>` - Minimum severity for alerts
+#### `-o, --org <organization>`
+
+GitHub organization name. Falls back to `GITHUB_ORG` environment variable.
+
+#### `-t, --token <token>`
+
+GitHub Personal Access Token. Falls back to `GITHUB_TOKEN` environment variable.
+
+#### `-i, --interval <minutes>`
+
+Check interval in minutes.
+
+- **Type**: `integer`
+- **Default**: `60`
+- **Range**: `1-1440`
+
+#### `--min-severity <level>`
+
+Minimum severity level to alert on.
+
+- **Values**: `low`, `medium`, `high`, `critical`
+- **Default**: `medium`
+
+#### `-d, --days <number>`
+
+Lookback period for pull request analysis.
+
+- **Default**: `7`
+
+#### `--once`
+
+Run a single scan and exit (one-shot mode). Useful for CI/CD pipelines.
+
+#### `--reset`
+
+Clear previous state before starting. Resets the change detector so all findings are treated as new.
+
+#### `--no-ai`
+
+Disable AI-powered analysis during watch scans.
+
+#### `-v, --verbose`
+
+Enable verbose logging for debugging.
+
+### Examples
+
+#### Continuous Monitoring
+
+```bash
+npx @sdh100shaun/hubhelper watch \
+  --org myorg \
+  --interval 30 \
+  --min-severity high
+```
+
+#### One-Shot Scan
+
+```bash
+npx @sdh100shaun/hubhelper watch \
+  --org myorg \
+  --once \
+  --days 7
+```
 
 ## Environment Variables
 
