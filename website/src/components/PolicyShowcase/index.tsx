@@ -73,19 +73,28 @@ export default function PolicyShowcase(): React.ReactElement {
 
   return (
     <div className="policy-panel">
-      <div className="policy-panel__tab-bar">
+      <div className="policy-panel__tab-bar" role="tablist" aria-label="Policy example tabs">
         {TABS.map((t) => (
           <button
             key={t.id}
             className={`policy-panel__tab${active === t.id ? ' active' : ''}`}
             onClick={() => setActive(t.id)}
             type="button"
+            role="tab"
+            aria-selected={active === t.id}
+            aria-controls={`panel-${t.id}`}
+            id={`tab-${t.id}`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="policy-panel__content">
+      <div
+        className="policy-panel__content"
+        role="tabpanel"
+        id={`panel-${active}`}
+        aria-labelledby={`tab-${active}`}
+      >
         <CodeBlock language={content.lang}>{content.code}</CodeBlock>
       </div>
     </div>

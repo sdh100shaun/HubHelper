@@ -37,9 +37,9 @@ function Hero(): React.ReactElement {
       </div>
       <div className="terminal-window">
         <div className="terminal-header">
-          <span className="terminal-dot" style={{ background: '#ff5f56' }} />
-          <span className="terminal-dot" style={{ background: '#ffbd2e' }} />
-          <span className="terminal-dot" style={{ background: '#27c93f' }} />
+          <span className="terminal-dot" style={{ background: '#ff5f56' }} aria-hidden="true" />
+          <span className="terminal-dot" style={{ background: '#ffbd2e' }} aria-hidden="true" />
+          <span className="terminal-dot" style={{ background: '#27c93f' }} aria-hidden="true" />
           <span className="terminal-title">Terminal</span>
         </div>
         <div className="terminal-body">
@@ -109,11 +109,11 @@ function PolicyFlowDiagram(): React.ReactElement {
     <div className="flow-diagram" style={{ padding: '1.5rem 0', maxWidth: '100%' }}>
       {nodes.map((n, i) => {
         if ('arrow' in n) {
-          return <span key={i} className="flow-arrow">→</span>;
+          return <span key={i} className="flow-arrow" aria-hidden="true">→</span>;
         }
         return (
           <div key={i} className="flow-node">
-            <span className="flow-node__icon">{n.icon}</span>
+            <span className="flow-node__icon" aria-hidden="true">{n.icon}</span>
             <span className="flow-node__pill">{n.pill}</span>
             <span className="flow-node__label" style={{ whiteSpace: 'pre' }}>{n.label}</span>
           </div>
@@ -173,10 +173,10 @@ function ArchitectureStrip(): React.ReactElement {
           null,
           { icon: '📄', pill: 'Reporters', label: 'Output' },
         ].map((n, i) => {
-          if (n === null) return <span key={i} className="flow-arrow">→</span>;
+          if (n === null) return <span key={i} className="flow-arrow" aria-hidden="true">→</span>;
           return (
             <div key={i} className="flow-node">
-              <span className="flow-node__icon">{n.icon}</span>
+              <span className="flow-node__icon" aria-hidden="true">{n.icon}</span>
               <span className="flow-node__pill">{n.pill}</span>
               <span className="flow-node__label">{n.label}</span>
             </div>

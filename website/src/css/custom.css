@@ -618,6 +618,61 @@
 [data-theme='dark'] .alert--warning { background: rgba(246,173,85,0.1);  border-color: rgba(246,173,85,0.3); }
 [data-theme='dark'] .alert--danger  { background: rgba(252,129,74,0.1);  border-color: rgba(252,129,74,0.3); }
 
+/* ─── Focus indicators (WCAG 2.4.7 / 2.4.13) ───────────────────────────── */
+:focus-visible {
+  outline: 2px solid #c084fc;
+  outline-offset: 2px;
+}
+
+.btn-hero-primary:focus-visible,
+.btn-hero-secondary:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(192, 132, 252, 0.4);
+}
+
+.policy-panel__tab:focus-visible {
+  outline: 2px solid #c084fc;
+  outline-offset: -2px;
+}
+
+/* ─── Link discrimination (WCAG 1.4.1) ──────────────────────────────────── */
+.markdown a,
+.spotlight__copy a,
+.footer__link-item {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.markdown a:hover,
+.spotlight__copy a:hover,
+.footer__link-item:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ─── Reduced motion (WCAG 2.3.3) ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .risk-pulse,
+  .risk-pulse * {
+    animation: none !important;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-secondary,
+  .feature-card,
+  .policy-panel__tab,
+  .flow-node__pill {
+    transition: none !important;
+  }
+
+  .btn-hero-primary:hover,
+  .btn-hero-secondary:hover,
+  .feature-card:hover {
+    transform: none !important;
+  }
+}
+
 /* ─── Responsive tweaks ──────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .section { padding: 3rem 0; }

@@ -82,16 +82,18 @@ export default function AIDemo(): React.ReactElement {
   return (
     <div className="terminal-window">
       <div className="terminal-header">
-        <span className="terminal-dot" style={{ background: '#ff5f56' }} />
-        <span className="terminal-dot" style={{ background: '#ffbd2e' }} />
-        <span className="terminal-dot" style={{ background: '#27c93f' }} />
+        <span className="terminal-dot" style={{ background: '#ff5f56' }} aria-hidden="true" />
+        <span className="terminal-dot" style={{ background: '#ffbd2e' }} aria-hidden="true" />
+        <span className="terminal-dot" style={{ background: '#27c93f' }} aria-hidden="true" />
         <span className="terminal-title">hubhelper analyze --org acme-corp</span>
-        <span style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+        <span style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }} role="group" aria-label="Demo scenarios">
           {SCENARIOS.map((s, i) => (
             <button
               key={s.label}
               onClick={() => setActive(i)}
               type="button"
+              aria-pressed={i === active}
+              aria-label={`Show ${s.label} scenario`}
               style={{
                 background: i === active ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.08)',
                 border: '1px solid ' + (i === active ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.15)'),
@@ -108,7 +110,7 @@ export default function AIDemo(): React.ReactElement {
           ))}
         </span>
       </div>
-      <div className="terminal-body" style={{ whiteSpace: 'pre-wrap' }}>
+      <div className="terminal-body" style={{ whiteSpace: 'pre-wrap' }} aria-live="polite" aria-atomic="true">
         <span className="t-dim">{'════'.repeat(16)}{'\n'}</span>
         <span className="t-bold t-blue">{'  GitHub Organization Security Analysis\n'}</span>
         <span className="t-dim">{'════'.repeat(16)}{'\n\n'}</span>
@@ -167,7 +169,7 @@ function RiskBadge({ level }: { level: RiskLevel }): React.ReactElement {
       verticalAlign: 'middle',
     }}>
       {(level === 'critical' || level === 'high') && (
-        <span style={{
+        <span aria-hidden="true" style={{
           width: 7,
           height: 7,
           borderRadius: '50%',

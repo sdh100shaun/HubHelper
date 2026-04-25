@@ -59,7 +59,7 @@ export default function HomepageFeatures(): React.ReactElement {
       <div className="features-grid">
         {FEATURES.map((f) => (
           <div key={f.title} className="feature-card">
-            <span className="feature-card__icon">{f.icon}</span>
+            <span className="feature-card__icon" aria-hidden="true">{f.icon}</span>
             <h3>{f.title}</h3>
             <p>{f.description}</p>
           </div>
