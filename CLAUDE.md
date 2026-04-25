@@ -204,6 +204,9 @@ npm run lint && npm run build
 **Problem**: Tests not running  
 **Solution**: Ensure jest is installed: `npm install`
 
+**Problem**: `jest-haste-map: duplicate manual mock found: chalk` warning  
+**Solution**: Already fixed — `jest.config.js` excludes `/dist/` via `modulePathIgnorePatterns`. Do not remove that entry.
+
 ## Performance Guidelines
 
 - Use pagination for API calls
@@ -297,7 +300,7 @@ npm run docs:serve       # Dev server with hot reload
 
 ## Architecture
 
-**CLI entry point:** `src/index.ts` — Commander.js with `analyze`, `check-repo`, `query`, and `watch` commands.
+**CLI entry point:** `src/index.ts` — Commander.js with `analyze`, `check-repo`, `query`, `watch`, and `stream` commands.
 
 **Policy-driven data flow:**
 ```
@@ -307,6 +310,12 @@ GitHubFetcher → PolicyEngine.evaluate() → Evaluators (9 controls) → Policy
                                                                                           ├─ HTML
                                                                                           ├─ SARIF (GitHub Code Scanning)
                                                                                           └─ Compliance (frameworks)
+```
+
+**Realtime stream data flow (`stream` command):**
+```
+GitHubEventsFetcher (ETag polling) → RealtimeOrchestrator → PolicyEngine.evaluate()
+                                                           → StreamReporter (per-event violations)
 ```
 
 ### Core Components
@@ -340,10 +349,13 @@ GitHubFetcher → PolicyEngine.evaluate() → Evaluators (9 controls) → Policy
   - `html-reporter.ts` — HTML reports
   - `sarif-reporter.ts` — SARIF 2.1.0 (GitHub Code Scanning integration)
   - `compliance-reporter.ts` — Framework compliance reports (NIST, CIS)
+  - `stream-reporter.ts` — Compact per-event stream output for the `stream` command
 
 - **services/** — GitHub API integration
   - `github-fetcher.ts` — Octokit client for repos, PRs, workflows
+  - `github-events-fetcher.ts` — ETag-based polling of `/orgs/{org}/events` for the `stream` command
   - `watch-orchestrator.ts` — Continuous monitoring mode
+  - `realtime-orchestrator.ts` — Per-event policy evaluation loop for the `stream` command
   - `state-manager.ts` — Stateful change detection
   - `change-detector.ts` — Issue deduplication
 
@@ -355,8 +367,9 @@ GitHubFetcher → PolicyEngine.evaluate() → Evaluators (9 controls) → Policy
   - `input-validator.ts` — GitHub token/org/days validation
   - `path-validator.ts` — Path traversal prevention
   - `html-sanitizer.ts` — XSS prevention
+  - `security-utils.ts` — Shared `isSecurityRelated()` helper (keyword/label/file detection)
 
-- **types/index.ts** — Core interfaces: `Repository`, `PullRequest`, `Workflow`, `SecurityIssue`, `AnalysisResult`, `OrganizationActivity`
+- **types/index.ts** — Core interfaces: `Repository`, `PullRequest`, `Workflow`, `SecurityIssue`, `AnalysisResult`, `OrganizationActivity`, `GitHubEvent`, `StreamConfig`, `StreamEventResult`
 
 ## Working with Policies
 
