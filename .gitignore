@@ -9,3 +9,5 @@ coverage/
 _site/
 .gh-lists/
 .claude/
+playwright-report/
+test-results/
