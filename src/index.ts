@@ -47,7 +47,20 @@ function resolveCliAuth(
     return { mode: 'pat', token: validation.sanitized as string };
   }
   try {
-    return resolveAuthFromEnv();
+    const auth = resolveAuthFromEnv();
+
+    if (auth.mode === 'pat') {
+      const validation = validateGitHubToken(auth.token);
+      if (!validation.valid) {
+        consoleReporter.printError(new Error(validation.error!));
+        consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
+        return null;
+      }
+
+      return { mode: 'pat', token: validation.sanitized as string };
+    }
+
+    return auth;
   } catch (err) {
     consoleReporter.printError(err as Error);
     consoleReporter.printInfo(
