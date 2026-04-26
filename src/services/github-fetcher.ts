@@ -1,4 +1,4 @@
-import { Octokit } from '@octokit/rest';
+import type { Octokit } from '@octokit/rest';
 import type {
   ApprovedEmailConfig,
   PullRequest,
@@ -8,14 +8,16 @@ import type {
   WorkflowJob,
   WorkflowRun,
 } from '../types/index.js';
+import { type AuthConfig, createGitHubClient } from './github-auth.js';
 
 export class GitHubFetcher {
   private octokit: Octokit;
   private org: string;
   private cachedRepos: Repository[] | null = null;
 
-  constructor(token: string, organization: string) {
-    this.octokit = new Octokit({ auth: token });
+  constructor(auth: string | AuthConfig, organization: string) {
+    const config: AuthConfig = typeof auth === 'string' ? { mode: 'pat', token: auth } : auth;
+    this.octokit = createGitHubClient(config);
     this.org = organization;
   }
 

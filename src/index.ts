@@ -13,6 +13,7 @@ import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
 import { CopilotService } from './services/copilot-service.js';
+import { type AuthConfig, resolveAuthFromEnv } from './services/github-auth.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
@@ -26,6 +27,36 @@ import { validateFilePath } from './utils/path-validator.js';
 
 // Load environment variables
 config();
+
+/**
+ * Resolve CLI auth: explicit --token flag wins (validated as PAT),
+ * otherwise auto-detect from environment (App auth or PAT).
+ * Returns null and has already printed the error on failure.
+ */
+function resolveCliAuth(
+  tokenOption: string | undefined,
+  consoleReporter: ConsoleReporter
+): AuthConfig | null {
+  if (tokenOption) {
+    const validation = validateGitHubToken(tokenOption);
+    if (!validation.valid) {
+      consoleReporter.printError(new Error(validation.error!));
+      consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
+      return null;
+    }
+    return { mode: 'pat', token: validation.sanitized as string };
+  }
+  try {
+    return resolveAuthFromEnv();
+  } catch (err) {
+    consoleReporter.printError(err as Error);
+    consoleReporter.printInfo(
+      'Set GITHUB_TOKEN (PAT) or GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + ' +
+        'GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App)'
+    );
+    return null;
+  }
+}
 
 const program = new Command();
 
@@ -57,18 +88,12 @@ program
 
     try {
       // Get configuration
-      const tokenInput = options.token || process.env.GITHUB_TOKEN;
       const orgInput = options.org || process.env.GITHUB_ORG;
       const daysInput = options.days;
 
-      // Validate token
-      const tokenValidation = validateGitHubToken(tokenInput);
-      if (!tokenValidation.valid) {
-        consoleReporter.printError(new Error(tokenValidation.error!));
-        consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
-        process.exit(1);
-      }
-      const token = tokenValidation.sanitized as string;
+      // Resolve auth (PAT via --token flag or auto-detect App/PAT from env)
+      const authConfig = resolveCliAuth(options.token, consoleReporter);
+      if (!authConfig) process.exit(1);
 
       // Validate organization
       const orgValidation = validateOrganizationName(orgInput);
@@ -92,7 +117,7 @@ program
 
       // Fetch data
       const spinner = ora('Fetching repositories...').start();
-      const fetcher = new GitHubFetcher(token, org);
+      const fetcher = new GitHubFetcher(authConfig, org);
 
       const repositories = await fetcher.getRepositories();
       spinner.succeed(`Fetched ${repositories.length} repositories`);
@@ -345,15 +370,9 @@ program
     const consoleReporter = new ConsoleReporter();
 
     try {
-      // Validate token
-      const tokenInput = options.token || process.env.GITHUB_TOKEN;
-      const tokenValidation = validateGitHubToken(tokenInput);
-      if (!tokenValidation.valid) {
-        consoleReporter.printError(new Error(tokenValidation.error!));
-        consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
-        process.exit(1);
-      }
-      const token = tokenValidation.sanitized as string;
+      // Resolve auth (PAT via --token flag or auto-detect App/PAT from env)
+      const watchAuthConfig = resolveCliAuth(options.token, consoleReporter);
+      if (!watchAuthConfig) process.exit(1);
 
       // Validate organization
       const orgInput = options.org || process.env.GITHUB_ORG;
@@ -395,7 +414,8 @@ program
       // Build WatchConfig
       const config: WatchConfig = {
         organization: org,
-        token,
+        token: watchAuthConfig.mode === 'pat' ? watchAuthConfig.token : '',
+        authConfig: watchAuthConfig,
         intervalMinutes: interval,
         minSeverity: minSeverity as 'low' | 'medium' | 'high' | 'critical',
         lookbackDays: days,
@@ -482,16 +502,11 @@ program
           process.exit(1);
         }
       } else {
-        const tokenInput = options.token || process.env.GITHUB_TOKEN;
         const orgInput = options.org || process.env.GITHUB_ORG;
 
-        const tokenValidation = validateGitHubToken(tokenInput);
-        if (!tokenValidation.valid) {
-          consoleReporter.printError(new Error(tokenValidation.error!));
-          consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
-          process.exit(1);
-        }
-        githubToken = tokenValidation.sanitized as string;
+        const queryAuthConfig = resolveCliAuth(options.token, consoleReporter);
+        if (!queryAuthConfig) process.exit(1);
+        githubToken = queryAuthConfig.mode === 'pat' ? queryAuthConfig.token : undefined;
 
         const orgValidation = validateOrganizationName(orgInput);
         if (!orgValidation.valid) {
@@ -509,7 +524,7 @@ program
         const days = daysValidation.sanitized as number;
 
         const spinner = ora('Fetching organization data...').start();
-        const fetcher = new GitHubFetcher(githubToken, org);
+        const fetcher = new GitHubFetcher(queryAuthConfig, org);
 
         const repositories = await fetcher.getRepositories();
         spinner.text = `Fetched ${repositories.length} repositories, fetching PRs...`;

@@ -59,7 +59,7 @@ export class WatchOrchestrator {
 
     this.stateManager = new StateManager(stateConfig);
     this.changeDetector = new ChangeDetector();
-    this.githubFetcher = new GitHubFetcher(config.token, config.organization);
+    this.githubFetcher = new GitHubFetcher(config.authConfig ?? config.token, config.organization);
     this.securityAnalyzer = new SecurityAnalyzer();
 
     // Initialize statistics

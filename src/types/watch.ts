@@ -7,6 +7,8 @@
  * @module types/watch
  */
 
+import type { AuthConfig } from '../services/github-auth.js';
+
 /**
  * Configuration for watch mode operation
  */
@@ -14,8 +16,11 @@ export interface WatchConfig {
   /** GitHub organization name to monitor */
   organization: string;
 
-  /** GitHub personal access token or GitHub App token */
+  /** GitHub personal access token (legacy — prefer authConfig) */
   token: string;
+
+  /** Auth config for PAT or GitHub App. When set, takes precedence over token. */
+  authConfig?: AuthConfig;
 
   /** Scan interval in minutes (default: 60) */
   intervalMinutes: number;
