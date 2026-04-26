@@ -10,7 +10,7 @@ githubEdit: true
 HubHelper supports two authentication modes. GitHub App auth is recommended for
 automated and CI workflows; PAT auth is the simplest option for local use.
 
-| | PAT | GitHub App |
+| Feature | PAT | GitHub App |
 |---|---|---|
 | **Best for** | Local dev, one-off scans | CI/CD, scheduled automation |
 | **Identity** | Your user account | Bot account |
