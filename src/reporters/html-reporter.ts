@@ -40,7 +40,7 @@ export class HTMLReporter {
             text-align: center;
         }
         .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .header p { font-size: 1.1em; opacity: 0.9; }
+        .subtitle { font-size: 1.1em; opacity: 0.9; }
         .content { padding: 40px; }
         .summary {
             background: #f7fafc;
@@ -63,7 +63,7 @@ export class HTMLReporter {
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .stat-card h3 { font-size: 2em; margin-bottom: 5px; }
+        .stat-value { font-size: 2em; margin-bottom: 5px; font-weight: bold; }
         .stat-card p { opacity: 0.9; }
         .section {
             margin-bottom: 30px;
@@ -86,7 +86,7 @@ export class HTMLReporter {
             font-weight: bold;
             text-transform: uppercase;
         }
-        .severity-critical { background: #e53e3e; color: white; }
+        .severity-critical { background: #ef4444; color: white; }
         .severity-high { background: #fc8181; color: white; }
         .severity-medium { background: #f6ad55; color: white; }
         .severity-low { background: #4299e1; color: white; }
@@ -115,7 +115,7 @@ export class HTMLReporter {
             border-radius: 4px;
             border-left: 3px solid #f6ad55;
         }
-        .timestamp {
+        .footer {
             text-align: center;
             color: #718096;
             padding: 20px;
@@ -136,7 +136,7 @@ export class HTMLReporter {
     <div class="container">
         <div class="header">
             <h1>🔐 GitHub Security Analysis</h1>
-            <p>Organization Activity & Security Monitoring Report</p>
+            <p class="subtitle">Organization Activity & Security Monitoring Report</p>
         </div>
 
         <div class="content">
@@ -145,56 +145,56 @@ export class HTMLReporter {
                 <p>${escapeHtml(result.summary)}</p>
             </div>
 
-            <div class="statistics">
+            <div class="statistics statistics-grid">
                 <div class="stat-card">
-                    <h3>${result.statistics.total_repos}</h3>
-                    <p>Repositories</p>
+                    <div class="stat-value">${result.statistics.total_repos}</div>
+                    <p>Total Repositories</p>
                 </div>
                 <div class="stat-card">
-                    <h3>${result.statistics.total_prs}</h3>
-                    <p>Pull Requests</p>
+                    <div class="stat-value">${result.statistics.total_prs}</div>
+                    <p>Total Pull Requests</p>
                 </div>
                 <div class="stat-card">
-                    <h3>${result.statistics.self_merges}</h3>
+                    <div class="stat-value">${result.statistics.self_merges}</div>
                     <p>Self-Merges</p>
                 </div>
                 <div class="stat-card">
-                    <h3>${result.statistics.security_prs}</h3>
+                    <div class="stat-value">${result.statistics.security_prs}</div>
                     <p>Security PRs</p>
                 </div>
                 <div class="stat-card">
-                    <h3>${result.statistics.repos_with_disabled_actions}</h3>
-                    <p>Disabled Actions</p>
+                    <div class="stat-value">${result.statistics.repos_with_disabled_actions}</div>
+                    <p>Repos with Disabled Actions</p>
                 </div>
                 <div class="stat-card">
-                    <h3>${result.statistics.paused_workflows}</h3>
+                    <div class="stat-value">${result.statistics.paused_workflows}</div>
                     <p>Paused Workflows</p>
                 </div>
                 <div class="stat-card">
-                    <h3>${result.statistics.disabled_workflows}</h3>
+                    <div class="stat-value">${result.statistics.disabled_workflows}</div>
                     <p>Disabled Workflows</p>
                 </div>
             </div>
+
+            ${this.generateIssuesSection(result.issues)}
 
             ${
               aiInsights
                 ? `
             <div class="ai-insights">
-                <strong>🤖 AI-Powered Insights:</strong><br><br>
+                <h2>🤖 AI Insights</h2>
                 ${escapeHtml(aiInsights)}
             </div>
             `
                 : ''
             }
 
-            ${this.generateIssuesSection(result.issues)}
-
             ${this.generateRecommendationsSection(result.recommendations)}
         </div>
 
-        <div class="timestamp">
+        <footer class="footer">
             Generated on ${new Date().toLocaleString()}
-        </div>
+        </footer>
     </div>
 </body>
 </html>`;

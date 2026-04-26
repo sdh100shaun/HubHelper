@@ -64,7 +64,7 @@ test.describe('HTML Report Security', () => {
 
     // Check that no inline event handlers exist
     const content = await page.content();
-    expect(content).not.toMatch(/on\w+\s*=/i); // No onclick, onerror, etc.
+    expect(content).not.toMatch(/\bon\w+\s*=/i); // No onclick, onerror, etc.
   });
 
   test('sanitizes malicious javascript: URLs', async ({ page }) => {

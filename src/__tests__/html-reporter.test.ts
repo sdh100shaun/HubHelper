@@ -75,13 +75,13 @@ describe('HTMLReporter', () => {
       const html = reporter.generateReport(mockResult, aiInsights);
 
       expect(html).toContain(aiInsights);
-      expect(html).toContain('AI-Powered Insights');
+      expect(html).toContain('AI Insights');
     });
 
     it('should not include AI section without insights', () => {
       const html = reporter.generateReport(mockResult);
 
-      expect(html).not.toContain('AI-Powered Insights');
+      expect(html).not.toContain('AI Insights');
     });
 
     it('should include Content Security Policy headers', () => {
