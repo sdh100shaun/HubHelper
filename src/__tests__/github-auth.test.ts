@@ -1,5 +1,6 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { Octokit } from '@octokit/rest';
-import { createGitHubClient, describeAuth, resolveAuthFromEnv } from '../services/github-auth';
+import { createGitHubClient, describeAuth, resolveAuthFromEnv } from '../services/github-auth.js';
 
 jest.mock('@octokit/rest', () => ({
   Octokit: jest.fn().mockImplementation(() => ({})),
