@@ -234,10 +234,4 @@ steps:
 - Artifacts expire after retention period (90 days default)
 - Download before expiration
 
-## Additional Resources
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [GitHub Apps Documentation](https://docs.github.com/en/apps)
-- [Workflow Syntax Reference](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
-- [Cron Schedule Editor](https://crontab.guru/)
-- [Full Documentation](https://sdh100shaun.github.io/gh-tools/)
