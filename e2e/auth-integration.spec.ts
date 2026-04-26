@@ -102,7 +102,10 @@ test.describe('GitHub App authentication', () => {
       process.env.GITHUB_APP_INSTALLATION_ID &&
       (process.env.GITHUB_APP_PRIVATE_KEY || process.env.GITHUB_APP_PRIVATE_KEY_PATH);
 
-    test.skip(!hasAppCreds, 'set GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + GITHUB_APP_PRIVATE_KEY to enable live App test');
+    test.skip(
+      !hasAppCreds,
+      'set GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + GITHUB_APP_PRIVATE_KEY to enable live App test'
+    );
 
     const config = resolveAuthFromEnv();
     expect(config.mode).toBe('app');
@@ -123,14 +126,14 @@ test.describe('auth error handling', () => {
   });
 
   test('resolveAuthFromEnv throws when GITHUB_APP_ID is set without installation ID', () => {
-    expect(() =>
-      resolveAuthFromEnv({ GITHUB_APP_ID: '42', GITHUB_APP_PRIVATE_KEY: 'x' }),
-    ).toThrow(/GITHUB_APP_INSTALLATION_ID/);
+    expect(() => resolveAuthFromEnv({ GITHUB_APP_ID: '42', GITHUB_APP_PRIVATE_KEY: 'x' })).toThrow(
+      /GITHUB_APP_INSTALLATION_ID/
+    );
   });
 
   test('resolveAuthFromEnv throws when App is selected without a private key', () => {
     expect(() =>
-      resolveAuthFromEnv({ GITHUB_APP_ID: '42', GITHUB_APP_INSTALLATION_ID: '99' }),
+      resolveAuthFromEnv({ GITHUB_APP_ID: '42', GITHUB_APP_INSTALLATION_ID: '99' })
     ).toThrow(/GITHUB_APP_PRIVATE_KEY/);
   });
 });
