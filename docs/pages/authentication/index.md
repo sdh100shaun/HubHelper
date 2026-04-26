@@ -116,8 +116,8 @@ GITHUB_ORG=your-org
 | `GITHUB_APP_PRIVATE_KEY_PATH` | App auth | Path to `.pem` file |
 | `GITHUB_ORG` | Both | Organization to scan |
 
-`GITHUB_APP_PRIVATE_KEY` and `GITHUB_APP_PRIVATE_KEY_PATH` are mutually
-exclusive; when both are set the inline key wins.
+`GITHUB_APP_PRIVATE_KEY` and `GITHUB_APP_PRIVATE_KEY_PATH` may both be set;
+when both are present, the inline key in `GITHUB_APP_PRIVATE_KEY` wins.
 
 ---
 
