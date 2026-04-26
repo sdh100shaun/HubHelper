@@ -7,8 +7,26 @@
  * @module types/watch
  */
 
-import type { AuthConfig } from '../services/github-auth.js';
+/**
+ * Authentication configuration for GitHub access
+ * Supports either a personal access token or GitHub App authentication.
+ */
+export interface AuthConfig {
+  /** Authentication mode to use */
+  type: 'token' | 'app';
 
+  /** GitHub personal access token when using token authentication */
+  token?: string;
+
+  /** GitHub App ID when using app authentication */
+  appId?: string;
+
+  /** GitHub App installation ID when using app authentication */
+  installationId?: string;
+
+  /** GitHub App private key when using app authentication */
+  privateKey?: string;
+}
 /**
  * Configuration for watch mode operation
  */
