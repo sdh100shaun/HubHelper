@@ -259,6 +259,8 @@ export class CopilotService {
 
       'security-pr-volume': (i) =>
         `High volume of security-related PRs detected (${i.details.security_pr_count} PRs). This may indicate an ongoing security incident or a need for additional security review resources.`,
+      'contractor-repo-access': (i) =>
+        `Contractor ${i.details.contractor_login} (${i.details.contractor_email}) has pull-request activity in ${i.details.full_name}, which is outside their permitted repository list. Review and revoke access if this is not authorised.`,
     };
     return map[issue.type]?.(issue) ?? issue.description;
   }

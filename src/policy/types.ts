@@ -11,7 +11,7 @@
  */
 
 import { z } from 'zod';
-import type { PullRequest, Repository, WorkflowRun } from '../types/index.js';
+import type { PullRequest, Repository, UserProfile, WorkflowRun } from '../types/index.js';
 
 // ============================================================================
 // Shared Enums and Constants
@@ -40,6 +40,7 @@ export const DetectorTypeSchema = z.enum([
   'action-failure',
   'repeated-action-failure',
   'security-pr-volume',
+  'contractor-repo-access',
 ]);
 export type DetectorType = z.infer<typeof DetectorTypeSchema>;
 
@@ -269,6 +270,7 @@ export interface EvaluationContext {
   workflowRuns: WorkflowRun[];
   scope: ScopeConfig;
   classifierResults?: Map<string, unknown>; // Results from classifier controls
+  orgMembers?: UserProfile[]; // Org members with email profiles, used by member-aware controls
 }
 
 /**
