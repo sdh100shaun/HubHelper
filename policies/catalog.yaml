@@ -291,6 +291,48 @@ controls:
         - "8.2" # Collect Audit Logs
 
   # ========================================================================
+  # HH-GH-010: Contractor Repository Access Policy
+  # ========================================================================
+  - id: HH-GH-010
+    statement: >
+      Contractors identified by their email domain MUST only have pull-request
+      activity in repositories explicitly listed as permitted. Activity in any
+      other repository indicates a potential access-control violation and should
+      be reviewed by an administrator.
+    family: Access Control
+    evaluator:
+      kind: github.repository
+      detector: contractor-repo-access
+    parameter:
+      - id: contractor_domains
+        label: Email domains that identify contractor users
+        type: string-array
+        item-type: string
+        default: []
+        description: >
+          One or more email domains (e.g. contractor.io, freelancer.com) used to
+          identify contractors within the organisation. Members whose public GitHub
+          email ends with one of these domains are treated as contractors.
+      - id: allowed_repos
+        label: Repositories contractors are permitted to access
+        type: string-array
+        item-type: string
+        default: []
+        description: >
+          Short repository names (without the org prefix) that contractors are
+          authorised to work in. Any contractor pull-request activity detected
+          outside this list will raise a violation.
+    default-severity: high
+    mappings:
+      NIST-800-53:
+        - AC-2  # Account Management
+        - AC-3  # Access Enforcement
+        - AC-6  # Least Privilege
+      CIS-Controls:
+        - "6.1" # Establish an Access Granting Process
+        - "6.2" # Establish an Access Revoking Process
+
+  # ========================================================================
   # HH-GH-009: Security PR Volume Recommendation (Meta)
   # ========================================================================
   - id: HH-GH-009

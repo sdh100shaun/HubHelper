@@ -10,7 +10,13 @@
  * @module policy/engine
  */
 
-import type { PullRequest, Repository, SecurityIssue, WorkflowRun } from '../types/index.js';
+import type {
+  PullRequest,
+  Repository,
+  SecurityIssue,
+  UserProfile,
+  WorkflowRun,
+} from '../types/index.js';
 import { EvaluatorError } from './errors.js';
 import { evaluatorRegistry } from './evaluator-registry.js';
 import { loadCatalog, loadCatalogForProfile, loadProfile } from './loader.js';
@@ -57,7 +63,8 @@ export class PolicyEngine {
   async evaluate(
     repositories: Repository[],
     pullRequests: PullRequest[],
-    workflowRuns: WorkflowRun[]
+    workflowRuns: WorkflowRun[],
+    orgMembers?: UserProfile[]
   ): Promise<PolicyEngineResult> {
     if (!this.policy) {
       throw new Error('Policy not loaded. Call loadPolicy() first.');
@@ -70,6 +77,7 @@ export class PolicyEngine {
       workflowRuns,
       scope: this.policy.scope,
       classifierResults: new Map(),
+      orgMembers,
     };
 
     const allIssues: SecurityIssue[] = [];

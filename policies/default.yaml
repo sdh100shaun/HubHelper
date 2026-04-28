@@ -22,6 +22,7 @@ controls:
     - HH-GH-007  # Repeated action failures
     - HH-GH-008  # Single action failures
     - HH-GH-009  # Security PR volume recommendation
+    - HH-GH-010  # Contractor repository access policy
 
   # No tailoring - use catalog defaults
   tailoring: []
