@@ -1,188 +1,137 @@
 # AI-Assisted Policy Authoring & Explanation Layer Plan
 
-**Status:** Planning Phase  
+**Status:** Ready for Implementation  
 **Priority:** High  
-**Estimated Effort:** 12–15 days  
+**Estimated Effort:** 15–18 days  
 **Target Version:** v1.3.0  
 
 ---
 
-## Executive Summary
+## Decisions Made
 
-HubHelper currently uses hardcoded evaluators (TypeScript) to implement policy controls and a
-static lookup table in `copilot-service.ts` to explain issues. This plan introduces two
-AI-powered layers that reduce the amount of code that must be written per control and improve
-the quality of output presented to security teams:
+All open questions from the initial draft are resolved:
 
-1. **AI Policy Authoring** — translate a plain-English security requirement into a valid
-   YAML catalog entry + TypeScript evaluator stub, ready for human review and commit.
-2. **AI Explanation Layer** — replace the static `fallbackExplain` map with contextual,
-   remediation-focused explanations and an org-level executive summary, generated on demand.
+| # | Question | Decision |
+|---|---|---|
+| 1 | API key management | No separate key — Copilot SDK authenticates via `GITHUB_TOKEN` already in env |
+| 2 | SDK choice | Use `@github/copilot-sdk` throughout; expose `--model` flag for user overrides |
+| 3 | Control ID namespace | Keep `HH-GH-###` — consistent with all existing controls |
+| 4 | Review gate | New `review` control state: evaluated but excluded from compliance reports; appears in a separate informational section |
+| 5 | Test coverage | Comprehensive mocked unit tests for all AI service code; no live API calls in CI |
 
-Neither layer is required for normal operation; both are opt-in so performance and
-determinism of the core analysis pipeline are preserved.
+---
 
-### Model Summary
+## Model Summary
 
 | Layer | Task | Model | Model ID |
 |---|---|---|---|
-| Authoring | Single-control generation | Claude Sonnet 4.6 | `claude-sonnet-4-6` |
-| Authoring | Multi-control / complex generation | Claude Opus 4.6 | `claude-opus-4-6` |
-| Explanation | Per-issue explanations + remediation | Claude Opus 4.7 | `claude-opus-4-7` |
-| Explanation | Executive summary narrative | Claude Opus 4.7 | `claude-opus-4-7` |
+| Authoring | Single-control | Claude Sonnet 4.6 | `claude-sonnet-4-6` |
+| Authoring | Multi-control / complex | Claude Opus 4.6 | `claude-opus-4-6` |
+| Explanation | Per-issue + remediation | Claude Opus 4.7 | `claude-opus-4-7` |
+| Explanation | Executive summary | Claude Opus 4.7 | `claude-opus-4-7` |
 
-Rationale: Sonnet 4.6 balances quality and speed for structured-output authoring tasks.
-Opus 4.6 is used when inter-control reasoning depth is needed. Opus 4.7 — the most capable
-available model — is reserved for the explanation layer where output quality directly affects
-how security teams prioritise and action findings; the explanation cache ensures this does
-not add latency to repeated scans.
+The `--model` flag on any command overrides the default. Auto-selection: if the authoring prompt references existing control IDs or `depends-on` relationships, Opus 4.6 is selected automatically; otherwise Sonnet 4.6.
 
 ---
-
-## Motivation
-
-### Current pain points
-
-| Area | Problem |
-|---|---|
-| New control authoring | Requires editing 6+ files (catalog, two profiles, types, evaluator, index, tests) |
-| Control logic | Every evaluation rule must be hand-coded in TypeScript |
-| Issue explanations | `fallbackExplain` is a hard-coded string map — no context, no remediation steps |
-| Executive reporting | No narrative summary; security leads read raw issue lists |
-
-### Goals
-
-- A developer unfamiliar with the codebase should be able to add a new policy control in
-  under 10 minutes using the authoring CLI.
-- Explanations should include remediation steps tailored to the specific repository and issue.
-- Executive summaries should be usable without reading individual issue details.
-- AI calls must never block the default analysis pipeline.
-
----
-
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         CLI (src/index.ts)                          │
-└──────────┬───────────────────────────────────────┬──────────────────┘
-           │                                       │
-           │  existing                             │  new
-           ▼                                       ▼
-┌──────────────────────┐              ┌────────────────────────────┐
-│   PolicyEngine       │              │   PolicyAuthorService      │
-│   (unchanged)        │              │   (src/services/           │
-│                      │              │    policy-author.ts)       │
-│  evaluate() →        │              │                            │
-│  PolicyEngineResult  │              │  author(prompt) →          │
-└──────────┬───────────┘              │  AuthoredControl           │
-           │                          └────────────────────────────┘
-           │                                       │
-           ▼                                       ▼
-┌──────────────────────┐              ┌────────────────────────────┐
-│   Reporters          │              │   PolicyValidator           │
-│   (existing)         │              │   (src/policy/             │
-│                      │              │    ai-validator.ts)        │
-│  + AIExplainer       │              │                            │
-│    (opt-in flag)     │              │  validateAgainstSchema()   │
-└──────────────────────┘              └────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                   CLI (src/index.ts)                 │
+└────────┬─────────────────────────────┬───────────────┘
+         │ existing                    │ new
+         ▼                             ▼
+┌─────────────────┐       ┌────────────────────────┐
+│  PolicyEngine   │       │  PolicyAuthorService   │
+│                 │       │  (author-policy cmd)   │
+│  evaluate() ──► │       │                        │
+│  PolicyEngine   │       │  author(prompt)        │
+│  Result         │       │    → AuthoredControl   │
+│  + reviewIssues │       └──────────┬─────────────┘
+└────────┬────────┘                  │
+         │                           ▼
+         ▼                ┌────────────────────────┐
+┌─────────────────┐       │  PolicyValidator       │
+│  Reporters      │       │  (Zod schema check)    │
+│                 │       └────────────────────────┘
+│  + AIExplainer  │
+│  (--ai-explain) │       ┌────────────────────────┐
+│  + ReviewSection│       │  CopilotAIClient       │
+└─────────────────┘       │  (wraps copilot-sdk,   │
+                          │   GITHUB_TOKEN auth)   │
+                          └────────────────────────┘
 ```
+
+All AI calls go through `CopilotAIClient` (`src/services/copilot-ai-client.ts`), a thin
+wrapper around `@github/copilot-sdk` that injects the model ID and handles retries.
+No separate API key is required — the existing `GITHUB_TOKEN` authenticates all requests.
 
 ---
 
 ## Part 1 — AI Policy Authoring
 
-### 1.1 New CLI Command
+### 1.1 CLI Command
 
 ```
-hubhelper author-policy "<natural language requirement>"
+hubhelper author-policy "<natural language requirement>" [options]
 
 Options:
-  --output   console | file          (default: console)
-  --dir      path to write files to  (default: ./policies/generated/)
-  --model    claude model to use     (default: claude-sonnet-4-6)
-  --dry-run  print prompt only, do not call API
+  --model     override model (default: claude-sonnet-4-6)
+  --complex   force Opus 4.6 for multi-control authoring
+  --output    console | file  (default: console)
+  --dir       output directory (default: ./policies/generated/)
+  --dry-run   print prompt only, no API call
 ```
 
 Example:
 
 ```bash
 hubhelper author-policy \
-  "contractors from acme-vendor.com should only be allowed to raise PRs against repos tagged with the 'external' topic"
+  "contractors from acme-vendor.com may only raise PRs in repos tagged 'external'"
 ```
 
-Expected output:
+Output:
 
 ```
-✓ Generated control HH-GH-011
-  Written to: policies/generated/HH-GH-011.yaml
+✓ Generated HH-GH-011
+  Catalog entry : policies/generated/HH-GH-011.yaml
   Evaluator stub: src/evaluators/generated/topic-scoped-access-evaluator.ts
 
 Next steps:
-  1. Review the YAML and evaluator stub
-  2. Move files to their canonical locations
-  3. Add HH-GH-011 to policies/default.yaml (include list)
-  4. Run: npm run lint && npm run build && npm test
+  1. Review generated files
+  2. Copy to canonical locations
+  3. Add HH-GH-011 to policies/default.yaml include list
+  4. npm run lint && npm run build && npm test
 ```
 
 ### 1.2 PolicyAuthorService
 
 **File:** `src/services/policy-author.ts`
 
-**Responsibilities:**
-- Build a structured prompt containing:
-  - The existing catalog (all current controls as context / few-shot examples)
-  - The user's natural-language requirement
-  - A JSON schema for the expected output format
-- Call the Anthropic API (Claude Sonnet 4.6 by default) with structured output
-- Parse and validate the response against `CatalogSchema` (Zod)
-- Generate a TypeScript evaluator stub from the returned evaluator config
-
-**Prompt structure:**
-
-```
-System:
-  You are a security policy author for the HubHelper compliance engine.
-  Given a natural-language security requirement, produce:
-  1. A YAML catalog entry conforming to the schema below
-  2. A TypeScript evaluator stub implementing the generated control
-
-  <schema>...</schema>
-  <existing-controls>...</existing-controls>
-
-User:
-  Requirement: "<user input>"
-```
-
-**Output type:**
+**Flow:**
+1. Read current `catalog.yaml` — injected as few-shot examples in the system prompt
+2. Call `CopilotAIClient.complete()` with structured-output schema
+3. Parse JSON response → extract YAML fragment + evaluator config
+4. Validate YAML against `CatalogSchema` (Zod) — reject and surface errors if invalid
+5. Check generated control ID is not already in use
+6. Render TypeScript evaluator stub from template
+7. Return `AuthoredControl`
 
 ```typescript
 interface AuthoredControl {
-  controlId: string;           // e.g. HH-GH-011
-  catalogYaml: string;         // ready to paste into catalog.yaml
-  evaluatorStub: string;       // TypeScript skeleton, implements BaseEvaluator
-  warnings: string[];          // e.g. "requires orgMembers in context"
+  controlId: string;      // e.g. HH-GH-011
+  catalogYaml: string;    // ready to append to catalog.yaml
+  evaluatorStub: string;  // TypeScript skeleton
+  warnings: string[];     // e.g. "requires orgMembers in context"
 }
-```
-
-**Validation pipeline:**
-
-```
-LLM response (JSON)
-  → parse YAML fragment
-  → validate with CatalogSchema (Zod)   // reject if schema invalid
-  → check control ID uniqueness
-  → render evaluator stub from template
-  → return AuthoredControl
 ```
 
 ### 1.3 Evaluator Stub Template
 
-The authored evaluator will be a Handlebars (or simple string-interpolation) template that
-generates a compilable but `throw new Error('Not implemented')` skeleton:
+`src/templates/evaluator-stub.ts` renders a compilable skeleton via string interpolation:
 
 ```typescript
-// Generated by hubhelper author-policy — review before use
+// Generated by hubhelper author-policy — REVIEW BEFORE USE
 @registerEvaluator('{{detector}}')
 export class {{ClassName}}Evaluator extends BaseEvaluator {
   readonly controlId = '{{controlId}}';
@@ -193,249 +142,358 @@ export class {{ClassName}}Evaluator extends BaseEvaluator {
     parameters: Record<string, unknown>,
     severity: Severity
   ): Promise<EvaluationResult> {
-    // TODO: implement evaluation logic
-    // Parameters available:
-    {{#each parameters}}
-    //   {{id}} ({{type}}): {{label}}
-    {{/each}}
+    // TODO: implement
+    // Parameters: {{paramSummary}}
     throw new Error('Evaluator not yet implemented');
   }
 
   validateParameters(parameters: Record<string, unknown>): void {
-    {{#each parameters}}
-    {{#if required}}
-    this.get{{typeHelper type}}Param(parameters, '{{id}}');
-    {{/if}}
-    {{/each}}
+    // TODO: add required parameter checks
   }
 }
 ```
 
-### 1.4 Model Selection Rationale
-
-| Task | Recommended Model | Model ID | Reason |
-|---|---|---|---|
-| Single-control authoring | `Claude Sonnet 4.6` | `claude-sonnet-4-6` | Latest Sonnet; strong structured-output quality and instruction-following; fast enough for interactive use |
-| Multi-control / complex authoring | `Claude Opus 4.6` | `claude-opus-4-6` | Superior reasoning for controls with inter-dependencies, `depends-on` chains, and cross-cutting parameter design; used when `--complex` flag is passed or when the prompt references multiple existing controls |
-
-The `--model` flag overrides the automatic selection. The default (`claude-sonnet-4-6`) is used
-when no flag is passed and the requirement does not reference inter-control dependencies.
-
 ---
-
 ## Part 2 — AI Explanation Layer
 
 ### 2.1 Design Principles
 
-- **Opt-in only.** Default `hubhelper analyze` output is unchanged.  
-  Flag: `--ai-explain` enables per-issue AI explanations.  
-  Flag: `--ai-summary` enables executive summary generation.
-- **Batch, not per-issue calls.** All issues for a run are explained in a single API call
-  using a structured prompt, not one call per issue (avoids latency multiplication).
-- **Cache by fingerprint.** A SHA-256 of `(controlId, repository, key detail fields)`
-  is used as a cache key so repeated runs don't re-explain unchanged issues.
-- **Streaming for console output.** Use streaming API so the console reporter can display
-  explanations as they arrive rather than waiting for the full batch.
+- **Opt-in.** `--ai-explain` enables per-issue explanations; `--ai-summary` enables executive summary. Default pipeline is unchanged.
+- **Batch calls.** All issues sent in one API request, not one call per issue.
+- **Cache by fingerprint.** SHA-256 of `(controlId + repository + key detail fields)` — 24h TTL at `~/.hubhelper/cache/explanations/`. Only new/changed issues hit the API.
+- **Streaming.** Console reporter streams tokens as they arrive rather than waiting for full response.
 
 ### 2.2 AIExplainerService
 
-**File:** `src/services/ai-explainer.ts`
-
-**Interface:**
+**File:** `src/services/ai-explainer.ts`  
+**Model:** `claude-opus-4-7` (both per-issue and executive summary)
 
 ```typescript
 interface ExplainedIssue {
   issue: SecurityIssue;
-  explanation: string;     // 2–3 sentences: what happened and why it matters
-  remediation: string[];   // ordered list of concrete fix steps
-  references: string[];    // NIST/CIS control IDs + doc links
+  explanation: string;   // 2-3 sentences: what happened and why it matters
+  remediation: string[]; // ordered concrete fix steps
+  references: string[];  // NIST/CIS control IDs
 }
 
 interface ExecutiveSummary {
-  headline: string;          // one sentence, e.g. "3 critical access-control gaps found"
-  narrative: string;         // 2–3 paragraphs suitable for a non-technical audience
-  topRisks: string[];        // top 3 risks in plain English
-  positives: string[];       // what is working well
-  recommendedActions: string[]; // prioritised action items
+  headline: string;
+  narrative: string;          // 2-3 paragraphs, non-technical audience
+  topRisks: string[];
+  positives: string[];
+  recommendedActions: string[];
 }
 
 class AIExplainerService {
-  async explainIssues(
-    issues: SecurityIssue[],
-    policy: ResolvedPolicy
-  ): Promise<ExplainedIssue[]>;
-
-  async generateExecutiveSummary(
-    result: PolicyEngineResult,
-    org: string
-  ): Promise<ExecutiveSummary>;
+  async explainIssues(issues: SecurityIssue[], policy: ResolvedPolicy): Promise<ExplainedIssue[]>;
+  async generateExecutiveSummary(result: PolicyEngineResult, org: string): Promise<ExecutiveSummary>;
 }
 ```
 
-**Prompt structure for `explainIssues`:**
+### 2.3 Console Output With --ai-explain
 
 ```
-System:
-  You are a security advisor. Given a list of compliance issues found in a
-  GitHub organisation, explain each one concisely and provide remediation steps.
-  Respond with a JSON array matching the ExplainedIssue schema.
+[HIGH] contractor-repo-access · myorg/internal-api
 
-User:
-  Organisation: <org>
-  Policy profile: <profile title>
-  Issues (JSON): <issues array>
+  Contractor alice has pull-request activity in myorg/internal-api, which is
+  not in the permitted repository list for their domain.
+
+  AI Analysis
+  ───────────
+  Alice's email (alice@acme-vendor.com) identifies her as a third-party
+  contractor. Access to internal-api exposes proprietary business logic to an
+  external party, violating least-privilege and your contractor access policy.
+
+  Remediation
+  ───────────
+  1. Remove alice from internal-api collaborators in GitHub repo settings
+  2. Audit commits from alice in internal-api over the lookback window
+  3. If access is legitimate, add internal-api to contractor_allowed_repos
+
+  References: NIST AC-6, CIS Control 6.1
 ```
 
-**Model:** `claude-opus-4-7` for both per-issue explanations and executive summaries.
+### 2.4 Reporter Schema Additions
 
-Opus 4.7 is the latest and most capable Claude model. For the explanation layer, output
-quality matters more than raw speed — a security advisor reading the report expects accurate
-remediation steps and well-reasoned risk narrative. The explanation cache (§2.3) absorbs the
-latency cost on repeated runs: Opus 4.7 is only called for issues that are genuinely new or
-changed since the last scan.
+JSON and HTML reporters gain two nullable top-level fields when AI flags are active:
 
-### 2.3 Caching Strategy
-
-```
-src/services/
-  explanation-cache.ts   — filesystem cache, keyed by SHA-256(issue fingerprint)
-                           TTL: 24 hours (configurable)
-                           Location: ~/.hubhelper/cache/explanations/
+```typescript
+interface PolicyEngineReport {
+  issues: SecurityIssue[];
+  reviewIssues: SecurityIssue[];       // review-state controls (see Part 4)
+  aiExplanations?: ExplainedIssue[];   // present only with --ai-explain
+  executiveSummary?: ExecutiveSummary; // present only with --ai-summary
+  statistics: { ... };
+}
 ```
 
-Cache hit rate will be high for recurring issues (same repo, same control violation that
-hasn't been remediated). Only new or changed issues incur API calls.
+SARIF output excludes all AI fields — SARIF is consumed by GitHub Code Scanning for enforcement and must remain deterministic.
 
-### 2.4 Reporter Integration
+---
+## Part 3 — Copilot SDK Integration
 
-**Console reporter changes (`src/reporters/console-reporter.ts`):**
+### 3.1 CopilotAIClient
 
+**File:** `src/services/copilot-ai-client.ts`
+
+Single wrapper used by both `PolicyAuthorService` and `AIExplainerService`. Authenticates via `GITHUB_TOKEN` — no additional key required.
+
+```typescript
+interface CompletionOptions {
+  model: string;          // e.g. 'claude-sonnet-4-6'
+  systemPrompt: string;
+  userPrompt: string;
+  responseFormat?: 'json' | 'text';
+  stream?: boolean;
+}
+
+class CopilotAIClient {
+  constructor(token: string) { /* uses GITHUB_TOKEN */ }
+
+  async complete(options: CompletionOptions): Promise<string>;
+  async *stream(options: CompletionOptions): AsyncIterable<string>;
+}
 ```
-Without --ai-explain (current):
-  [HIGH] contractor-repo-access: myorg/internal-api
-    Contractor alice has pull-request activity...
 
-With --ai-explain:
-  [HIGH] contractor-repo-access: myorg/internal-api
-    Contractor alice has pull-request activity...
-    
-    AI Analysis:
-      Alice's email (alice@acme-vendor.com) identifies her as a third-party contractor.
-      Access to internal-api exposes proprietary business logic to an external party,
-      violating least-privilege and your contractor access policy.
-    
-    Remediation:
-      1. Remove alice from the internal-api repository collaborators
-      2. Review any code alice has committed to internal-api in the last 30 days
-      3. Update the contractor_allowed_repos policy parameter if this access is legitimate
-    
-    References: NIST AC-6 (Least Privilege), CIS Control 6.1
-```
+Internally wraps `@github/copilot-sdk`. Any call that fails with a rate-limit or transient error is retried up to 3 times with exponential backoff (2s, 4s, 8s).
 
-**HTML/JSON reporters:** Add optional `aiExplanation` and `aiRemediation` fields to the
-report schema when `--ai-explain` is active. These are nullable so existing consumers don't
-break.
+### 3.2 Model Override
 
-### 2.5 Executive Summary Output
+The `--model` CLI flag is passed through to `CopilotAIClient` on every call. Valid values are any model ID supported by the Copilot SDK. The plan defaults (`claude-sonnet-4-6`, `claude-opus-4-6`, `claude-opus-4-7`) are used when no override is provided.
 
-When `--ai-summary` is passed, the console reporter appends a formatted executive summary
-block at the end of the report. The JSON/HTML reporters include it as a top-level field.
+### 3.3 No GitHub MCP Dependency
+
+The Copilot SDK authenticates via `GITHUB_TOKEN` but does not require or use the GitHub MCP server. All GitHub data needed for context (repos, members, PRs) is already fetched by `GitHubFetcher` and available in `EvaluationContext`. MCP is a transport layer for IDE/agent surfaces and is not available in a Node.js CLI context.
 
 ---
 
-## Part 3 — GitHub MCP Considerations
+## Part 4 — Control Review State
 
-The `@github/copilot-sdk` is already a dependency. The Copilot SDK does **not** expose
-GitHub MCP tools directly from within a Node.js evaluator context — MCP is a server-side
-transport layer used by IDE/agent surfaces, not a library API. Therefore:
+### 4.1 Purpose
 
-- **Policy authoring and explanations** will use the **Anthropic Claude API directly**
-  (via the `anthropic` npm package, consistent with the existing `ai-analyzer.ts` pattern)
-  rather than attempting to call MCP tools.
-- **GitHub data** needed for context (repo metadata, member emails) is already fetched by
-  `GitHubFetcher` and passed through `EvaluationContext` — no MCP calls are needed.
-- The `@github/copilot-sdk` may be used if the user is running inside a GitHub Copilot
-  agent environment and a chat interface is preferred; this would be an alternative
-  transport for the same prompts, configured via a flag.
+A control in `review` state is fully evaluated — its evaluator runs and issues are collected — but those issues are **excluded from the compliance report** and do not count toward `fail-threshold`. They appear in a separate informational section so teams can validate a new control against real data before promoting it to active.
+
+This solves the authoring workflow: a newly generated control can be added to the catalog with `state: review`, run in production, and observed safely before it starts blocking CI or affecting compliance scores.
+
+### 4.2 YAML Schema Changes
+
+**`src/policy/types.ts`** — extend `ControlSchema` and `ControlTailoringSchema`:
+
+```typescript
+export const ControlStateSchema = z.enum(['active', 'disabled', 'review']);
+export type ControlState = z.infer<typeof ControlStateSchema>;
+```
+
+Backward compatibility: `enabled: false` maps to `state: 'disabled'`; `enabled: true` (default) maps to `state: 'active'`. The `enabled` field is kept as a deprecated alias so existing profiles continue to work without changes.
+
+**Catalog entry example:**
+
+```yaml
+- id: HH-GH-011
+  state: review          # evaluated but excluded from compliance reports
+  statement: >
+    Contractors from acme-vendor.com may only raise PRs in repos tagged 'external'.
+  ...
+```
+
+**Profile tailoring example:**
+
+```yaml
+tailoring:
+  - control-id: HH-GH-011
+    state: review          # promote to active once validated
+```
+
+### 4.3 Policy Engine Changes
+
+`PolicyEngineResult` gains a `reviewIssues` field:
+
+```typescript
+interface PolicyEngineResult {
+  issues: SecurityIssue[];        // active controls only — used for reporting + fail-threshold
+  reviewIssues: SecurityIssue[];  // review-state controls — informational only
+  statistics: { ... };
+  policy: ResolvedPolicy;
+}
+```
+
+The engine loop:
+- `state: active` → issues go to `result.issues`
+- `state: review` → issues go to `result.reviewIssues`
+- `state: disabled` → evaluator not called, no issues
+
+### 4.4 Reporter Behaviour
+
+| Reporter | Active issues | Review issues |
+|---|---|---|
+| Console | Full detail | Appended as "Controls Under Review" section, visually distinct |
+| JSON | `issues` array | `reviewIssues` array (top-level, never mixed) |
+| HTML | Main report | Collapsible "Under Review" panel |
+| SARIF | Included | **Excluded** — SARIF drives enforcement |
+| Compliance | Included | **Excluded** — review issues do not affect framework scores |
+
+`fail-threshold` applies to `issues` only. A run with zero active issues but many review issues exits 0.
 
 ---
+## Part 5 — Testing Strategy
 
-## Files to Create / Modify
+All AI service tests use mocks. No live API calls in CI.
 
-### New files
+### 5.1 CopilotAIClient Tests
+
+**File:** `src/__tests__/copilot-ai-client.test.ts`
+
+Mock `@github/copilot-sdk` at the module level. Test:
+
+- `complete()` returns parsed response on success
+- `complete()` retries on transient error (2s/4s/8s backoff), succeeds on 3rd attempt
+- `complete()` throws after 3 failed retries
+- `stream()` yields tokens incrementally
+- Model ID is passed through correctly to SDK
+- `GITHUB_TOKEN` missing → throws descriptive error at construction
+
+### 5.2 PolicyAuthorService Tests
+
+**File:** `src/__tests__/policy-author.test.ts`
+
+Mock `CopilotAIClient`. Test:
+
+- Valid single-control prompt → returns `AuthoredControl` with correct `controlId` format (`HH-GH-###`)
+- Generated YAML passes `CatalogSchema` Zod validation
+- Duplicate control ID in catalog → throws with clear message
+- Invalid YAML from model → validation error surfaced to caller
+- `--complex` flag → Opus 4.6 model ID passed to client
+- No `--complex` flag → Sonnet 4.6 model ID passed to client
+- `--model` override → overridden model ID passed to client
+- `--dry-run` → no call to `CopilotAIClient`, prompt printed to stdout
+- Catalog few-shot context is injected into system prompt
+
+### 5.3 AIExplainerService Tests
+
+**File:** `src/__tests__/ai-explainer.test.ts`
+
+Mock `CopilotAIClient`. Test:
+
+- `explainIssues()` with 3 issues → returns 3 `ExplainedIssue` objects
+- `explainIssues()` with empty array → returns empty array, no API call
+- `generateExecutiveSummary()` → returns `ExecutiveSummary` with all required fields
+- Opus 4.7 model ID used for both explanation calls
+- `--model` override respected for explanation calls
+- Malformed JSON from model → throws descriptive error
+
+### 5.4 ExplanationCache Tests
+
+**File:** `src/__tests__/explanation-cache.test.ts`
+
+Use real filesystem with `tmp` directory. Test:
+
+- Cache miss → calls through to supplier function
+- Cache hit within TTL → returns cached value, supplier not called
+- Cache entry expired (TTL elapsed) → calls supplier again
+- Two issues with different fingerprints → cached independently
+- Same issue, different run → same fingerprint, cache hit
+- Corrupted cache file → treated as miss, supplier called, bad file overwritten
+- Cache directory missing → created automatically
+
+### 5.5 Control Review State Tests
+
+**File:** `src/__tests__/policy-engine-review-state.test.ts`
+
+Mock evaluators. Test:
+
+- `state: active` control → issues in `result.issues`, not in `result.reviewIssues`
+- `state: review` control → issues in `result.reviewIssues`, not in `result.issues`
+- `state: disabled` control → evaluator not called, no issues anywhere
+- Mix of active + review controls → correct segregation
+- `fail-threshold: high` with only review issues → exit code 0
+- `fail-threshold: high` with active high issue → exit code 1
+- `enabled: false` in old profile → treated as `state: disabled`
+- `enabled: true` in old profile → treated as `state: active`
+- Profile tailoring can promote `review` → `active`
+
+### 5.6 Reporter Review Section Tests
+
+Extend existing reporter tests:
+
+- Console: review issues render in distinct "Controls Under Review" block
+- JSON: `reviewIssues` key present; never merged with `issues`
+- SARIF: `reviewIssues` absent from output
+- Compliance reporter: review issues excluded from framework scores
+- HTML: collapsible "Under Review" panel present when `reviewIssues` non-empty
+
+---
+## Files to Create
 
 | File | Purpose |
 |---|---|
-| `src/services/policy-author.ts` | PolicyAuthorService — authoring logic + Anthropic API call |
-| `src/services/ai-explainer.ts` | AIExplainerService — batch explanation + executive summary |
-| `src/services/explanation-cache.ts` | Filesystem-backed explanation cache |
-| `src/templates/evaluator-stub.ts` | Evaluator stub template renderer |
-| `src/__tests__/policy-author.test.ts` | Unit tests (mocked API) |
-| `src/__tests__/ai-explainer.test.ts` | Unit tests (mocked API) |
-| `src/__tests__/explanation-cache.test.ts` | Cache tests |
-| `policies/generated/.gitkeep` | Placeholder for generated controls |
+| `src/services/copilot-ai-client.ts` | Copilot SDK wrapper — auth, model selection, retry |
+| `src/services/policy-author.ts` | Authoring logic — prompt build, Zod validation, stub render |
+| `src/services/ai-explainer.ts` | Batch explanation + executive summary |
+| `src/services/explanation-cache.ts` | Fingerprint-keyed filesystem cache |
+| `src/templates/evaluator-stub.ts` | Evaluator TypeScript skeleton renderer |
+| `src/__tests__/copilot-ai-client.test.ts` | SDK wrapper tests (mocked) |
+| `src/__tests__/policy-author.test.ts` | Authoring service tests (mocked) |
+| `src/__tests__/ai-explainer.test.ts` | Explainer service tests (mocked) |
+| `src/__tests__/explanation-cache.test.ts` | Cache tests (real fs, tmp dir) |
+| `src/__tests__/policy-engine-review-state.test.ts` | Review state engine tests |
+| `policies/generated/.gitkeep` | Staging directory for AI-generated controls |
 
-### Modified files
+## Files to Modify
 
 | File | Change |
 |---|---|
-| `src/index.ts` | Add `author-policy` command; add `--ai-explain` and `--ai-summary` flags to `analyze` |
-| `src/reporters/console-reporter.ts` | Render AI explanation block when present |
-| `src/reporters/json-reporter.ts` | Include `aiExplanation` / `aiRemediation` fields (nullable) |
-| `src/reporters/html-reporter.ts` | Render AI explanation section |
-| `package.json` | Confirm `anthropic` package is listed (check version, add if missing) |
+| `src/policy/types.ts` | Add `ControlStateSchema`; add `reviewIssues` to `EvaluationResult`; deprecate `enabled` |
+| `src/policy/engine.ts` | Segregate active vs review issues; populate `reviewIssues` on result |
+| `src/policy/resolver.ts` | Map legacy `enabled` boolean to `state` enum |
+| `src/index.ts` | Add `author-policy` command; add `--ai-explain`, `--ai-summary` flags |
+| `src/reporters/console-reporter.ts` | Render AI block + "Under Review" section |
+| `src/reporters/json-reporter.ts` | Add `reviewIssues`, `aiExplanations`, `executiveSummary` fields |
+| `src/reporters/html-reporter.ts` | Add collapsible review panel + AI explanation section |
+| `src/reporters/sarif-reporter.ts` | Explicitly exclude `reviewIssues` and AI fields |
+| `src/reporters/compliance-reporter.ts` | Exclude review issues from framework scores |
+| `src/__tests__/console-reporter.test.ts` | Add review section tests |
+| `src/__tests__/json-reporter.test.ts` | Add reviewIssues field tests |
 
 ---
 
 ## Phased Delivery
 
-### Phase 1 — AI Explanation Layer (5 days)
+### Phase 1 — Control Review State (3 days)
+Foundation that everything else builds on. No AI calls involved.
 
-Lowest risk; purely additive to existing output. No changes to the analysis pipeline.
+1. `ControlStateSchema` in types + backward-compat `enabled` mapping
+2. Engine segregation — `reviewIssues` on result
+3. All reporter review sections
+4. Tests: `policy-engine-review-state.test.ts` + reporter additions
 
-1. `AIExplainerService` + mocked tests
-2. `ExplanationCache`
-3. Console reporter `--ai-explain` flag
-4. JSON/HTML reporter schema additions
-5. `--ai-summary` flag + executive summary
+### Phase 2 — Copilot SDK Client (2 days)
+Shared infrastructure for phases 3 and 4.
 
-### Phase 2 — AI Policy Authoring (7 days)
+1. `CopilotAIClient` wrapper
+2. Retry logic + model passthrough
+3. `copilot-ai-client.test.ts`
 
-Slightly higher complexity; requires prompt engineering iteration.
+### Phase 3 — AI Explanation Layer (5 days)
+Purely additive; no pipeline changes.
 
-1. `PolicyAuthorService` + Zod validation pipeline
-2. Evaluator stub template renderer
+1. `ExplanationCache`
+2. `AIExplainerService` — `explainIssues` + `generateExecutiveSummary`
+3. Console `--ai-explain` streaming output
+4. JSON/HTML reporter additions
+5. `--ai-summary` flag
+6. Tests: explainer + cache
+
+### Phase 4 — AI Policy Authoring (5 days)
+
+1. Evaluator stub template renderer
+2. `PolicyAuthorService` — prompt build + Zod validation pipeline
 3. `author-policy` CLI command
-4. Tests with mocked Anthropic responses
-5. Documentation update
+4. `policies/generated/` staging directory
+5. Tests: policy-author
 
-### Phase 3 — Polish (2 days)
+### Phase 5 — Polish (2 days)
 
-1. Streaming output in console reporter for long AI responses
-2. Cache TTL configuration via env/profile
-3. Model selection flag (`--model`)
-4. Rate-limit handling + retry logic
-
----
-
-## Open Questions for Review
-
-1. **API key management.** Should the Anthropic key be read from `ANTHROPIC_API_KEY` env var
-   (same as Claude Code), or should HubHelper have its own `HUBHELPER_AI_KEY`? Using the
-   same var reduces friction but may surprise users.
-
-2. **Copilot SDK vs Anthropic SDK.** The `@github/copilot-sdk` is already installed. Do you
-   prefer to use it exclusively (keeps vendor surface smaller) or use the Anthropic SDK
-   directly (more model flexibility, explicit access to Sonnet 4.6 / Opus 4.6 / Opus 4.7)?
-
-3. **Generated control IDs.** The plan assigns sequential IDs (HH-GH-011 onwards) to
-   AI-authored controls. Should there be a different namespace (e.g. `HH-AI-001`) to
-   distinguish AI-generated controls from hand-authored ones?
-
-4. **Review gate.** Should the `author-policy` command write to a `policies/generated/`
-   staging directory (requiring manual promotion), or should it write directly to
-   `policies/catalog.yaml` with a warning?
-
-5. **Test coverage for AI paths.** All AI service tests will mock the Anthropic API. Is
-   there a requirement for integration tests against the live API in CI, or is mocking
-   sufficient?
+1. Cache TTL configurable via env var `HUBHELPER_CACHE_TTL_HOURS`
+2. Rate-limit detection → graceful degradation (fall back to static explanation)
+3. `--model` flag wired through all commands
+4. README / docs update for new commands and flags
