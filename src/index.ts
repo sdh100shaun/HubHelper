@@ -12,6 +12,8 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
+import { AIExplainerService } from './services/ai-explainer.js';
+import type { AIModel } from './services/copilot-ai-client.js';
 import { CopilotService } from './services/copilot-service.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
@@ -52,6 +54,9 @@ program
     'json'
   )
   .option('--no-ai', 'Disable AI-powered insights')
+  .option('--ai-explain', 'Generate per-issue AI explanations (requires Copilot)')
+  .option('--ai-summary', 'Generate AI executive summary (requires Copilot)')
+  .option('--ai-model <model>', 'Override AI model (e.g. claude-opus-4-7)')
   .action(async (options) => {
     const consoleReporter = new ConsoleReporter();
 
@@ -182,6 +187,42 @@ program
         }
       } finally {
         await copilotService.dispose();
+      }
+
+      // AI per-issue explanations and/or executive summary
+      if (options.aiExplain || options.aiSummary) {
+        const explainer = new AIExplainerService({
+          model: options.aiModel as AIModel | undefined,
+        });
+        try {
+          if (options.aiSummary) {
+            spinner.start('Generating AI executive summary...');
+            const summary = await explainer.summarize(analysisResult);
+            if (summary) {
+              aiInsights = summary;
+              spinner.succeed('AI summary generated');
+            } else {
+              spinner.warn('AI summary unavailable (Copilot not accessible)');
+            }
+          }
+
+          if (options.aiExplain && analysisResult.issues.length > 0) {
+            spinner.start('Generating AI explanations for issues...');
+            const explained: string[] = [];
+            for (const issue of analysisResult.issues.slice(0, 20)) {
+              const explanation = await explainer.explainIssue(issue);
+              if (explanation) {
+                explained.push(`[${issue.type}] ${issue.repository}: ${explanation}`);
+              }
+            }
+            if (explained.length > 0) {
+              analysisResult.recommendations.push(...explained);
+            }
+            spinner.succeed(`AI explanations generated (${explained.length} issues)`);
+          }
+        } finally {
+          await explainer.dispose();
+        }
       }
 
       // Display results
