@@ -62,7 +62,8 @@ test.describe('HTML Report Security', () => {
     const scriptTags = page.locator('script');
     await expect(scriptTags).toHaveCount(0);
 
-    // Check that no inline event handlers exist
+    // Check that no inline event handlers exist (word boundary ensures we don't
+    // match legitimate attributes like content= or font= inside longer words)
     const content = await page.content();
     expect(content).not.toMatch(/\bon\w+\s*=/i); // No onclick, onerror, etc. (\b prevents false match on content=)
   });
