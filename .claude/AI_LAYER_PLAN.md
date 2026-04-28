@@ -22,6 +22,21 @@ the quality of output presented to security teams:
 Neither layer is required for normal operation; both are opt-in so performance and
 determinism of the core analysis pipeline are preserved.
 
+### Model Summary
+
+| Layer | Task | Model | Model ID |
+|---|---|---|---|
+| Authoring | Single-control generation | Claude Sonnet 4.6 | `claude-sonnet-4-6` |
+| Authoring | Multi-control / complex generation | Claude Opus 4.6 | `claude-opus-4-6` |
+| Explanation | Per-issue explanations + remediation | Claude Opus 4.7 | `claude-opus-4-7` |
+| Explanation | Executive summary narrative | Claude Opus 4.7 | `claude-opus-4-7` |
+
+Rationale: Sonnet 4.6 balances quality and speed for structured-output authoring tasks.
+Opus 4.6 is used when inter-control reasoning depth is needed. Opus 4.7 — the most capable
+available model — is reserved for the explanation layer where output quality directly affects
+how security teams prioritise and action findings; the explanation cache ensures this does
+not add latency to repeated scans.
+
 ---
 
 ## Motivation
@@ -85,7 +100,7 @@ hubhelper author-policy "<natural language requirement>"
 Options:
   --output   console | file          (default: console)
   --dir      path to write files to  (default: ./policies/generated/)
-  --model    claude model to use     (default: claude-haiku-4-5-20251001)
+  --model    claude model to use     (default: claude-sonnet-4-6)
   --dry-run  print prompt only, do not call API
 ```
 
@@ -119,7 +134,7 @@ Next steps:
   - The existing catalog (all current controls as context / few-shot examples)
   - The user's natural-language requirement
   - A JSON schema for the expected output format
-- Call the Anthropic API (Claude Haiku for speed) with structured output
+- Call the Anthropic API (Claude Sonnet 4.6 by default) with structured output
 - Parse and validate the response against `CatalogSchema` (Zod)
 - Generate a TypeScript evaluator stub from the returned evaluator config
 
@@ -198,10 +213,13 @@ export class {{ClassName}}Evaluator extends BaseEvaluator {
 
 ### 1.4 Model Selection Rationale
 
-| Task | Recommended Model | Reason |
-|---|---|---|
-| Policy authoring | `claude-haiku-4-5-20251001` | Fast, cheap; output is structured JSON |
-| Complex multi-control authoring | `claude-sonnet-4-6` | Better reasoning for inter-control dependencies |
+| Task | Recommended Model | Model ID | Reason |
+|---|---|---|---|
+| Single-control authoring | `Claude Sonnet 4.6` | `claude-sonnet-4-6` | Latest Sonnet; strong structured-output quality and instruction-following; fast enough for interactive use |
+| Multi-control / complex authoring | `Claude Opus 4.6` | `claude-opus-4-6` | Superior reasoning for controls with inter-dependencies, `depends-on` chains, and cross-cutting parameter design; used when `--complex` flag is passed or when the prompt references multiple existing controls |
+
+The `--model` flag overrides the automatic selection. The default (`claude-sonnet-4-6`) is used
+when no flag is passed and the requirement does not reference inter-control dependencies.
 
 ---
 
@@ -268,9 +286,13 @@ User:
   Issues (JSON): <issues array>
 ```
 
-**Model:** `claude-haiku-4-5-20251001` (fast, handles batches well)
+**Model:** `claude-opus-4-7` for both per-issue explanations and executive summaries.
 
-**Executive summary model:** `claude-sonnet-4-6` (better prose quality)
+Opus 4.7 is the latest and most capable Claude model. For the explanation layer, output
+quality matters more than raw speed — a security advisor reading the report expects accurate
+remediation steps and well-reasoned risk narrative. The explanation cache (§2.3) absorbs the
+latency cost on repeated runs: Opus 4.7 is only called for issues that are genuinely new or
+changed since the last scan.
 
 ### 2.3 Caching Strategy
 
@@ -404,7 +426,7 @@ Slightly higher complexity; requires prompt engineering iteration.
 
 2. **Copilot SDK vs Anthropic SDK.** The `@github/copilot-sdk` is already installed. Do you
    prefer to use it exclusively (keeps vendor surface smaller) or use the Anthropic SDK
-   directly (more model flexibility, access to Haiku/Sonnet/Opus)?
+   directly (more model flexibility, explicit access to Sonnet 4.6 / Opus 4.6 / Opus 4.7)?
 
 3. **Generated control IDs.** The plan assigns sequential IDs (HH-GH-011 onwards) to
    AI-authored controls. Should there be a different namespace (e.g. `HH-AI-001`) to
