@@ -11,6 +11,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'features/bring-your-own-policy',
         'features/ai-integration',
+        'features/policy-standards',
       ],
     },
     'api-reference',

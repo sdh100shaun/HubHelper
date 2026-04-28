@@ -118,10 +118,10 @@ Only safe file types are permitted:
 
 All user inputs are validated before processing:
 
-#### Organization Name Validation
+#### Organisation Name Validation
 
 ```typescript
-// GitHub organization naming rules
+// GitHub organisation naming rules
 // 1-39 characters, alphanumeric + hyphens
 // Cannot start or end with hyphen
 
@@ -354,7 +354,7 @@ This tool follows the principle of least privilege. Use **fine-grained tokens** 
 - ✅ **Metadata**: Read - Repository listing (automatic)
 - ⚠️ **Administration**: Read - Security settings (optional)
 
-**Organization permissions:**
+**Organisation permissions:**
 - ❌ **None required** for most use cases
 
 ### Why Fine-Grained Tokens?
@@ -372,14 +372,14 @@ This tool follows the principle of least privilege. Use **fine-grained tokens** 
 
 **Classic tokens require broad scopes:**
 - `repo` - Full control of repositories (write access not needed)
-- `read:org` - Read organization membership
+- `read:org` - Read organisation membership
 - `admin:org` - Full org control (extremely broad, dangerous)
 
 **Fine-grained tokens need only:**
 - Read-only repository permissions
 - No write access
-- No organization-level permissions
-- Scoped to specific organization
+- No organisation-level permissions
+- Scoped to specific organisation
 
 **Security improvement:** Fine-grained tokens are ~99% less permissive than classic tokens for this use case.
 
@@ -389,7 +389,7 @@ Use this checklist to ensure your tokens are secure:
 
 - [ ] Using fine-grained tokens (not classic)
 - [ ] Read-only permissions (no write access)
-- [ ] Organization-scoped (not account-wide)
+- [ ] Organisation-scoped (not account-wide)
 - [ ] Expiration set (90 days or less)
 - [ ] Stored in secure credential manager
 - [ ] Not committed to git (added to .gitignore)
@@ -471,7 +471,7 @@ If a token is compromised, follow these steps immediately:
 # - Review recent commits in all repositories
 # - Check pull requests created/merged
 # - Review GitHub Actions workflow runs
-# - Verify organization settings unchanged
+# - Verify organisation settings unchanged
 ```
 
 **5. Document:**
@@ -492,15 +492,15 @@ The tool works with both token types:
 |------------|---------|-----------|
 | **Actions**: Read | Check if GitHub Actions is enabled<br />List workflow status (active/disabled/paused) | ✅ Yes |
 | **Pull requests**: Read | Analyze merged PRs<br />Detect self-merges<br />Identify security-related PRs | ✅ Yes |
-| **Metadata**: Read | List organization repositories<br />Get repository details | ✅ Yes (automatic) |
+| **Metadata**: Read | List organisation repositories<br />Get repository details | ✅ Yes (automatic) |
 | **Administration**: Read | Check secret scanning status<br />Check Dependabot status | ⚠️ Optional |
 
-**Organization permissions:**
+**Organisation permissions:**
 - ❌ None required
 
 **Security benefits:**
 - ✅ Read-only access (cannot modify anything)
-- ✅ Organization-scoped (limited blast radius)
+- ✅ Organisation-scoped (limited blast radius)
 - ✅ Repository-specific access possible
 - ✅ Automatic expiration
 - ✅ Detailed audit logs
@@ -512,17 +512,17 @@ The tool works with both token types:
 | Scope | Purpose | Risk Level |
 |-------|---------|------------|
 | `repo` | Access repository data | ⚠️ High - Full repo access (write not needed) |
-| `read:org` | Read organization info | ✅ Low - Read-only |
+| `read:org` | Read organisation info | ✅ Low - Read-only |
 
 **Security concerns:**
 - ⚠️ Grants write access (not needed)
 - ⚠️ No expiration enforcement
 - ⚠️ Cannot limit to specific repositories
-- ⚠️ Broad scope across all organizations
+- ⚠️ Broad scope across all organisations
 
 **Note:** The `admin:org` scope mentioned in older documentation is NOT required. The tool only needs read access.
 
-**Mitigation:** Use fine-grained tokens instead. If using classic tokens, create a dedicated token, rotate every 90 days, and limit to specific organizations.
+**Mitigation:** Use fine-grained tokens instead. If using classic tokens, create a dedicated token, rotate every 90 days, and limit to specific organisations.
 
 ### Data Handling
 

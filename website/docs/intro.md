@@ -1,21 +1,21 @@
 ---
 sidebar_position: 1
 title: Introduction
-description: What HubHelper is, why it exists, and what it can do for your organization.
+description: What HubHelper is, why it exists, and what it can do for your organisation.
 slug: /intro
 ---
 
 # HubHelper
 
-**AI-powered tools to visualize GitHub activity and flag security issues across organizations.**
+**AI-powered tools to visualise GitHub activity and flag security issues across organisations.**
 
-HubHelper gives platform and security teams a single command to scan their entire GitHub organization and surface what matters — self-merges, unreviewed security changes, disabled Actions, and compliance violations — enriched with Copilot AI pattern analysis.
+HubHelper gives platform and security teams a single command to scan their entire GitHub organisation and surface what matters — self-merges, unreviewed security changes, disabled Actions, and compliance violations — enriched with Copilot AI pattern analysis.
 
 ---
 
 ## Why HubHelper?
 
-Most GitHub organizations grow faster than their security practices. Teams end up with:
+Most GitHub organisations grow faster than their security practices. Teams end up with:
 
 - Pull requests merged by their own authors, bypassing review
 - Security-critical changes landing without a second pair of eyes
@@ -36,7 +36,7 @@ HubHelper doesn't ship with hardcoded compliance rules. Instead, you store a JSO
 
 ### GitHub Copilot AI Integration
 
-Raw issue lists tell you *what* is wrong. HubHelper's AI layer — powered by the GitHub Copilot SDK — tells you *why it matters*, scores overall organizational risk, and generates prioritised recommendations in plain language.
+Raw issue lists tell you *what* is wrong. HubHelper's AI layer — powered by the GitHub Copilot SDK — tells you *why it matters*, scores overall organisational risk, and generates prioritised recommendations in plain language.
 
 → [Explore AI integration](/docs/features/ai-integration)
 
@@ -59,7 +59,7 @@ Raw issue lists tell you *what* is wrong. HubHelper's AI layer — powered by th
 ## Quick Start
 
 ```bash
-# Analyze your organization
+# Analyse your organisation
 npx @sdh100shaun/hubhelper analyze \
   --org your-org \
   --token $GITHUB_TOKEN \
