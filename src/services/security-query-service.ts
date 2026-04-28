@@ -8,7 +8,11 @@
  */
 
 import { CopilotClient, approveAll, defineTool } from '@github/copilot-sdk';
+import type { MCPHTTPServerConfig } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+
+// Auto-clean idle CLI sessions to avoid leaking server-side state on crashes.
+const SESSION_IDLE_TIMEOUT_SECONDS = 300;
 
 export interface QueryResult {
   answer: string;
@@ -39,7 +43,9 @@ export class SecurityQueryService {
 
   private async ensureClient(): Promise<CopilotClient> {
     if (this.client) return this.client;
-    this.client = new CopilotClient();
+    this.client = new CopilotClient({
+      sessionIdleTimeoutSeconds: SESSION_IDLE_TIMEOUT_SECONDS,
+    });
     await this.client.start();
     return this.client;
   }
@@ -86,11 +92,11 @@ export class SecurityQueryService {
     const tools = this.buildAnalysisTools(analysisData);
 
     // Configure GitHub MCP server when a token is available
-    const mcpServers =
+    const mcpServers: Record<string, MCPHTTPServerConfig> | undefined =
       this.githubToken != null
         ? {
             github: {
-              type: 'http' as const,
+              type: 'http',
               url: 'https://api.githubcopilot.com/mcp/',
               headers: { Authorization: `Bearer ${this.githubToken}` },
               tools: ['*'],

@@ -2,6 +2,9 @@ import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { AssistantMessageEvent } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
+// Auto-clean idle CLI sessions to avoid leaking server-side state on crashes.
+const SESSION_IDLE_TIMEOUT_SECONDS = 300;
+
 type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 export interface AIOutput {
@@ -72,7 +75,9 @@ export class CopilotService {
 
   private async init(): Promise<boolean> {
     try {
-      this.client = new CopilotClient();
+      this.client = new CopilotClient({
+        sessionIdleTimeoutSeconds: SESSION_IDLE_TIMEOUT_SECONDS,
+      });
       await this.client.start();
       return true;
     } catch {
