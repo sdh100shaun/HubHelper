@@ -49,7 +49,7 @@ export class HTMLReporter {
             margin-bottom: 30px;
             border-radius: 4px;
         }
-        .statistics {
+        .statistics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
@@ -86,7 +86,7 @@ export class HTMLReporter {
             font-weight: bold;
             text-transform: uppercase;
         }
-        .severity-critical { background: #e53e3e; color: white; }
+        .severity-critical { background: #ef4444; color: white; }
         .severity-high { background: #fc8181; color: white; }
         .severity-medium { background: #f6ad55; color: white; }
         .severity-low { background: #4299e1; color: white; }
@@ -119,7 +119,7 @@ export class HTMLReporter {
             border-radius: 4px;
             border-left: 3px solid #f6ad55;
         }
-        .timestamp {
+        .footer {
             text-align: center;
             color: #718096;
             padding: 20px;
@@ -149,13 +149,21 @@ export class HTMLReporter {
             white-space: pre-wrap;
             font-family: 'Courier New', monospace;
         }
+        .ai-insights h2 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🔐 GitHub Security Analysis</h1>
-            <p>Organization Activity & Security Monitoring Report</p>
+            <p class="subtitle">Organization Activity & Security Monitoring Report</p>
         </div>
 
         <div class="content">
@@ -164,14 +172,14 @@ export class HTMLReporter {
                 <p>${escapeHtml(result.summary)}</p>
             </div>
 
-            <div class="statistics">
+            <div class="statistics-grid">
                 <div class="stat-card">
                     <h3>${result.statistics.total_repos}</h3>
-                    <p>Repositories</p>
+                    <p>Total Repositories</p>
                 </div>
                 <div class="stat-card">
                     <h3>${result.statistics.total_prs}</h3>
-                    <p>Pull Requests</p>
+                    <p>Total Pull Requests</p>
                 </div>
                 <div class="stat-card">
                     <h3>${result.statistics.self_merges}</h3>
@@ -183,7 +191,7 @@ export class HTMLReporter {
                 </div>
                 <div class="stat-card">
                     <h3>${result.statistics.repos_with_disabled_actions}</h3>
-                    <p>Disabled Actions</p>
+                    <p>Repos with Disabled Actions</p>
                 </div>
                 <div class="stat-card">
                     <h3>${result.statistics.paused_workflows}</h3>
@@ -195,25 +203,25 @@ export class HTMLReporter {
                 </div>
             </div>
 
+            ${this.generateIssuesSection(result.issues)}
+
+            ${result.reviewIssues && result.reviewIssues.length > 0 ? this.generateReviewIssuesSection(result.reviewIssues) : ''}
+
             ${
               aiInsights
                 ? `
             <div class="ai-insights">
-                <strong>🤖 AI-Powered Insights:</strong><br><br>
+                <h2>🤖 AI-Powered Insights</h2>
                 ${escapeHtml(aiInsights)}
             </div>
             `
                 : ''
             }
 
-            ${this.generateIssuesSection(result.issues)}
-
-            ${result.reviewIssues && result.reviewIssues.length > 0 ? this.generateReviewIssuesSection(result.reviewIssues) : ''}
-
             ${this.generateRecommendationsSection(result.recommendations)}
         </div>
 
-        <div class="timestamp">
+        <div class="footer">
             Generated on ${new Date().toLocaleString()}
         </div>
     </div>
