@@ -26,7 +26,10 @@ import type {
 import '../evaluators/index.js';
 
 export interface PolicyEngineResult {
+  /** Issues from active controls — included in compliance reports and fail-threshold. */
   issues: SecurityIssue[];
+  /** Issues from controls in 'review' state — collected but excluded from compliance scoring. */
+  reviewIssues: SecurityIssue[];
   statistics: {
     controlsEvaluated: number;
     totalIssues: number;
@@ -70,11 +73,13 @@ export class PolicyEngine {
     };
 
     const allIssues: SecurityIssue[] = [];
+    const reviewIssues: SecurityIssue[] = [];
     const evaluationResults: EvaluationResult[] = [];
 
     // Execute controls in order (already sorted by resolver)
     for (const control of this.policy.controls) {
-      if (!control.enabled) {
+      // disabled controls are filtered out during resolution; skip any that slip through
+      if (control.state === 'disabled') {
         continue;
       }
 
@@ -89,7 +94,11 @@ export class PolicyEngine {
 
         // Collect issues (skip classifiers - they're just data providers)
         if (control.evaluator.kind !== 'classifier') {
-          allIssues.push(...(result.issues as SecurityIssue[]));
+          if (control.state === 'review') {
+            reviewIssues.push(...(result.issues as SecurityIssue[]));
+          } else {
+            allIssues.push(...(result.issues as SecurityIssue[]));
+          }
         }
       } catch (error) {
         console.error(`Error evaluating control ${control.id}:`, error);
@@ -101,7 +110,7 @@ export class PolicyEngine {
       }
     }
 
-    // Calculate statistics
+    // Calculate statistics (active issues only — review issues excluded from scoring)
     const issuesBySeverity: Record<string, number> = {
       critical: 0,
       high: 0,
@@ -115,6 +124,7 @@ export class PolicyEngine {
 
     return {
       issues: allIssues,
+      reviewIssues,
       statistics: {
         controlsEvaluated: evaluationResults.length,
         totalIssues: allIssues.length,

@@ -180,6 +180,7 @@ program
         analysisResult = {
           summary: `Found ${engineResult.issues.length} security issues across ${repositories.length} repositories`,
           issues: engineResult.issues,
+          reviewIssues: engineResult.reviewIssues,
           recommendations: [],
           statistics: {
             total_repos: repositories.length,
