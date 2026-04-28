@@ -93,6 +93,11 @@ docs(readme): update installation instructions
 - 100-character line width
 - Trailing commas (ES5 style)
 
+### Documentation Language
+- All user-facing documentation must use **UK English** spellings
+- Use "organisation" (not "organization"), "customise" (not "customize"), "colour" (not "color"), "behaviour" (not "behavior"), "analyse" (not "analyze") in prose
+- Technical terms, CLI command names (`analyze`), JSON field names, and code remain unchanged
+
 ### Error Handling
 - Always handle errors gracefully
 - Provide meaningful error messages
