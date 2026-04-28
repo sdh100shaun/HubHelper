@@ -106,6 +106,7 @@ const config: Config = {
           items: [
             { label: 'Bring Your Own Policy', to: '/docs/features/bring-your-own-policy' },
             { label: 'AI Integration', to: '/docs/features/ai-integration' },
+            { label: 'Policy Standards', to: '/docs/features/policy-standards' },
           ],
         },
         {
