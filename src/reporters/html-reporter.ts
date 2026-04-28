@@ -98,6 +98,10 @@ export class HTMLReporter {
             border-left: 4px solid #cbd5e0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
+        .issue.review-issue {
+            border-left-color: #b794f4;
+            opacity: 0.9;
+        }
         .issue h3 { margin-bottom: 8px; color: #2d3748; }
         .issue p { color: #718096; margin-bottom: 5px; }
         .issue a { color: #667eea; text-decoration: none; }
@@ -120,6 +124,21 @@ export class HTMLReporter {
             color: #718096;
             padding: 20px;
             font-size: 0.9em;
+        }
+        .review-issues-section {
+            border-left: 4px solid #b794f4;
+        }
+        .review-issues-section h2 {
+            color: #805ad5;
+            border-bottom-color: #b794f4;
+        }
+        .review-notice {
+            font-size: 0.9em;
+            color: #718096;
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            background: #faf5ff;
+            border-radius: 4px;
         }
         .ai-insights {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -189,6 +208,8 @@ export class HTMLReporter {
 
             ${this.generateIssuesSection(result.issues)}
 
+            ${result.reviewIssues && result.reviewIssues.length > 0 ? this.generateReviewIssuesSection(result.reviewIssues) : ''}
+
             ${this.generateRecommendationsSection(result.recommendations)}
         </div>
 
@@ -224,6 +245,36 @@ export class HTMLReporter {
             <p><strong>Repository:</strong> ${sanitized.repository}</p>
             ${sanitized.details.url ? `<p><strong>URL:</strong> <a href="${sanitized.details.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(sanitized.details.url)}</a></p>` : ''}
             ${issue.details.merged_at ? `<p><strong>Merged:</strong> ${escapeHtml(new Date(issue.details.merged_at).toLocaleString())}</p>` : ''}
+          </div>
+        `;
+      }
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  private generateReviewIssuesSection(issues: SecurityIssue[]): string {
+    const groupedIssues = this.groupIssuesByType(issues);
+    let html = `
+      <div class="section review-issues-section" aria-label="Controls Under Review">
+        <h2>🔬 Controls Under Review</h2>
+        <p class="review-notice">These issues are <strong>informational only</strong> — not included in compliance scoring or fail-threshold.</p>
+    `;
+
+    for (const [type, typeIssues] of Object.entries(groupedIssues)) {
+      html += `<h3>${this.formatType(type)} (${typeIssues.length})</h3>`;
+
+      for (const issue of typeIssues) {
+        const sanitized = sanitizeSecurityIssue(issue);
+        html += `
+          <div class="issue review-issue">
+            <h3>
+              <span class="severity-badge severity-${escapeHtml(sanitized.severity)}">${escapeHtml(sanitized.severity)}</span>
+              ${sanitized.description}
+            </h3>
+            <p><strong>Repository:</strong> ${sanitized.repository}</p>
+            ${sanitized.details.url ? `<p><strong>URL:</strong> <a href="${sanitized.details.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(sanitized.details.url)}</a></p>` : ''}
           </div>
         `;
       }
