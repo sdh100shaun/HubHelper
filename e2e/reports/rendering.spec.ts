@@ -98,7 +98,9 @@ test.describe('HTML Report Rendering', () => {
     await page.goto(`file://${reportPath}`);
 
     // Check that issue groups exist
-    await expect(page.locator('h3')).toContainText(/Self Merge|Security PR|Disabled Actions/);
+    const groupHeaders = page.locator('.section > h3');
+    await expect(groupHeaders.filter({ hasText: 'Self Merge' })).toBeVisible();
+    await expect(groupHeaders.filter({ hasText: 'Disabled Actions' })).toBeVisible();
 
     // Check that individual issues are displayed
     const issues = page.locator('.issue');
@@ -118,8 +120,8 @@ test.describe('HTML Report Rendering', () => {
     await page.goto(`file://${reportPath}`);
 
     // Check for repository names
-    await expect(page.locator('.issue')).toContainText('org/api-server');
-    await expect(page.locator('.issue')).toContainText('org/frontend');
+    await expect(page.locator('.issue').filter({ hasText: 'org/api-server' })).toBeVisible();
+    await expect(page.locator('.issue').filter({ hasText: 'org/frontend' })).toBeVisible();
 
     // Check for GitHub PR links
     const links = page.locator('a[href*="github.com"]');
@@ -136,7 +138,7 @@ test.describe('HTML Report Rendering', () => {
     await page.goto(`file://${reportPath}`);
 
     // Verify empty state message
-    await expect(page.locator('text=No Issues Found')).toBeVisible();
+    await expect(page.locator('h2').filter({ hasText: 'No Issues Found' })).toBeVisible();
     await expect(page.locator('text=Great job!')).toBeVisible();
 
     // Verify statistics are still shown
