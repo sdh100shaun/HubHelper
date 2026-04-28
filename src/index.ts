@@ -16,6 +16,7 @@ import { AIExplainerService } from './services/ai-explainer.js';
 import type { AIModel } from './services/copilot-ai-client.js';
 import { CopilotService } from './services/copilot-service.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
+import { PolicyAuthorService } from './services/policy-author.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
 import type { AnalysisResult } from './types/index.js';
 import type { WatchConfig } from './types/watch.js';
@@ -868,6 +869,62 @@ program
     } catch (error) {
       consoleReporter.printError(error as Error);
       process.exit(1);
+    }
+  });
+
+program
+  .command('author-policy')
+  .description('Author a new policy control from a natural-language description')
+  .requiredOption('-d, --description <text>', 'Natural-language security requirement')
+  .requiredOption('--control-id <id>', 'Control ID to assign (e.g. HH-GH-011)', 'HH-GH-011')
+  .option('--save', 'Write generated files to disk')
+  .option('--output-dir <dir>', 'Directory for generated YAML snippets', 'policies/generated')
+  .option('--ai-model <model>', 'AI model to use (default: claude-sonnet-4-6)')
+  .action(async (options) => {
+    const consoleReporter = new ConsoleReporter();
+    const author = new PolicyAuthorService({
+      model: options.aiModel as AIModel | undefined,
+      outputDir: options.outputDir as string,
+    });
+
+    try {
+      consoleReporter.printInfo(`Authoring control ${options.controlId}...`);
+      const result = await author.authorControl(
+        options.description as string,
+        options.controlId as string,
+        options.save as boolean
+      );
+
+      if (!result) {
+        consoleReporter.printError(
+          new Error(
+            'AI authoring failed — Copilot may not be available or returned an invalid response'
+          )
+        );
+        process.exit(1);
+      }
+
+      console.log('\n--- catalog.yaml snippet ---\n');
+      console.log(result.catalogSnippet);
+      console.log('--- evaluator stub ---\n');
+      console.log(result.evaluatorStub);
+
+      if (result.saved && result.outputPaths) {
+        consoleReporter.printSuccess(`Evaluator written to: ${result.outputPaths.evaluator}`);
+        consoleReporter.printSuccess(
+          `Catalog snippet written to: ${result.outputPaths.catalogSnippet}`
+        );
+        consoleReporter.printInfo(
+          'Next: register the evaluator in src/evaluators/index.ts and add the control to your profile.'
+        );
+      } else if (!options.save) {
+        consoleReporter.printInfo('Tip: pass --save to write these files to disk.');
+      }
+    } catch (error) {
+      consoleReporter.printError(error as Error);
+      process.exit(1);
+    } finally {
+      await author.dispose();
     }
   });
 
