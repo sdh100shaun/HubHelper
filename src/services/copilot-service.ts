@@ -1,6 +1,6 @@
 import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { AssistantMessageEvent } from '@github/copilot-sdk';
-import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/index.js';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
 type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
@@ -138,12 +138,43 @@ export class CopilotService {
     }
   }
 
+  async explainCode(result: CodeSearchResult): Promise<string> {
+    const available = await this.ensureClient();
+    if (!available || !this.client) {
+      return this.fallbackExplainCode(result);
+    }
+
+    const session = await this.client.createSession({
+      model: 'claude-sonnet-4-5',
+      onPermissionRequest: approveAll,
+    });
+    try {
+      const snippetSection = result.snippet
+        ? `\`\`\`\n${result.snippet}\n\`\`\``
+        : `(no snippet available — see full file at ${result.url})`;
+      const prompt = `Explain the following code snippet found in ${result.repository} at ${result.path}.
+Describe what it does, its likely purpose, and flag any security implications. Be concise (3-5 sentences).
+
+${snippetSection}`;
+      const event: AssistantMessageEvent | undefined = await session.sendAndWait({ prompt });
+      return event?.data.content ?? this.fallbackExplainCode(result);
+    } catch {
+      return this.fallbackExplainCode(result);
+    } finally {
+      await session.destroy().catch(() => {});
+    }
+  }
+
   async dispose(): Promise<void> {
     if (this.client) {
       await this.client.stop().catch(() => {});
       this.client = null;
       this.initPromise = null;
     }
+  }
+
+  private fallbackExplainCode(result: CodeSearchResult): string {
+    return `Code found in ${result.repository} at ${result.path}. Review the file at ${result.url} for full context.`;
   }
 
   // ── Fallback analysis (no SDK required) ──────────────────────────────────

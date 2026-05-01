@@ -9,9 +9,11 @@ const mockListRepoWorkflows = jest.fn();
 const mockListPulls = jest.fn();
 const mockGetPull = jest.fn();
 const mockListFiles = jest.fn();
+const mockRequest = jest.fn();
 
 jest.mock('@octokit/rest', () => ({
   Octokit: jest.fn().mockImplementation(() => ({
+    request: mockRequest,
     repos: {
       listForOrg: mockListForOrg,
       get: mockGetRepo,
@@ -528,6 +530,90 @@ describe('GitHubFetcher', () => {
 
       expect(prs).toHaveLength(1);
       expect(prs[0].is_security_related).toBe(true);
+    });
+  });
+
+  describe('searchCode', () => {
+    it('maps API response to CodeSearchResult array', async () => {
+      mockRequest.mockResolvedValue({
+        data: {
+          items: [
+            {
+              repository: { full_name: 'test-org/repo1' },
+              path: 'src/utils.ts',
+              html_url: 'https://github.com/test-org/repo1/blob/main/src/utils.ts',
+              sha: 'abc123',
+              text_matches: [{ fragment: 'const result = eval(input);' }],
+            },
+          ],
+        },
+      });
+
+      const results = await fetcher.searchCode('eval(');
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toEqual({
+        repository: 'test-org/repo1',
+        path: 'src/utils.ts',
+        url: 'https://github.com/test-org/repo1/blob/main/src/utils.ts',
+        sha: 'abc123',
+        snippet: 'const result = eval(input);',
+      });
+    });
+
+    it('uses empty string snippet when text_matches is absent', async () => {
+      mockRequest.mockResolvedValue({
+        data: {
+          items: [
+            {
+              repository: { full_name: 'test-org/repo2' },
+              path: 'index.js',
+              html_url: 'https://github.com/test-org/repo2/blob/main/index.js',
+              sha: 'def456',
+            },
+          ],
+        },
+      });
+
+      const results = await fetcher.searchCode('process.env.SECRET');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].snippet).toBe('');
+    });
+
+    it('returns empty array when no items match', async () => {
+      mockRequest.mockResolvedValue({ data: { items: [] } });
+
+      const results = await fetcher.searchCode('nonexistent_pattern_xyz');
+
+      expect(results).toHaveLength(0);
+    });
+
+    it('passes org-scoped query and per_page to the API', async () => {
+      mockRequest.mockResolvedValue({ data: { items: [] } });
+
+      await fetcher.searchCode('TODO security', 15);
+
+      expect(mockRequest).toHaveBeenCalledWith('GET /search/code', {
+        q: 'TODO security org:test-org',
+        per_page: 15,
+        headers: { accept: 'application/vnd.github.text-match+json' },
+      });
+    });
+
+    it('caps per_page at 100 even when maxResults exceeds it', async () => {
+      mockRequest.mockResolvedValue({ data: { items: [] } });
+
+      await fetcher.searchCode('eval(', 200);
+
+      const call = mockRequest.mock.calls[0] as [string, { per_page: number }];
+      expect(call[1].per_page).toBe(100);
+    });
+
+    it('propagates API errors to the caller', async () => {
+      mockRequest.mockRejectedValue(new Error('API rate limit exceeded'));
+
+      await expect(fetcher.searchCode('eval(')).rejects.toThrow('API rate limit exceeded');
     });
   });
 });

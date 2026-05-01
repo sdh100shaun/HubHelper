@@ -301,6 +301,25 @@ export interface StreamEventResult {
   timestamp: string;
 }
 
+// ---------------------------------------------------------------------------
+// Code search
+// ---------------------------------------------------------------------------
+
+export interface CodeSearchResult {
+  /** Full repo name, e.g. "org/repo" */
+  repository: string;
+  /** File path within the repo */
+  path: string;
+  /** Direct URL to the file on GitHub */
+  url: string;
+  /** Git blob SHA */
+  sha: string;
+  /** Text fragment surrounding the match (empty when API returns none) */
+  snippet: string;
+  /** AI-generated explanation, populated after Copilot enrichment */
+  explanation?: string;
+}
+
 export interface ListReport {
   list: string;
   generated: string;

@@ -10,7 +10,9 @@
 import { CopilotClient, approveAll, defineTool } from '@github/copilot-sdk';
 import type { MCPHTTPServerConfig } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import { CopilotService } from './copilot-service.js';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
+import type { GitHubFetcher } from './github-fetcher.js';
 
 export interface QueryResult {
   answer: string;
@@ -36,7 +38,8 @@ export class SecurityQueryService {
 
   constructor(
     private readonly githubToken?: string,
-    private readonly model = 'claude-sonnet-4-5'
+    private readonly model = 'claude-sonnet-4-5',
+    private readonly fetcher?: GitHubFetcher
   ) {}
 
   private async ensureClient(): Promise<CopilotClient> {
@@ -277,6 +280,49 @@ export class SecurityQueryService {
         description: 'Returns the AI-generated recommendations from the security analysis.',
         handler: () => JSON.stringify(analysis.recommendations, null, 2),
       }),
+
+      ...(this.fetcher
+        ? [
+            defineTool('search_code_in_repositories', {
+              description:
+                'Search for a code pattern across all repositories in the organisation. Returns matching file paths, snippets, and AI-generated explanations of each snippet.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  query: {
+                    type: 'string',
+                    description:
+                      'Code search query (e.g. "eval(" or "process.env.SECRET" or "TODO security").',
+                  },
+                  max_results: {
+                    type: 'number',
+                    description: 'Maximum number of results to return (default 10, max 30).',
+                  },
+                },
+                required: ['query'],
+              },
+              handler: async (args: unknown) => {
+                const { query, max_results = 10 } = args as {
+                  query: string;
+                  max_results?: number;
+                };
+                const results = await this.fetcher!.searchCode(query, Math.min(max_results, 30));
+                const copilot = new CopilotService();
+                try {
+                  const explained = await Promise.all(
+                    results.map(async (r) => ({
+                      ...r,
+                      explanation: await copilot.explainCode(r),
+                    }))
+                  );
+                  return JSON.stringify(explained, null, 2);
+                } finally {
+                  await copilot.dispose();
+                }
+              },
+            }),
+          ]
+        : []),
     ];
   }
 
@@ -292,6 +338,7 @@ You have access to a pre-run security analysis of a GitHub organization:
 - ${analysis.issues.length} issues found (${analysis.issues.filter((i) => i.severity === 'critical').length} critical, ${analysis.issues.filter((i) => i.severity === 'high').length} high)
 
 Use the provided tools (get_security_summary, get_issues_by_severity, get_issues_by_type, get_issues_by_repository, get_top_repositories, get_recommendations) to look up specific data before answering.
+${this.fetcher ? 'Use search_code_in_repositories to find and explain code patterns across the organisation when asked about specific code.' : ''}
 ${this.githubToken ? 'You also have access to the GitHub MCP server for live repository queries.' : ''}
 
 When answering:

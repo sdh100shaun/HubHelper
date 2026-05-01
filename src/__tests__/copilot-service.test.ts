@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { CopilotService } from '../services/copilot-service.js';
-import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/index.js';
 
 // ── SDK mock setup ────────────────────────────────────────────────────────────
 
@@ -315,6 +315,85 @@ describe('CopilotService', () => {
       const result = await service.analyzeWithAI(BASE_RESULT);
 
       expect(result.risk_level).toBe('medium');
+    });
+  });
+
+  // ── explainCode ─────────────────────────────────────────────────────────────
+
+  describe('explainCode', () => {
+    const CODE_RESULT: CodeSearchResult = {
+      repository: 'test-org/repo1',
+      path: 'src/utils.ts',
+      url: 'https://github.com/test-org/repo1/blob/main/src/utils.ts',
+      sha: 'abc123',
+      snippet: 'const x = eval(userInput);',
+    };
+
+    it('returns AI explanation when SDK is available', async () => {
+      mockSendAndWait.mockResolvedValue({
+        data: { content: 'This code evaluates user input directly, which is a security risk.' },
+      });
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toBe(
+        'This code evaluates user input directly, which is a security risk.'
+      );
+      expect(mockCreateSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('includes repository, path and snippet in the prompt', async () => {
+      mockSendAndWait.mockResolvedValue({ data: { content: 'explanation' } });
+
+      await service.explainCode(CODE_RESULT);
+
+      const promptArg = (mockSendAndWait.mock.calls[0] as unknown as [{ prompt: string }])[0];
+      expect(promptArg.prompt).toContain('test-org/repo1');
+      expect(promptArg.prompt).toContain('src/utils.ts');
+      expect(promptArg.prompt).toContain('const x = eval(userInput);');
+    });
+
+    it('returns fallback string when SDK is unavailable', async () => {
+      mockStart.mockRejectedValue(new Error('SDK not available'));
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toContain('test-org/repo1');
+      expect(explanation).toContain('src/utils.ts');
+      expect(explanation).toContain('https://github.com/test-org/repo1/blob/main/src/utils.ts');
+    });
+
+    it('returns fallback string when sendAndWait throws', async () => {
+      mockSendAndWait.mockRejectedValue(new Error('Network error'));
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toContain('test-org/repo1');
+    });
+
+    it('returns fallback string when sendAndWait returns undefined', async () => {
+      mockSendAndWait.mockResolvedValue(undefined);
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toContain('src/utils.ts');
+    });
+
+    it('destroys session in finally block even when sendAndWait throws', async () => {
+      mockSendAndWait.mockRejectedValue(new Error('fail'));
+
+      await service.explainCode(CODE_RESULT);
+
+      expect(mockDestroy).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses file URL in fallback when snippet is empty', async () => {
+      mockStart.mockRejectedValue(new Error('SDK not available'));
+      const noSnippet: CodeSearchResult = { ...CODE_RESULT, snippet: '' };
+
+      const explanation = await service.explainCode(noSnippet);
+
+      expect(explanation).toContain(noSnippet.url);
     });
   });
 });
