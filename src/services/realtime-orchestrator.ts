@@ -95,7 +95,12 @@ export class RealtimeOrchestrator {
       const tickStart = Date.now();
       await this.tick();
       const elapsed = Date.now() - tickStart;
-      const waitMs = Math.max(0, this.fetcher.getMinPollIntervalSeconds() * 1000 - elapsed);
+      const fetcherMinPollIntervalSeconds = this.fetcher.getMinPollIntervalSeconds();
+      const effectivePollIntervalSeconds = Math.max(
+        this.config.pollIntervalSeconds,
+        fetcherMinPollIntervalSeconds
+      );
+      const waitMs = Math.max(0, effectivePollIntervalSeconds * 1000 - elapsed);
       if (!this.isShuttingDown) {
         await this.sleep(waitMs);
       }
