@@ -25,7 +25,7 @@ Found a bug? Help us fix it!
 3. Provide:
    - Clear description of the problem
    - Steps to reproduce
-   - Expected vs. actual behavior
+   - Expected vs. actual behaviour
    - Environment details (OS, Node version)
    - Error messages and stack traces
 
@@ -94,7 +94,7 @@ Ready to contribute code? Awesome!
 
    ```bash
    cp .env.example .env
-   # Edit .env with your GitHub token and test organization
+   # Edit .env with your GitHub token and test organisation
    ```
 
 6. **Verify Setup**
@@ -459,7 +459,7 @@ Releases are managed by maintainers:
 
 ## Recognition
 
-Contributors are recognized in:
+Contributors are recognised in:
 - GitHub contributors page
 - Release notes (for significant contributions)
 - Project README (for major features)

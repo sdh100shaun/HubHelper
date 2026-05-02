@@ -71,6 +71,9 @@ All user-supplied strings must be validated before use:
 - `validateFilePath` — from `src/utils/path-validator.ts`; prevents path traversal; enforces allowed extensions
 - `sanitizeHtml` — from `src/utils/html-sanitizer.ts`; use in HTML reporters before injecting user content
 
+### Documentation language
+All user-facing documentation must use **UK English** spellings: "organisation", "customise", "colour", "behaviour", "analyse". Technical terms, CLI command names, JSON field names, and source code are exempt.
+
 ### Commit format (Conventional Commits)
 ```
 <type>(<scope>): <subject>

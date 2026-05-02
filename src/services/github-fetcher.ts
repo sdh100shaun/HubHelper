@@ -8,6 +8,7 @@ import type {
   WorkflowJob,
   WorkflowRun,
 } from '../types/index.js';
+import { isSecurityRelated } from '../utils/security-utils.js';
 
 export class GitHubFetcher {
   private octokit: Octokit;
@@ -160,7 +161,7 @@ export class GitHubFetcher {
           });
 
           const filesChanged = files.map((f) => f.filename);
-          const isSecurityRelated = this.isSecurityRelated(
+          const securityRelated = isSecurityRelated(
             pr.title,
             pr.body || '',
             pr.labels.map((l) => l.name),
@@ -184,7 +185,7 @@ export class GitHubFetcher {
             created_at: pr.created_at,
             repository: repo.full_name,
             labels: pr.labels.map((l) => l.name),
-            is_security_related: isSecurityRelated,
+            is_security_related: securityRelated,
             files_changed: filesChanged,
           });
         }
@@ -194,46 +195,6 @@ export class GitHubFetcher {
     }
 
     return allPRs;
-  }
-
-  private isSecurityRelated(
-    title: string,
-    body: string,
-    labels: string[],
-    files: string[]
-  ): boolean {
-    const securityKeywords = [
-      'security',
-      'vulnerability',
-      'cve',
-      'xss',
-      'sql injection',
-      'csrf',
-      'auth',
-      'authentication',
-      'authorization',
-      'encrypt',
-      'secret',
-      'token',
-      'credential',
-      'dependabot',
-      'snyk',
-      'password',
-      'privilege',
-      'permission',
-    ];
-
-    const securityLabels = ['security', 'vulnerability', 'dependabot'];
-    const securityFiles = ['.github/workflows/', 'security.md', 'Dockerfile', '.env'];
-
-    const text = `${title} ${body}`.toLowerCase();
-    const hasKeyword = securityKeywords.some((keyword) => text.includes(keyword));
-    const hasLabel = labels.some((label) =>
-      securityLabels.some((sl) => label.toLowerCase().includes(sl))
-    );
-    const hasSecurityFile = files.some((file) => securityFiles.some((sf) => file.includes(sf)));
-
-    return hasKeyword || hasLabel || hasSecurityFile;
   }
 
   async getRecentWorkflowRuns(lookbackDays: number): Promise<WorkflowRun[]> {
