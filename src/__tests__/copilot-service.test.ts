@@ -167,7 +167,7 @@ describe('CopilotService', () => {
       await service.analyzeWithAI(BASE_RESULT);
 
       expect(CopilotClient).toHaveBeenCalledWith(
-        expect.objectContaining({ sessionIdleTimeoutSeconds: expect.any(Number) })
+        expect.objectContaining({ sessionIdleTimeoutSeconds: 300 })
       );
     });
 

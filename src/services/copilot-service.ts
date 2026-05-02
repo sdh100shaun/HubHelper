@@ -1,9 +1,7 @@
 import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { AssistantMessageEvent } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
-
-// Auto-clean idle CLI sessions to avoid leaking server-side state on crashes.
-const SESSION_IDLE_TIMEOUT_SECONDS = 300;
+import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
 type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
