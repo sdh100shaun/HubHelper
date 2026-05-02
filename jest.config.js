@@ -5,6 +5,7 @@ export default {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@github/copilot-sdk$': '<rootDir>/src/__mocks__/@github/copilot-sdk.ts',
+    '^@octokit/auth-app$': '<rootDir>/src/__mocks__/@octokit/auth-app.ts',
   },
   transform: {
     '^.+\\.ts$': [

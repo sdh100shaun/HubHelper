@@ -59,7 +59,16 @@ export class WatchOrchestrator {
 
     this.stateManager = new StateManager(stateConfig);
     this.changeDetector = new ChangeDetector();
-    this.githubFetcher = new GitHubFetcher(config.token, config.organization);
+
+    const auth = config.authConfig ?? config.token;
+    if (!auth) {
+      throw new Error(
+        'WatchConfig requires either authConfig or token. ' +
+          'Set GITHUB_TOKEN (PAT) or GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + ' +
+          'GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App).'
+      );
+    }
+    this.githubFetcher = new GitHubFetcher(auth, config.organization);
     this.securityAnalyzer = new SecurityAnalyzer();
 
     // Initialize statistics
