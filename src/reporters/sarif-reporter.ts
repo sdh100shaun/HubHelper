@@ -263,6 +263,7 @@ export class SarifReporter {
       repeated_action_failure: 'HH-GH-007',
       action_failure: 'HH-GH-008',
       'security-pr-volume': 'HH-GH-009',
+      'contractor-repo-access': 'HH-GH-010',
     };
 
     return typeToControlId[issueType] || 'HH-GH-000';
