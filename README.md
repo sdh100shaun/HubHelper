@@ -10,7 +10,7 @@ AI-powered policy-driven security analysis tool for GitHub organizations. Uses d
 ## Features
 
 🎯 **Policy-Driven Analysis**
-- Declarative YAML-based control catalog
+- Declarative YAML-based control catalog (OSCAL 1.1.2-compatible schema)
 - Customizable security profiles (default, strict)
 - Framework mappings (NIST 800-53, CIS Controls)
 - Extensible evaluator architecture
@@ -427,6 +427,8 @@ Controls are defined in `policies/catalog.yaml` with:
 - Evaluator configuration (kind, detector, parameters)
 - Default severity level
 - Framework mappings (NIST 800-53, CIS Controls)
+
+The catalog schema follows **OSCAL 1.1.2** (Open Security Controls Assessment Language) conventions — catalog, profile, and tailoring concepts map directly to OSCAL document types.
 
 ### Evaluation Flow
 
