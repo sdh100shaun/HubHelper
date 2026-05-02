@@ -207,6 +207,7 @@ export class SecurityQueryService {
                 'action_failure',
                 'repeated_action_failure',
                 'security-pr-volume',
+                'contractor-repo-access',
               ],
               description: 'Issue type to filter by.',
             },
