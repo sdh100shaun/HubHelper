@@ -6,20 +6,20 @@ description: Complete command-line interface reference for HubHelper
 
 ## Command Overview
 
-The `hubhelper` CLI provides commands for analyzing GitHub organization security:
+The `hubhelper` CLI provides commands for analysing GitHub organisation security:
 
 ```bash
 hubhelper <command> [options]
 ```
 
 Available commands:
-- `analyze` - Analyze organization activity and detect security issues
+- `analyze` - Analyse organisation activity and detect security issues
 - `check-repo` - Check a specific repository for security issues
-- `watch` - Continuously monitor an organization for security issues
+- `watch` - Continuously monitor an organisation for security issues
 
 ## analyze
 
-Analyze an entire GitHub organization for security issues.
+Analyse an entire GitHub organisation for security issues.
 
 ### Synopsis
 
@@ -32,11 +32,11 @@ npx @sdh100shaun/hubhelper analyze [options]
 
 #### `-o, --org <organization>`
 
-GitHub organization name to analyze.
+GitHub organisation name to analyse.
 
 - **Type**: `string`
 - **Required**: Yes (unless `GITHUB_ORG` environment variable is set)
-- **Validation**: Must be a valid GitHub organization name (1-39 alphanumeric characters and hyphens)
+- **Validation**: Must be a valid GitHub organisation name (1-39 alphanumeric characters and hyphens)
 - **Example**: `--org my-company`
 
 ```bash
@@ -120,7 +120,7 @@ npx @sdh100shaun/hubhelper analyze \
 The HTML report includes:
 - Executive summary with key statistics
 - Visual charts and graphs
-- Color-coded severity indicators
+- Colour-coded severity indicators
 - AI insights (if enabled)
 - Detailed issue breakdown
 - Actionable recommendations
@@ -146,7 +146,7 @@ Use this flag when:
 
 #### Basic Analysis
 
-Analyze an organization using environment variables:
+Analyse an organisation using environment variables:
 
 ```bash
 export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
@@ -276,7 +276,7 @@ Number of days to look back. Default: `30`.
 
 ## watch
 
-Continuously monitor an organization for security issues. Runs periodic scans and alerts on new findings above a severity threshold.
+Continuously monitor an organisation for security issues. Runs periodic scans and alerts on new findings above a severity threshold.
 
 ### Synopsis
 
@@ -288,7 +288,7 @@ hubhelper watch [options]
 
 #### `-o, --org <organization>`
 
-GitHub organization name. Falls back to `GITHUB_ORG` environment variable.
+GitHub organisation name. Falls back to `GITHUB_ORG` environment variable.
 
 #### `-t, --token <token>`
 
@@ -368,7 +368,7 @@ export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 
 ### GITHUB_ORG
 
-Default GitHub organization to analyze.
+Default GitHub organisation to analyse.
 
 ```bash
 export GITHUB_ORG=mycompany
@@ -393,7 +393,7 @@ The tool automatically loads these variables.
 
 All user inputs are validated before processing:
 
-- **Organization Names**: Must match GitHub's naming rules (alphanumeric + hyphens, 1-39 chars)
+- **Organisation Names**: Must match GitHub's naming rules (alphanumeric + hyphens, 1-39 chars)
 - **Days Parameter**: Must be an integer between 1-365
 - **File Paths**: Restricted to current directory and subdirectories (no `../` or absolute paths)
 - **GitHub Tokens**: Basic format validation
@@ -421,7 +421,7 @@ GitHub API has rate limits:
 - **Authenticated**: 5,000 requests/hour
 - **GraphQL**: 5,000 points/hour
 
-The tool respects these limits. For large organizations, you may need to:
+The tool respects these limits. For large organisations, you may need to:
 - Reduce the `--days` parameter
 - Run analysis less frequently
 - Use pagination (handled automatically)
@@ -444,7 +444,7 @@ Error: Invalid organization name format
 → Must be alphanumeric with hyphens, cannot start or end with hyphen
 ```
 
-Solution: Use a valid GitHub organization name.
+Solution: Use a valid GitHub organisation name.
 
 ### API Errors
 

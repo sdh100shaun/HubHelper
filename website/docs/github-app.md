@@ -29,7 +29,7 @@ GitHub Apps provide a more secure and scalable way to authenticate automated wor
 **Use GitHub Apps for:**
 - ✅ Automated scheduled workflows (daily/weekly scans)
 - ✅ CI/CD pipelines and automation
-- ✅ Organization-wide tools that multiple teams use
+- ✅ Organisation-wide tools that multiple teams use
 - ✅ Production systems requiring high uptime
 - ✅ Services that need separate identity from users
 - ✅ Tools requiring higher rate limits
@@ -55,7 +55,7 @@ GitHub Apps provide a more secure and scalable way to authenticate automated wor
    | Field | Value |
    |-------|-------|
    | **GitHub App name** | `Security Scanner` (must be unique) |
-   | **Description** | `Automated security analysis for organization repositories` |
+   | **Description** | `Automated security analysis for organisation repositories` |
    | **Homepage URL** | `https://github.com/sdh100shaun/gh-tools` |
    | **Webhook** | Uncheck "Active" (not needed for this use case) |
 
@@ -68,7 +68,7 @@ GitHub Apps provide a more secure and scalable way to authenticate automated wor
    - ✅ **Administration**: Read (optional - for security settings)
    - ⚠️ **Issues**: Write (optional - for creating issues from findings)
 
-   **Organization permissions:**
+   **Organisation permissions:**
    - ❌ None required
 
    **Account permissions:**
@@ -94,9 +94,9 @@ After creating the app:
 
 1. Go to your app's settings page
 2. Click **"Install App"** in the left sidebar
-3. Select the organization to install it on
+3. Select the organisation to install it on
 4. Choose repository access:
-   - **All repositories** (for organization-wide scanning)
+   - **All repositories** (for organisation-wide scanning)
    - **Select repositories** (for limited scope)
 5. Click **"Install"**
 
@@ -218,7 +218,7 @@ The example workflow includes:
 #### 1. Automated Scanning
 
 Runs on a schedule without manual intervention:
-- Analyzes organization repositories
+- Analyses organisation repositories
 - Generates JSON and HTML reports
 - Uploads artifacts for review
 
@@ -227,7 +227,7 @@ Runs on a schedule without manual intervention:
 Automatically checks for threshold violations:
 - Self-merged PRs > 5
 - Disabled Actions > 3
-- Can be customized in workflow
+- Can be customised in workflow
 
 #### 3. Automated Issue Creation
 
@@ -250,7 +250,7 @@ Posts summary to Actions run:
 - Key findings
 - Links to artifacts
 
-## Customizing the Workflow
+## Customising the Workflow
 
 ### Change Analysis Period
 
@@ -303,9 +303,9 @@ Add Slack/email notifications:
       }
 ```
 
-### Multiple Organizations
+### Multiple Organisations
 
-Scan multiple organizations in one workflow:
+Scan multiple organisations in one workflow:
 
 ```yaml
 strategy:
@@ -325,7 +325,7 @@ steps:
 
 **Do:**
 - ✅ Store private key in GitHub Secrets
-- ✅ Use repository/organization secrets
+- ✅ Use repository/organisation secrets
 - ✅ Limit access to secrets (restrict who can modify)
 - ✅ Rotate private keys periodically
 
@@ -359,7 +359,7 @@ Install app on specific repositories when possible:
 gh api /app/installations
 
 # View app events (audit log)
-# Organization Settings → Audit log → Filter by app name
+# Organisation Settings → Audit log → Filter by app name
 ```
 
 **Set up alerts:**
@@ -408,12 +408,12 @@ gh secret set SECURITY_SCANNER_APP_PRIVATE_KEY < new-key.pem
    - Pull requests: Read ✅
    - Metadata: Read ✅
 3. Click "Save"
-4. Approve permission request (organization may need to approve)
+4. Approve permission request (organisation may need to approve)
 5. Wait 60 seconds for changes to propagate
 
 ### Error: "App not installed"
 
-**Cause:** App not installed on organization/repository
+**Cause:** App not installed on organisation/repository
 
 **Solution:**
 ```bash
@@ -421,7 +421,7 @@ gh secret set SECURITY_SCANNER_APP_PRIVATE_KEY < new-key.pem
 gh api /app/installations
 
 # Install app
-# Go to: App Settings → Install App → Select organization
+# Go to: App Settings → Install App → Select organisation
 ```
 
 ### Workflow doesn't run on schedule
@@ -438,7 +438,7 @@ gh api /app/installations
 
 **Cause:** App tokens auto-expire after 1 hour
 
-**Solution:** This is normal behavior. The workflow automatically generates fresh tokens:
+**Solution:** This is normal behaviour. The workflow automatically generates fresh tokens:
 
 ```yaml
 # Token is regenerated on each workflow run
@@ -547,7 +547,7 @@ EOF
 
 ### Use GitHub Apps When:
 - Automated scheduled scanning
-- Organization-wide tools
+- Organisation-wide tools
 - CI/CD pipelines
 - Multiple team members need access
 - Need separate audit trail from users
@@ -564,7 +564,7 @@ EOF
 
 1. [Set up your GitHub App](#setting-up-a-github-app)
 2. [Configure scheduled workflow](#scheduled-workflow-setup)
-3. [Customize for your organization](#customizing-the-workflow)
+3. [Customise for your organisation](#customising-the-workflow)
 4. [Monitor and iterate](#security-best-practices)
 
 ---

@@ -43,7 +43,7 @@ hubhelper analyze --org your-org
 
 ### Option 3: Local Development
 
-Clone the repository for development or customization:
+Clone the repository for development or customisation:
 
 ```bash
 git clone https://github.com/sdh100shaun/gh-tools.git
@@ -77,7 +77,7 @@ Fine-grained tokens provide the most secure access with minimal read-only permis
    |---------|-------|
    | Token name | `gh-security-tools-readonly` |
    | Expiration | 90 days |
-   | Resource owner | *Select your organization* |
+   | Resource owner | *Select your organisation* |
    | Repository access | All repositories |
 
 4. **Set Permissions (Read-only)**
@@ -88,7 +88,7 @@ Fine-grained tokens provide the most secure access with minimal read-only permis
    - ✅ **Administration**: Read (optional - for security settings)
    - ✅ **Metadata**: Read (automatic)
 
-   **Organization permissions:** None required
+   **Organisation permissions:** None required
 
 5. **Generate and Save**
    - Click "Generate token"
@@ -101,7 +101,7 @@ Fine-grained tokens provide the most secure access with minimal read-only permis
 |------------|-------------------|-----------|
 | **Actions: Read** | Check if GitHub Actions is enabled<br />List workflow status (active/disabled/paused) | ✅ Yes |
 | **Pull requests: Read** | Analyze merged PRs<br />Detect self-merges<br />Identify security-related PRs | ✅ Yes |
-| **Metadata: Read** | List organization repositories<br />Get repository details | ✅ Yes (automatic) |
+| **Metadata: Read** | List organisation repositories<br />Get repository details | ✅ Yes (automatic) |
 | **Administration: Read** | Check secret scanning status<br />Check Dependabot status | ⚠️ Optional |
 
 **Note:** Without `Administration: Read`, security scanning status checks will be skipped, but the tool will still work.
@@ -115,7 +115,7 @@ If you prefer classic tokens (not recommended for security):
 3. Give your token a descriptive name (e.g., "Security Analysis Tool")
 4. Select the following scopes:
    - ✅ `repo` (if analyzing private repositories)
-   - ✅ `read:org` (read organization membership)
+   - ✅ `read:org` (read organisation membership)
 5. Click "Generate token"
 6. **Copy the token immediately** - you won't be able to see it again!
 
@@ -225,7 +225,7 @@ Use in workflow:
 
 ## Basic Usage
 
-### Analyze an Organization
+### Analyse an Organisation
 
 Run a basic security analysis:
 
@@ -234,12 +234,12 @@ npx @sdh100shaun/hubhelper analyze --org myorg
 ```
 
 This will:
-1. Fetch all repositories in the organization
+1. Fetch all repositories in the organisation
 2. Analyze pull requests from the last 30 days
 3. Detect security issues (self-merges, security PRs, disabled actions)
-4. Display results in the terminal with color-coded severity levels
+4. Display results in the terminal with colour-coded severity levels
 
-### Customize the Time Range
+### Customise the Time Range
 
 Look back a specific number of days (1-365):
 
@@ -362,7 +362,7 @@ Add to your CI pipeline (e.g., GitHub Actions):
 
 **Error**: "Bad credentials" or "Not Found"
 
-**Solution**: Ensure your token has the minimum required read-only access for the command you're running. Prefer a fine-grained token with read-only repository access, and add read-only organization access only if needed to read organization membership or metadata. For classic tokens, use `repo` only when you need access to private repositories and `read:org` only when organization read access is required. `admin:org` is not required for normal read-only analysis. Regenerate the token if necessary.
+**Solution**: Ensure your token has the minimum required read-only access for the command you're running. Prefer a fine-grained token with read-only repository access, and add read-only organisation access only if needed to read organisation membership or metadata. For classic tokens, use `repo` only when you need access to private repositories and `read:org` only when organisation read access is required. `admin:org` is not required for normal read-only analysis. Regenerate the token if necessary.
 
 ### Rate Limiting
 
@@ -370,14 +370,14 @@ Add to your CI pipeline (e.g., GitHub Actions):
 
 **Solution**: GitHub API has rate limits. Wait an hour or use a token with higher limits (authenticated requests get 5,000/hour).
 
-### Organization Not Found
+### Organisation Not Found
 
 **Error**: "Organization 'xyz' not found"
 
 **Solution**:
-- Verify the organization name is spelled correctly
-- Ensure your token has access to the organization
-- Check that you're a member of the organization
+- Verify the organisation name is spelt correctly
+- Ensure your token has access to the organisation
+- Check that you're a member of the organisation
 
 ### File Path Security Errors
 
@@ -397,7 +397,7 @@ Add to your CI pipeline (e.g., GitHub Actions):
 
 **Error**: "Invalid organization name format"
 
-**Solution**: GitHub organization names must:
+**Solution**: GitHub organisation names must:
 - Be 1-39 characters
 - Contain only alphanumeric characters and hyphens
 - Not start or end with a hyphen
