@@ -428,7 +428,7 @@ program
       // Build WatchConfig
       const config: WatchConfig = {
         organization: org,
-        token: watchAuthConfig.mode === 'pat' ? watchAuthConfig.token : '',
+        ...(watchAuthConfig.mode === 'pat' ? { token: watchAuthConfig.token } : {}),
         authConfig: watchAuthConfig,
         intervalMinutes: interval,
         minSeverity: minSeverity as 'low' | 'medium' | 'high' | 'critical',

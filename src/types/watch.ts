@@ -18,10 +18,13 @@ export interface WatchConfig {
   /** GitHub organization name to monitor */
   organization: string;
 
-  /** GitHub personal access token (legacy — prefer authConfig) */
-  token: string;
+  /**
+   * GitHub personal access token (legacy — prefer authConfig).
+   * Optional when authConfig is provided.
+   */
+  token?: string;
 
-  /** Auth config for PAT or GitHub App. When set, takes precedence over token. */
+  /** Auth config for PAT or GitHub App. When provided, takes precedence over token. */
   authConfig?: AuthConfig;
 
   /** Scan interval in minutes (default: 60) */
