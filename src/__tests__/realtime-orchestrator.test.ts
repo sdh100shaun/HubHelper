@@ -182,10 +182,9 @@ describe('RealtimeOrchestrator', () => {
       expect(mockGhFetcher.getRepositories).toHaveBeenCalledWith(false);
     });
 
-    it('seeds seen IDs from initial fetch before entering loop', async () => {
-      const initialEvents = [makePREvent('seed-1')];
+    it('calls fetchNewEvents for initial seeding before entering the poll loop', async () => {
       mockEventsFetcher.fetchNewEvents
-        .mockResolvedValueOnce(initialEvents)
+        .mockResolvedValueOnce([makePREvent('seed-1')])
         .mockImplementationOnce(async () => {
           await orchestrator.stop();
           return [];
@@ -193,7 +192,8 @@ describe('RealtimeOrchestrator', () => {
 
       await orchestrator.start();
 
-      expect(mockEventsFetcher.seedSeenIds).toHaveBeenCalledWith(initialEvents);
+      // Once for initial seeding, once for the first loop tick
+      expect(mockEventsFetcher.fetchNewEvents).toHaveBeenCalledTimes(2);
     });
 
     it('calls printShutdown after stop', async () => {
@@ -328,6 +328,8 @@ describe('RealtimeOrchestrator', () => {
     });
 
     it('deduplicates identical violations within TTL', async () => {
+      // Use pollIntervalSeconds: 0 to avoid a 30 s sleep between ticks
+      orchestrator = new RealtimeOrchestrator(makeStreamConfig({ pollIntervalSeconds: 0 }));
       mockEngine.evaluate.mockResolvedValue({
         issues: [makeIssue('org/repo', 1)],
         statistics: {},
