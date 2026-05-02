@@ -3,10 +3,12 @@
  *
  * Structural tests (client creation, config resolution) run unconditionally.
  * Live API tests are skipped automatically unless the relevant environment
- * variables are present, so this suite is safe to run in CI without secrets.
+ * variables are present AND HUBHELPER_LIVE_TESTS=true is set, so this suite
+ * is safe to run in CI without secrets.
  *
- * PAT live test:   set GITHUB_TOKEN
- * App live test:   set GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID +
+ * PAT live test:   HUBHELPER_LIVE_TESTS=true + GITHUB_TOKEN
+ * App live test:   HUBHELPER_LIVE_TESTS=true + GITHUB_APP_ID +
+ *                      GITHUB_APP_INSTALLATION_ID +
  *                      GITHUB_APP_PRIVATE_KEY (or _PATH)
  */
 import { expect, test } from '@playwright/test';
@@ -46,7 +48,10 @@ test.describe('PAT authentication', () => {
   });
 
   test('PAT client can reach the live GitHub API', async () => {
-    test.skip(!process.env.GITHUB_TOKEN, 'set GITHUB_TOKEN to enable live PAT test');
+    test.skip(
+      !process.env.HUBHELPER_LIVE_TESTS || !process.env.GITHUB_TOKEN,
+      'set HUBHELPER_LIVE_TESTS=true and GITHUB_TOKEN to enable live PAT test'
+    );
 
     const client = createGitHubClient({ mode: 'pat', token: process.env.GITHUB_TOKEN! });
     const { data } = await client.rateLimit.get();
@@ -98,13 +103,15 @@ test.describe('GitHub App authentication', () => {
 
   test('App client can reach the live GitHub API', async () => {
     const hasAppCreds =
+      process.env.HUBHELPER_LIVE_TESTS &&
       process.env.GITHUB_APP_ID &&
       process.env.GITHUB_APP_INSTALLATION_ID &&
       (process.env.GITHUB_APP_PRIVATE_KEY || process.env.GITHUB_APP_PRIVATE_KEY_PATH);
 
     test.skip(
       !hasAppCreds,
-      'set GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + GITHUB_APP_PRIVATE_KEY to enable live App test'
+      'set HUBHELPER_LIVE_TESTS=true + GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + ' +
+        'GITHUB_APP_PRIVATE_KEY to enable live App test'
     );
 
     const config = resolveAuthFromEnv();
