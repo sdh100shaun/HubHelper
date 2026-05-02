@@ -958,6 +958,14 @@ program
         verbose: options.verbose === true,
       };
 
+      if (streamConfig.verbose) {
+        consoleReporter.printInfo('Starting realtime stream with verbose logging enabled');
+        consoleReporter.printInfo(`Organization: ${streamConfig.organization}`);
+        consoleReporter.printInfo(`Poll interval: ${streamConfig.pollIntervalSeconds}s`);
+        consoleReporter.printInfo(`Minimum severity: ${streamConfig.minSeverity}`);
+        consoleReporter.printInfo(`Policy profile: ${streamConfig.profilePath}`);
+        consoleReporter.printInfo(`Show compliant results: ${streamConfig.showCompliant}`);
+      }
       const orchestrator = new RealtimeOrchestrator(streamConfig);
       await orchestrator.start();
     } catch (error) {
