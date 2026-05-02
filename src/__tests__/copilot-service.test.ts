@@ -160,6 +160,17 @@ describe('CopilotService', () => {
       expect(mockStart).toHaveBeenCalledTimes(1);
     });
 
+    it('configures session idle timeout to auto-clean leaked CLI sessions', async () => {
+      const { CopilotClient } = await import('@github/copilot-sdk');
+      mockSendAndWait.mockResolvedValue({ data: { content: makeValidAIJson() } });
+
+      await service.analyzeWithAI(BASE_RESULT);
+
+      expect(CopilotClient).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionIdleTimeoutSeconds: 300 })
+      );
+    });
+
     describe('fallback risk scoring (SDK unavailable)', () => {
       beforeEach(() => {
         mockStart.mockRejectedValue(new Error('no CLI'));

@@ -1,6 +1,7 @@
 import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { AssistantMessageEvent } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
 type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
@@ -72,7 +73,9 @@ export class CopilotService {
 
   private async init(): Promise<boolean> {
     try {
-      this.client = new CopilotClient();
+      this.client = new CopilotClient({
+        sessionIdleTimeoutSeconds: SESSION_IDLE_TIMEOUT_SECONDS,
+      });
       await this.client.start();
       return true;
     } catch {
