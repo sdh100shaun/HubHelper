@@ -833,7 +833,7 @@ program
 program
   .command('stream')
   .description('Stream GitHub activity in real-time and flag policy violations as they happen')
-  .option('-o, --org <organization>', 'GitHub organization name')
+  .option('-o, --org <organization>', 'GitHub organisation name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-i, --interval <seconds>', 'Poll interval in seconds (10–300)', '30')
   .option('--min-severity <level>', 'Minimum severity to flag (low|medium|high|critical)', 'medium')
@@ -877,7 +877,6 @@ program
         process.exit(1);
       }
 
-      // Validate profile path to prevent path traversal
       const profilePathResult = (() => {
         try {
           return validateFilePath(options.profile as string, {
@@ -909,7 +908,7 @@ program
 
       if (streamConfig.verbose) {
         consoleReporter.printInfo('Starting realtime stream with verbose logging enabled');
-        consoleReporter.printInfo(`Organization: ${streamConfig.organization}`);
+        consoleReporter.printInfo(`Organisation: ${streamConfig.organization}`);
         consoleReporter.printInfo(`Poll interval: ${streamConfig.pollIntervalSeconds}s`);
         consoleReporter.printInfo(`Minimum severity: ${streamConfig.minSeverity}`);
         consoleReporter.printInfo(`Policy profile: ${streamConfig.profilePath}`);

@@ -86,7 +86,8 @@ export class RealtimeOrchestrator {
     this.scheduleRepoRefresh();
     this.startDedupPruning();
 
-    await this.fetcher.fetchNewEvents();
+    const initialEvents = await this.fetcher.fetchNewEvents();
+    this.fetcher.seedSeenIds(initialEvents);
 
     this.registerSignalHandlers();
 
