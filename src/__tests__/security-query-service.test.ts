@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { SecurityQueryService } from '../services/security-query-service.js';
-import type { AnalysisResult, CodeSearchResult } from '../types/index.js';
+import type { AnalysisResult } from '../types/index.js';
 
 // ── SDK mock ──────────────────────────────────────────────────────────────────
 
@@ -22,28 +22,6 @@ jest.mock('@github/copilot-sdk', () => ({
   defineTool: jest.fn((name: string, opts: { handler: unknown }) => ({ name, ...opts })),
 }));
 
-// ── CopilotService mock (used inside the tool handler) ────────────────────────
-
-const mockExplainCode = jest.fn<() => Promise<string>>();
-const mockCopilotDispose = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-
-jest.mock('../services/copilot-service.js', () => ({
-  CopilotService: jest.fn().mockImplementation(() => ({
-    explainCode: mockExplainCode,
-    dispose: mockCopilotDispose,
-  })),
-}));
-
-// ── GitHubFetcher mock ────────────────────────────────────────────────────────
-
-const mockSearchCode = jest.fn<() => Promise<CodeSearchResult[]>>();
-
-function makeFetcher() {
-  return { searchCode: mockSearchCode } as unknown as import(
-    '../services/github-fetcher.js'
-  ).GitHubFetcher;
-}
-
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 const BASE_ANALYSIS: AnalysisResult = {
@@ -61,16 +39,6 @@ const BASE_ANALYSIS: AnalysisResult = {
   },
 };
 
-const SEARCH_RESULTS: CodeSearchResult[] = [
-  {
-    repository: 'test-org/repo1',
-    path: 'src/utils.ts',
-    url: 'https://github.com/test-org/repo1/blob/main/src/utils.ts',
-    sha: 'abc123',
-    snippet: 'const x = eval(userInput);',
-  },
-];
-
 function makeSession() {
   return { sendAndWait: mockSendAndWait, destroy: mockDestroy };
 }
@@ -83,115 +51,78 @@ describe('SecurityQueryService', () => {
     mockStart.mockResolvedValue(undefined);
     mockCreateSession.mockResolvedValue(makeSession());
     mockSendAndWait.mockResolvedValue({ data: { content: 'Test answer.' } });
-    mockExplainCode.mockResolvedValue('This code calls eval which is dangerous.');
-    mockSearchCode.mockResolvedValue(SEARCH_RESULTS);
   });
 
   describe('constructor', () => {
-    it('creates instance without fetcher', () => {
+    it('creates instance without token', () => {
       const service = new SecurityQueryService();
       expect(service).toBeInstanceOf(SecurityQueryService);
     });
 
-    it('creates instance with fetcher', () => {
-      const service = new SecurityQueryService(undefined, 'claude-sonnet-4-5', makeFetcher());
+    it('creates instance with token', () => {
+      const service = new SecurityQueryService('token');
       expect(service).toBeInstanceOf(SecurityQueryService);
     });
   });
 
-  describe('search_code_in_repositories tool', () => {
-    it('calls fetcher.searchCode and copilot.explainCode and returns JSON', async () => {
-      const fetcher = makeFetcher();
-      const service = new SecurityQueryService('token', 'claude-sonnet-4-5', fetcher);
-
-      // Capture the tools passed to createSession
-      let capturedTools: Array<{ name: string; handler: (args: unknown) => Promise<string> }> = [];
-      mockCreateSession.mockImplementation((opts: { tools: typeof capturedTools }) => {
-        capturedTools = opts.tools;
+  describe('GitHub MCP integration', () => {
+    it('configures GitHub MCP server when token is provided', async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: capturing session config for assertion
+      let capturedOpts: any;
+      mockCreateSession.mockImplementation((opts: unknown) => {
+        capturedOpts = opts;
         return Promise.resolve(makeSession());
       });
 
-      await service.query('find eval usage', BASE_ANALYSIS);
-
-      const tool = capturedTools.find((t) => t.name === 'search_code_in_repositories');
-      expect(tool).toBeDefined();
-
-      const result = await tool!.handler({ query: 'eval(', max_results: 5 });
-      const parsed = JSON.parse(result) as CodeSearchResult[];
-
-      expect(mockSearchCode).toHaveBeenCalledWith('eval(', 5);
-      expect(mockExplainCode).toHaveBeenCalledTimes(1);
-      expect(parsed[0].explanation).toBe('This code calls eval which is dangerous.');
-      expect(parsed[0].repository).toBe('test-org/repo1');
-    });
-
-    it('is absent when no fetcher is provided', async () => {
-      const service = new SecurityQueryService('token');
-
-      let capturedTools: Array<{ name: string }> = [];
-      mockCreateSession.mockImplementation((opts: { tools: typeof capturedTools }) => {
-        capturedTools = opts.tools;
-        return Promise.resolve(makeSession());
-      });
-
+      const service = new SecurityQueryService('test-token');
       await service.query('any question', BASE_ANALYSIS);
 
-      const tool = capturedTools.find((t) => t.name === 'search_code_in_repositories');
-      expect(tool).toBeUndefined();
+      expect(capturedOpts.mcpServers).toBeDefined();
+      expect(capturedOpts.mcpServers.github.type).toBe('http');
+      expect(capturedOpts.mcpServers.github.url).toBe('https://api.githubcopilot.com/mcp/');
+      expect(capturedOpts.mcpServers.github.headers.Authorization).toBe('Bearer test-token');
     });
 
-    it('disposes CopilotService after enriching results', async () => {
-      const fetcher = makeFetcher();
-      const service = new SecurityQueryService('token', 'claude-sonnet-4-5', fetcher);
-
-      let capturedTools: Array<{ name: string; handler: (args: unknown) => Promise<string> }> = [];
-      mockCreateSession.mockImplementation((opts: { tools: typeof capturedTools }) => {
-        capturedTools = opts.tools;
+    it('omits MCP servers when no token is provided', async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: capturing session config for assertion
+      let capturedOpts: any;
+      mockCreateSession.mockImplementation((opts: unknown) => {
+        capturedOpts = opts;
         return Promise.resolve(makeSession());
       });
 
-      await service.query('find code', BASE_ANALYSIS);
+      const service = new SecurityQueryService();
+      await service.query('any question', BASE_ANALYSIS);
 
-      const tool = capturedTools.find((t) => t.name === 'search_code_in_repositories');
-      await tool!.handler({ query: 'eval(' });
-
-      expect(mockCopilotDispose).toHaveBeenCalledTimes(1);
+      expect(capturedOpts.mcpServers).toBeUndefined();
     });
 
-    it('defaults max_results to 10 when not provided', async () => {
-      const fetcher = makeFetcher();
-      const service = new SecurityQueryService('token', 'claude-sonnet-4-5', fetcher);
-
-      let capturedTools: Array<{ name: string; handler: (args: unknown) => Promise<string> }> = [];
-      mockCreateSession.mockImplementation((opts: { tools: typeof capturedTools }) => {
-        capturedTools = opts.tools;
+    it('mentions search_code in system prompt when token is provided', async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: capturing session config for assertion
+      let capturedOpts: any;
+      mockCreateSession.mockImplementation((opts: unknown) => {
+        capturedOpts = opts;
         return Promise.resolve(makeSession());
       });
 
-      await service.query('find code', BASE_ANALYSIS);
+      const service = new SecurityQueryService('test-token');
+      await service.query('any question', BASE_ANALYSIS);
 
-      const tool = capturedTools.find((t) => t.name === 'search_code_in_repositories');
-      await tool!.handler({ query: 'eval(' });
-
-      expect(mockSearchCode).toHaveBeenCalledWith('eval(', 10);
+      expect(capturedOpts.systemMessage.content).toContain('search_code');
     });
 
-    it('caps max_results at 30', async () => {
-      const fetcher = makeFetcher();
-      const service = new SecurityQueryService('token', 'claude-sonnet-4-5', fetcher);
-
-      let capturedTools: Array<{ name: string; handler: (args: unknown) => Promise<string> }> = [];
-      mockCreateSession.mockImplementation((opts: { tools: typeof capturedTools }) => {
-        capturedTools = opts.tools;
+    it('omits search_code instructions from system prompt when no token', async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: capturing session config for assertion
+      let capturedOpts: any;
+      mockCreateSession.mockImplementation((opts: unknown) => {
+        capturedOpts = opts;
         return Promise.resolve(makeSession());
       });
 
-      await service.query('find code', BASE_ANALYSIS);
+      const service = new SecurityQueryService();
+      await service.query('any question', BASE_ANALYSIS);
 
-      const tool = capturedTools.find((t) => t.name === 'search_code_in_repositories');
-      await tool!.handler({ query: 'eval(', max_results: 999 });
-
-      expect(mockSearchCode).toHaveBeenCalledWith('eval(', 30);
+      expect(capturedOpts.systemMessage.content).not.toContain('search_code');
     });
   });
 

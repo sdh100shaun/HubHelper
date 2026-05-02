@@ -525,7 +525,6 @@ program
 
       let analysisResult: AnalysisResult;
       let githubToken: string | undefined;
-      let fetcher: GitHubFetcher | undefined;
 
       // Load analysis from file or fetch fresh data
       if (options.from) {
@@ -603,8 +602,9 @@ program
       }
 
       // Copilot SDK — no separate API key required; passes GitHub token for MCP.
-      // Pass the fetcher when available so the AI can call search_code_in_repositories.
-      const queryService = new SecurityQueryService(githubToken, 'claude-sonnet-4-5', fetcher);
+      // When the token is set, the AI can use the GitHub MCP server's search_code
+      // tool to find code patterns across the organisation.
+      const queryService = new SecurityQueryService(githubToken);
 
       try {
         // Interactive mode
