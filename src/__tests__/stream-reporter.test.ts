@@ -119,7 +119,7 @@ describe('StreamReporter', () => {
       expect(output).toContain('VIOLATION high');
     });
 
-    it('truncates long PR titles to at most 41 visible characters (40 + ellipsis)', () => {
+    it('truncates long PR titles to max total characters including the ellipsis (39 + ellipsis when max=40)', () => {
       const reporter = new StreamReporter({ minSeverity: 'low', showCompliant: true });
       const longTitle = 'A'.repeat(60);
       const event = makeEvent();
