@@ -217,6 +217,88 @@ export interface RepositoryListStorage {
   lists: Record<string, RepositoryList>;
 }
 
+// ---------------------------------------------------------------------------
+// Realtime stream types
+// ---------------------------------------------------------------------------
+
+export interface GitHubEventActor {
+  login: string;
+  display_login?: string;
+}
+
+export interface GitHubEventRepo {
+  id: number;
+  name: string;
+  url: string;
+}
+
+export interface GitHubPullRequestEventPayload {
+  action: 'opened' | 'closed' | 'merged' | 'reopened' | 'synchronize';
+  number: number;
+  pull_request: {
+    number: number;
+    title: string;
+    body: string | null;
+    html_url: string;
+    user: { login: string };
+    merged_by: { login: string } | null;
+    merged_at: string | null;
+    created_at: string;
+    labels: Array<{ name: string }>;
+    merged: boolean;
+  };
+}
+
+export interface GitHubWorkflowRunEventPayload {
+  action: 'requested' | 'in_progress' | 'completed';
+  workflow_run: {
+    id: number;
+    name: string | null;
+    head_branch: string | null;
+    head_sha: string;
+    status: string;
+    conclusion: string | null;
+    created_at: string;
+    updated_at: string;
+    workflow_id: number;
+    run_number: number;
+    event: string;
+    run_attempt: number;
+    html_url: string;
+  };
+}
+
+export type GitHubEventPayload =
+  | GitHubPullRequestEventPayload
+  | GitHubWorkflowRunEventPayload
+  | Record<string, unknown>;
+
+export interface GitHubEvent {
+  id: string;
+  type: string;
+  actor: GitHubEventActor;
+  repo: GitHubEventRepo;
+  payload: GitHubEventPayload;
+  created_at: string;
+  public: boolean;
+}
+
+export interface StreamConfig {
+  organization: string;
+  token: string;
+  pollIntervalSeconds: number;
+  minSeverity: 'low' | 'medium' | 'high' | 'critical';
+  profilePath: string;
+  showCompliant: boolean;
+  verbose: boolean;
+}
+
+export interface StreamEventResult {
+  event: GitHubEvent;
+  violations: SecurityIssue[];
+  timestamp: string;
+}
+
 export interface ListReport {
   list: string;
   generated: string;
