@@ -1,0 +1,143 @@
+---
+sidebar_position: 3
+title: Policy Standards & Compliance Frameworks
+description: HubHelper's security control catalogue is structured on OSCAL 1.1.2 and maps every control to NIST 800-53 and CIS Controls.
+---
+
+# Policy Standards & Compliance Frameworks
+
+HubHelper's policy engine is built on established security standards, not invented conventions. The control catalogue is structured according to **OSCAL 1.1.2** and every control is mapped to **NIST 800-53** and **CIS Controls** — so your findings slot directly into existing compliance programmes.
+
+:::info[Standards-based from day one]
+The `policies/catalog.yaml` file carries `oscal-version: "1.1.2"` in its metadata. This means the catalogue, profile, and tailoring concepts you use when customising HubHelper are directly analogous to OSCAL document types — no translation layer needed.
+:::
+
+---
+
+## What Is OSCAL?
+
+**OSCAL (Open Security Controls Assessment Language)** is a set of formats published by NIST that express security control catalogues, profiles, and assessment results in machine-readable XML and JSON. HubHelper adopts the OSCAL vocabulary for its own policy layer:
+
+| OSCAL Concept | HubHelper Equivalent |
+|---|---|
+| Catalogue | `policies/catalog.yaml` — master list of all controls |
+| Profile | `policies/default.yaml`, `policies/strict.yaml` — control selections |
+| Control | An entry under `controls:` with an `id`, `statement`, `family`, and `mappings` |
+| Parameter | The `parameter:` block on each control |
+| Tailoring | The `tailoring:` block in a profile that overrides catalogue defaults |
+| Framework mapping | The `mappings:` block on each control (`NIST-800-53`, `CIS-Controls`) |
+
+Because HubHelper follows OSCAL conventions, teams already familiar with OSCAL tooling (oscal-cli, compliance-trestle, etc.) can read the catalogue and profiles without learning a new schema.
+
+---
+
+## Supported Compliance Frameworks
+
+### NIST 800-53
+
+NIST Special Publication 800-53 is the US federal standard for security and privacy controls. HubHelper maps to the following NIST 800-53 control families:
+
+| Control Family | NIST ID | Description |
+|---|---|---|
+| Configuration Management | CM-3 | Configuration Change Control |
+| System and Services Acquisition | SA-11 | Developer Testing and Evaluation |
+| Security Assessment and Authorisation | CA-2 | Security Assessments |
+| Security Assessment and Authorisation | CA-7 | Continuous Monitoring |
+| System and Information Integrity | SI-4 | System Monitoring |
+| System and Information Integrity | SI-2 | Flaw Remediation |
+
+### CIS Controls
+
+The CIS Controls (Center for Internet Security) are a prioritised set of safeguards. HubHelper maps to:
+
+| CIS Control | Description |
+|---|---| 
+| 2.3 | Address Unauthorized Software |
+| 7.2 | Establish and Maintain a Remediation Process |
+| 8.2 | Collect Audit Logs |
+| 8.11 | Conduct Audit Log Reviews |
+| 16.2 | Establish and Maintain a Secure Application Development Process |
+| 16.3 | Perform Root Cause Analysis on Security Vulnerabilities |
+
+---
+
+## Full Control Mapping Table
+
+Every HubHelper control and its framework mappings:
+
+| Control ID | Name | NIST 800-53 | CIS Controls |
+|---|---|---|---|
+| HH-GH-001 | Self-Merged Pull Requests | CM-3, SA-11 | 16.2 |
+| HH-GH-002 | Unreviewed Security PRs | SA-11, CA-2 | 16.2 |
+| HH-GH-003 | Security PR Classifier | SA-11 | 2.3 |
+| HH-GH-004 | Disabled GitHub Actions | CA-2, SA-11 | 16.3 |
+| HH-GH-005 | Paused Workflows | CA-7 | 8.2 |
+| HH-GH-006 | Disabled Workflows | CA-7 | 8.2 |
+| HH-GH-007 | Repeated Action Failures | SI-4, CA-7 | 8.2, 8.11 |
+| HH-GH-008 | Single Action Failures | SI-4 | 8.2 |
+| HH-GH-009 | Security PR Volume | SI-2 | 7.2 |
+
+---
+
+## Control ID Format
+
+Control IDs follow the pattern `HH-GH-###`:
+
+```
+HH   → HubHelper (tool namespace)
+GH   → GitHub (platform scope)
+###  → Sequential three-digit number
+```
+
+This mirrors the `<PROGRAM>-<DOMAIN>-<SEQ>` convention used in many compliance programmes (e.g. NIST's `AC-1`, `CM-3`).
+
+---
+
+## Generating a Compliance Report
+
+HubHelper can produce a structured compliance report showing pass/fail status for each framework mapping:
+
+```bash
+# JSON compliance report
+npx @sdh100shaun/hubhelper analyze --org myorg --compliance report.json
+
+# HTML compliance dashboard
+npx @sdh100shaun/hubhelper analyze --org myorg --compliance report.html --compliance-format html
+
+# Markdown (for embedding in wikis or PRs)
+npx @sdh100shaun/hubhelper analyze --org myorg --compliance report.md --compliance-format markdown
+```
+
+Reports include:
+- Controls mapped to each framework
+- Compliance status (compliant / non-compliant)
+- Compliance rate percentages
+- Detailed issue listings for non-compliant controls
+
+---
+
+## Customising Framework Mappings
+
+If your organisation uses additional frameworks (e.g. ISO 27001, SOC 2), you can extend the catalogue by adding entries to the `mappings:` block on any control in `policies/catalog.yaml`:
+
+```yaml
+mappings:
+  NIST-800-53:
+    - CM-3
+    - SA-11
+  CIS-Controls:
+    - "16.2"
+  ISO-27001:          # custom addition
+    - A.14.2.2        # Formal change control procedures
+```
+
+The compliance reporter dynamically reads all keys present under `mappings:`, so new frameworks appear in reports automatically without any code changes.
+
+---
+
+## Further Reading
+
+- [OSCAL documentation](https://pages.nist.gov/OSCAL/) — official NIST OSCAL specification
+- [NIST 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final) — full control catalogue
+- [CIS Controls v8](https://www.cisecurity.org/controls/v8) — CIS safeguards
+- [Bring Your Own Policy](/docs/features/bring-your-own-policy) — how to customise profiles without touching code
