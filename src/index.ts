@@ -14,8 +14,9 @@ import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
 import { CopilotService } from './services/copilot-service.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
+import { RealtimeOrchestrator } from './services/realtime-orchestrator.js';
 import { WatchOrchestrator } from './services/watch-orchestrator.js';
-import type { AnalysisResult } from './types/index.js';
+import type { AnalysisResult, StreamConfig } from './types/index.js';
 import type { WatchConfig } from './types/watch.js';
 import {
   validateDays,
@@ -823,6 +824,98 @@ program
           console.log('');
         }
       }
+    } catch (error) {
+      consoleReporter.printError(error as Error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('stream')
+  .description('Stream GitHub activity in real-time and flag policy violations as they happen')
+  .option('-o, --org <organization>', 'GitHub organisation name')
+  .option('-t, --token <token>', 'GitHub personal access token')
+  .option('-i, --interval <seconds>', 'Poll interval in seconds (10–300)', '30')
+  .option('--min-severity <level>', 'Minimum severity to flag (low|medium|high|critical)', 'medium')
+  .option('--profile <file>', 'Policy profile YAML path', 'policies/default.yaml')
+  .option('--show-compliant', 'Also print events that pass all policy checks')
+  .option('-v, --verbose', 'Enable verbose logging')
+  .action(async (options) => {
+    const consoleReporter = new ConsoleReporter();
+
+    try {
+      const tokenInput = options.token || process.env.GITHUB_TOKEN;
+      const tokenValidation = validateGitHubToken(tokenInput);
+      if (!tokenValidation.valid) {
+        consoleReporter.printError(new Error(tokenValidation.error!));
+        consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
+        process.exit(1);
+      }
+      const token = tokenValidation.sanitized as string;
+
+      const orgInput = options.org || process.env.GITHUB_ORG;
+      const orgValidation = validateOrganizationName(orgInput);
+      if (!orgValidation.valid) {
+        consoleReporter.printError(new Error(orgValidation.error!));
+        consoleReporter.printInfo('Set GITHUB_ORG environment variable or use --org flag');
+        process.exit(1);
+      }
+      const org = orgValidation.sanitized as string;
+
+      const intervalSec = Number.parseInt(options.interval, 10);
+      if (Number.isNaN(intervalSec) || intervalSec < 10 || intervalSec > 300) {
+        consoleReporter.printError(new Error('Interval must be between 10 and 300 seconds'));
+        process.exit(1);
+      }
+
+      const validSeverities = ['low', 'medium', 'high', 'critical'];
+      const minSeverity = options.minSeverity?.toLowerCase();
+      if (!validSeverities.includes(minSeverity)) {
+        consoleReporter.printError(
+          new Error(`Invalid severity. Must be one of: ${validSeverities.join(', ')}`)
+        );
+        process.exit(1);
+      }
+
+      const profilePathResult = (() => {
+        try {
+          return validateFilePath(options.profile as string, {
+            allowedExtensions: ['.yaml', '.yml'],
+            createDirIfMissing: false,
+          });
+        } catch {
+          return null;
+        }
+      })();
+      if (!profilePathResult) {
+        consoleReporter.printError(
+          new Error(
+            'Invalid --profile path: must be a .yaml or .yml file inside the current directory'
+          )
+        );
+        process.exit(1);
+      }
+
+      const streamConfig: StreamConfig = {
+        organization: org,
+        token,
+        pollIntervalSeconds: intervalSec,
+        minSeverity: minSeverity as 'low' | 'medium' | 'high' | 'critical',
+        profilePath: profilePathResult,
+        showCompliant: options.showCompliant === true,
+        verbose: options.verbose === true,
+      };
+
+      if (streamConfig.verbose) {
+        consoleReporter.printInfo('Starting realtime stream with verbose logging enabled');
+        consoleReporter.printInfo(`Organisation: ${streamConfig.organization}`);
+        consoleReporter.printInfo(`Poll interval: ${streamConfig.pollIntervalSeconds}s`);
+        consoleReporter.printInfo(`Minimum severity: ${streamConfig.minSeverity}`);
+        consoleReporter.printInfo(`Policy profile: ${streamConfig.profilePath}`);
+        consoleReporter.printInfo(`Show compliant results: ${streamConfig.showCompliant}`);
+      }
+      const orchestrator = new RealtimeOrchestrator(streamConfig);
+      await orchestrator.start();
     } catch (error) {
       consoleReporter.printError(error as Error);
       process.exit(1);
