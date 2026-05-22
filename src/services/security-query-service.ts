@@ -36,7 +36,8 @@ export class SecurityQueryService {
 
   constructor(
     private readonly githubToken?: string,
-    private readonly model = 'claude-sonnet-4-5'
+    private readonly model = 'claude-sonnet-4-5',
+    private readonly org?: string
   ) {}
 
   private async ensureClient(): Promise<CopilotClient> {
@@ -89,7 +90,10 @@ export class SecurityQueryService {
     // Build analysis-specific tools so the AI can fetch data on demand
     const tools = this.buildAnalysisTools(analysisData);
 
-    // Configure GitHub MCP server when a token is available
+    // Configure GitHub MCP server when a token is available.
+    // Tools is restricted to an explicit read-only allowlist — '*' would also
+    // expose write-capable operations (create PRs, push files, etc.) which
+    // must not be auto-approved by the approveAll handler below.
     const mcpServers: Record<string, MCPHTTPServerConfig> | undefined =
       this.githubToken != null
         ? {
@@ -97,7 +101,22 @@ export class SecurityQueryService {
               type: 'http',
               url: 'https://api.githubcopilot.com/mcp/',
               headers: { Authorization: `Bearer ${this.githubToken}` },
-              tools: ['*'],
+              tools: [
+                'search_code',
+                'get_file_contents',
+                'get_commit',
+                'list_commits',
+                'list_branches',
+                'list_pull_requests',
+                'pull_request_read',
+                'list_issues',
+                'issue_read',
+                'search_issues',
+                'search_pull_requests',
+                'search_repositories',
+                'list_repository_collaborators',
+                'run_secret_scanning',
+              ],
             },
           }
         : undefined;
@@ -184,7 +203,9 @@ export class SecurityQueryService {
           required: ['severity'],
         },
         handler: (args: unknown) => {
-          const { severity } = args as { severity: string };
+          const params =
+            typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {};
+          const severity = typeof params.severity === 'string' ? params.severity : '';
           const filtered = analysis.issues.filter((i) => i.severity === severity);
           return JSON.stringify(filtered, null, 2);
         },
@@ -214,7 +235,9 @@ export class SecurityQueryService {
           required: ['type'],
         },
         handler: (args: unknown) => {
-          const { type } = args as { type: string };
+          const params =
+            typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {};
+          const type = typeof params.type === 'string' ? params.type : '';
           const filtered = analysis.issues.filter((i) => i.type === type);
           return JSON.stringify(filtered, null, 2);
         },
@@ -233,7 +256,10 @@ export class SecurityQueryService {
           required: ['repository'],
         },
         handler: (args: unknown) => {
-          const { repository } = args as { repository: string };
+          const params =
+            typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {};
+          const repository = typeof params.repository === 'string' ? params.repository : '';
+          if (!repository) return JSON.stringify([], null, 2);
           const filtered = analysis.issues.filter((i) =>
             i.repository.toLowerCase().includes(repository.toLowerCase())
           );
@@ -253,7 +279,10 @@ export class SecurityQueryService {
           },
         },
         handler: (args: unknown) => {
-          const { limit = 10 } = (args as { limit?: number }) ?? {};
+          const params =
+            typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : {};
+          const rawLimit = typeof params.limit === 'number' ? params.limit : 10;
+          const limit = Math.max(1, Math.min(rawLimit, 100));
           const counts = analysis.issues.reduce<
             Record<string, { count: number; severities: Record<string, number> }>
           >((acc, issue) => {
@@ -292,7 +321,7 @@ You have access to a pre-run security analysis of a GitHub organization:
 - ${analysis.issues.length} issues found (${analysis.issues.filter((i) => i.severity === 'critical').length} critical, ${analysis.issues.filter((i) => i.severity === 'high').length} high)
 
 Use the provided tools (get_security_summary, get_issues_by_severity, get_issues_by_type, get_issues_by_repository, get_top_repositories, get_recommendations) to look up specific data before answering.
-${this.githubToken ? 'You also have access to the GitHub MCP server for live repository queries — including its search_code tool for finding code patterns across all repositories. When asked about code, use search_code (scoped with `org:<orgname>`) to locate matches and explain each snippet you return.' : ''}
+${this.githubToken ? `You also have access to the GitHub MCP server for live repository queries — including its search_code tool for finding code patterns across all repositories. When asked about code, use search_code${this.org ? ` scoped to this organisation with the qualifier \`org:${this.org}\`` : ''} to locate matches and explain each snippet you return.` : ''}
 
 When answering:
 - Be concise and actionable

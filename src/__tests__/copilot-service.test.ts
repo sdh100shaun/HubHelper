@@ -395,5 +395,33 @@ describe('CopilotService', () => {
 
       expect(explanation).toContain(noSnippet.url);
     });
+
+    it('uses a dynamic fence longer than any backtick run in the snippet', async () => {
+      // Snippet containing ``` which would close a standard triple-backtick fence
+      const snippetWithFence: CodeSearchResult = {
+        ...CODE_RESULT,
+        snippet: 'const x = `foo` + ```bar``` + y;',
+      };
+      mockSendAndWait.mockResolvedValue({ data: { content: 'ok' } });
+
+      await service.explainCode(snippetWithFence);
+
+      const promptArg = (mockSendAndWait.mock.calls[0] as unknown as [{ prompt: string }])[0];
+      // The snippet contains ```, so the outer fence must be ```` or longer
+      expect(promptArg.prompt).toContain('````');
+      // The raw snippet content must still appear verbatim inside the fence
+      expect(promptArg.prompt).toContain('const x = `foo` + ```bar``` + y;');
+    });
+
+    it('uses the configured model when creating sessions', async () => {
+      const customService = new CopilotService('claude-opus-4-7');
+      mockSendAndWait.mockResolvedValue({ data: { content: 'explanation' } });
+
+      await customService.explainCode(CODE_RESULT);
+
+      expect(mockCreateSession).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'claude-opus-4-7' })
+      );
+    });
   });
 });

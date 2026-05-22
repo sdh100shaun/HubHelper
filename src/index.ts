@@ -525,6 +525,7 @@ program
 
       let analysisResult: AnalysisResult;
       let githubToken: string | undefined;
+      let org: string | undefined;
 
       // Load analysis from file or fetch fresh data
       if (options.from) {
@@ -574,7 +575,7 @@ program
           consoleReporter.printInfo('Set GITHUB_ORG environment variable or use --org flag');
           process.exit(1);
         }
-        const org = orgValidation.sanitized as string;
+        org = orgValidation.sanitized as string;
 
         const daysValidation = validateDays(options.days);
         if (!daysValidation.valid) {
@@ -601,10 +602,10 @@ program
         analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
       }
 
-      // Copilot SDK — no separate API key required; passes GitHub token for MCP.
-      // When the token is set, the AI can use the GitHub MCP server's search_code
-      // tool to find code patterns across the organisation.
-      const queryService = new SecurityQueryService(githubToken);
+      // Copilot SDK — no separate API key required; passes GitHub token and org
+      // for MCP. When the token is set, the AI can use the GitHub MCP server's
+      // search_code tool scoped to the organisation.
+      const queryService = new SecurityQueryService(githubToken, undefined, org);
 
       try {
         // Interactive mode

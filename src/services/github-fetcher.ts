@@ -293,23 +293,30 @@ export class GitHubFetcher {
    * `snippet` fragment surrounding the matched text.
    */
   async searchCode(query: string, maxResults = 30): Promise<CodeSearchResult[]> {
-    const { data } = await this.octokit.request('GET /search/code', {
-      q: `${query} org:${this.org}`,
-      per_page: Math.min(maxResults, 100),
-      headers: { accept: 'application/vnd.github.text-match+json' },
-    });
+    let data: unknown;
+    try {
+      const response = await this.octokit.request('GET /search/code', {
+        q: `${query} org:${this.org}`,
+        per_page: Math.min(maxResults, 100),
+        headers: { accept: 'application/vnd.github.text-match+json' },
+      });
+      data = response.data;
+    } catch (error) {
+      throw new Error(
+        `Code search failed for query "${query}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
 
-    const items = (
-      data as {
-        items: Array<{
-          repository: { full_name: string };
-          path: string;
-          html_url: string;
-          sha: string;
-          text_matches?: Array<{ fragment: string }>;
-        }>;
-      }
-    ).items;
+    const raw = data as {
+      items?: Array<{
+        repository: { full_name: string };
+        path: string;
+        html_url: string;
+        sha: string;
+        text_matches?: Array<{ fragment?: string }>;
+      }>;
+    };
+    const items = raw.items ?? [];
 
     return items.map((item) => ({
       repository: item.repository.full_name,
