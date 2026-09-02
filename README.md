@@ -82,7 +82,38 @@ npm install
 
 ## Authentication
 
-Generate a GitHub token with appropriate permissions:
+HubHelper resolves credentials in this order:
+
+1. **GitHub App** — `GITHUB_APP_ID` + `GITHUB_APP_INSTALLATION_ID` + `GITHUB_APP_PRIVATE_KEY[_PATH]`
+2. **`GITHUB_TOKEN`** — a PAT from the environment or `.env`
+3. **GitHub CLI** — the credential from `gh auth login`
+
+CI, which sets `GITHUB_TOKEN` explicitly, therefore never picks up an ambient `gh` login.
+
+### ⚡ GitHub CLI (fastest for local development)
+
+If you already use the [GitHub CLI](https://cli.github.com), HubHelper can borrow its
+credential — no token to mint, paste, or rotate:
+
+```bash
+gh auth login              # default scopes already cover HubHelper
+hubhelper auth status --org your-org   # confirm what you can actually see
+hubhelper analyze --org your-org
+```
+
+`gh auth login` grants `repo`, `read:org` and `gist` by default, which is everything HubHelper
+needs. Topping up an older login:
+
+```bash
+gh auth refresh -h github.com -s read:org
+```
+
+**Trade-off:** a `gh` credential is a *classic* OAuth token, and its `repo` scope includes
+**write** access. It is broader than the fine-grained read-only token described below. Use the
+GitHub CLI for local development convenience; prefer a fine-grained PAT or a GitHub App for CI
+and scheduled scans.
+
+Set `HUBHELPER_NO_GH_CLI=1` to disable GitHub CLI discovery entirely.
 
 ### 🔒 Fine-Grained Personal Access Token (Recommended)
 
@@ -141,6 +172,30 @@ gh-security analyze
 # Option 3: Command line (not recommended - visible in shell history)
 gh-security analyze --org your-org --token your_token_here
 ```
+
+### Permissions HubHelper Needs
+
+| Feature | Classic scope | Fine-grained permission |
+|---|---|---|
+| Repositories, pull requests, workflow runs, file contents | `repo` | Metadata, Pull requests, Actions, Contents — all Read |
+| Organisation members and the org event stream (`watch`, `stream`) | `read:org` | Organisation → Members: Read |
+| Actions-enabled and security-features-enabled status | `repo` **+ repository admin** | Administration: Read |
+
+⚠️ **Without repository admin**, the Actions permissions endpoint and the `security_and_analysis`
+block are not returned, so `actions_enabled` and `security_enabled` are reported as `false` for
+every repository you do not administer. Findings are then **incomplete rather than wrong**, and
+an incomplete report looks exactly like a clean one. Run `hubhelper auth status --org your-org`
+to see whether this affects you.
+
+### Checking Your Permissions
+
+```bash
+hubhelper auth status --org your-org
+```
+
+Reports the active credential, your identity, the granted scopes, whether the required access
+actually works against your organisation, and whether the admin-only extras above are available.
+Exits non-zero when something required is missing.
 
 ### Token Security Best Practices
 
@@ -242,6 +297,19 @@ npx @sdh100shaun/hubhelper analyze
 ```
 
 ## Command Reference
+
+### `auth status`
+
+Report the active credential and the permissions it grants.
+
+**Options:**
+- `-o, --org <organisation>` - Organisation to probe for real access (default: from `.env`)
+- `-t, --token <token>` - GitHub token (default: resolved from App, `GITHUB_TOKEN`, then `gh`)
+
+**Example:**
+```bash
+npm run dev auth status --org myorg
+```
 
 ### `analyze`
 
