@@ -6,7 +6,7 @@ import { describeGhCliFailure, getGhCliToken } from './gh-cli-token.js';
 export type AuthMode = 'pat' | 'app';
 
 /** Where a PAT came from. Absent means the environment, for backwards compatibility. */
-export type PatSource = 'env' | 'gh-cli';
+export type PatSource = 'env' | 'gh-cli' | 'flag';
 
 export interface PatAuthConfig {
   mode: 'pat';

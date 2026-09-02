@@ -73,7 +73,7 @@ export function describeGhCliFailure(reason: GhCliFailureReason): string {
     case 'not-installed':
       return 'The GitHub CLI (gh) was not found on PATH. Install it from https://cli.github.com.';
     case 'not-authenticated':
-      return 'The GitHub CLI is installed but not logged in. Run: gh auth login -s read:org';
+      return 'The GitHub CLI is installed but not logged in. Run: gh auth login';
     default:
       return 'The GitHub CLI could not provide a token. Check `gh auth status`.';
   }

@@ -49,7 +49,7 @@ function resolveCliAuth(
       consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
       return null;
     }
-    return { mode: 'pat', token: validation.sanitized as string, source: 'env' };
+    return { mode: 'pat', token: validation.sanitized as string, source: 'flag' };
   }
   try {
     const auth = resolveAuthFromEnv();
@@ -70,7 +70,7 @@ function resolveCliAuth(
     consoleReporter.printError(err as Error);
     consoleReporter.printInfo(
       'Set GITHUB_TOKEN (PAT) or GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + ' +
-        'GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App), or run: gh auth login -s read:org'
+        'GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App), or run: gh auth login'
     );
     return null;
   }
