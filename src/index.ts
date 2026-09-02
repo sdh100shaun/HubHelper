@@ -13,7 +13,7 @@ import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
 import { AIExplainerService } from './services/ai-explainer.js';
-import { PROBE_IDENTITY, PROBE_ORG_MEMBERS, checkAuthStatus } from './services/auth-status.js';
+import { checkAuthStatus, PROBE_IDENTITY, PROBE_ORG_MEMBERS } from './services/auth-status.js';
 import type { AIModel } from './services/copilot-ai-client.js';
 import { CopilotService } from './services/copilot-service.js';
 import { type AuthConfig, createGitHubClient, resolveAuthFromEnv } from './services/github-auth.js';

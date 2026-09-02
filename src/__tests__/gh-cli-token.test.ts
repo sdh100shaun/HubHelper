@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
-  GH_CLI_OPT_OUT_ENV,
   describeGhCliFailure,
+  GH_CLI_OPT_OUT_ENV,
   getGhCliToken,
 } from '../services/gh-cli-token.js';
 
