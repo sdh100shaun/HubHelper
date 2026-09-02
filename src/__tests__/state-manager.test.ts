@@ -10,7 +10,6 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { StateManager } from '../services/state-manager.js';
-import type { WatchState } from '../types/watch.js';
 
 describe('StateManager', () => {
   let stateManager: StateManager;

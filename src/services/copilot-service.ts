@@ -1,5 +1,4 @@
-import { CopilotClient, approveAll } from '@github/copilot-sdk';
-import type { AssistantMessageEvent } from '@github/copilot-sdk';
+import { type AssistantMessageEvent, approveAll, CopilotClient } from '@github/copilot-sdk';
 import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/index.js';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
@@ -115,7 +114,7 @@ export class CopilotService {
     } catch {
       return this.fallbackAnalysis(analysisResult);
     } finally {
-      await session.destroy().catch(() => {});
+      await session.disconnect().catch(() => {});
     }
   }
 
@@ -136,7 +135,7 @@ export class CopilotService {
     } catch {
       return this.fallbackExplain(issue);
     } finally {
-      await session.destroy().catch(() => {});
+      await session.disconnect().catch(() => {});
     }
   }
 
@@ -170,7 +169,7 @@ ${snippetSection}`;
     } catch {
       return this.fallbackExplainCode(result);
     } finally {
-      await session.destroy().catch(() => {});
+      await session.disconnect().catch(() => {});
     }
   }
 

@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync } from 'node:fs';
-import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, normalize, relative, resolve } from 'node:path';
 
 /**
  * Validates and sanitizes file paths to prevent path traversal attacks

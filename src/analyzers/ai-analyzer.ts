@@ -158,24 +158,4 @@ export class AIAnalyzer {
 
     return insights.join('\n');
   }
-
-  private groupIssuesByType(issues: SecurityIssue[]): Record<string, number> {
-    return issues.reduce(
-      (acc, issue) => {
-        acc[issue.type] = (acc[issue.type] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
-  }
-
-  private groupIssuesBySeverity(issues: SecurityIssue[]): Record<string, number> {
-    return issues.reduce(
-      (acc, issue) => {
-        acc[issue.severity] = (acc[issue.severity] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
-  }
 }

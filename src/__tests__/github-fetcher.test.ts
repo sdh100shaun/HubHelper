@@ -1,5 +1,4 @@
 import { GitHubFetcher } from '../services/github-fetcher';
-import type { PullRequest, Repository } from '../types/index';
 
 // Mock Octokit
 const mockListForOrg = jest.fn();

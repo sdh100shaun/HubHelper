@@ -5,7 +5,7 @@ import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/i
 // ── SDK mock setup ────────────────────────────────────────────────────────────
 
 const mockStop = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-const mockDestroy = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const mockDisconnect = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 // biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
 const mockSendAndWait = jest.fn() as jest.Mock<any>;
 // biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
@@ -56,7 +56,7 @@ function makeValidAIJson(overrides: object = {}): string {
 }
 
 function makeSession() {
-  return { sendAndWait: mockSendAndWait, destroy: mockDestroy };
+  return { sendAndWait: mockSendAndWait, disconnect: mockDisconnect };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ describe('CopilotService', () => {
 
       await service.analyzeWithAI(BASE_RESULT);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('always destroys the session on success', async () => {
@@ -146,7 +146,7 @@ describe('CopilotService', () => {
 
       await service.analyzeWithAI(BASE_RESULT);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('reuses the same client across multiple calls', async () => {
@@ -244,7 +244,7 @@ describe('CopilotService', () => {
 
       await service.explainIssue(SELF_MERGE_ISSUE);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('provides a non-empty fallback for every issue type', async () => {
@@ -384,7 +384,7 @@ describe('CopilotService', () => {
 
       await service.explainCode(CODE_RESULT);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('uses file URL in fallback when snippet is empty', async () => {

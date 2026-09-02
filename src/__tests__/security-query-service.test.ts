@@ -5,7 +5,7 @@ import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 // ── SDK mock ──────────────────────────────────────────────────────────────────
 
 const mockStop = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-const mockDestroy = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const mockDisconnect = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 // biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
 const mockSendAndWait = jest.fn() as jest.Mock<any>;
 // biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
@@ -70,7 +70,7 @@ const ANALYSIS_WITH_ISSUES: AnalysisResult = {
 };
 
 function makeSession() {
-  return { sendAndWait: mockSendAndWait, destroy: mockDestroy };
+  return { sendAndWait: mockSendAndWait, disconnect: mockDisconnect };
 }
 
 /** Capture the opts passed to createSession on the next call */
@@ -241,7 +241,7 @@ describe('SecurityQueryService', () => {
       await jest.advanceTimersByTimeAsync(30_001);
       await assertion;
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
       jest.useRealTimers();
     });
   });

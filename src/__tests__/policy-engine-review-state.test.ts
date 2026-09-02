@@ -179,7 +179,7 @@ describe('filterControls keeps review controls', () => {
 
 import { PolicyEngine } from '../policy/engine.js';
 import { evaluatorRegistry } from '../policy/evaluator-registry.js';
-import type { EvaluationContext, EvaluationResult, ResolvedPolicy } from '../policy/types.js';
+import type { EvaluationResult, ResolvedPolicy } from '../policy/types.js';
 import type { SecurityIssue } from '../types/index.js';
 
 function makeIssue(repo: string, type: SecurityIssue['type'] = 'disabled-actions'): SecurityIssue {

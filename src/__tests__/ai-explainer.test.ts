@@ -3,8 +3,7 @@
  */
 
 import { AIExplainerService } from '../services/ai-explainer.js';
-import type { SecurityIssue } from '../types/index.js';
-import type { AnalysisResult } from '../types/index.js';
+import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 // ─── Mock dependencies ────────────────────────────────────────────────────
 
