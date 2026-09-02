@@ -1,6 +1,5 @@
-import { CopilotClient, approveAll } from '@github/copilot-sdk';
-import type { AssistantMessageEvent } from '@github/copilot-sdk';
-import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import { type AssistantMessageEvent, approveAll, CopilotClient } from '@github/copilot-sdk';
+import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/index.js';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
 type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
@@ -71,6 +70,8 @@ export class CopilotService {
   private client: CopilotClient | null = null;
   private initPromise: Promise<boolean> | null = null;
 
+  constructor(private readonly model = 'claude-sonnet-4-5') {}
+
   private async init(): Promise<boolean> {
     try {
       this.client = new CopilotClient({
@@ -98,7 +99,7 @@ export class CopilotService {
     }
 
     const session = await this.client.createSession({
-      model: 'claude-sonnet-4-5',
+      model: this.model,
       onPermissionRequest: approveAll,
     });
     try {
@@ -113,7 +114,7 @@ export class CopilotService {
     } catch {
       return this.fallbackAnalysis(analysisResult);
     } finally {
-      await session.destroy().catch(() => {});
+      await session.disconnect().catch(() => {});
     }
   }
 
@@ -124,7 +125,7 @@ export class CopilotService {
     }
 
     const session = await this.client.createSession({
-      model: 'claude-sonnet-4-5',
+      model: this.model,
       onPermissionRequest: approveAll,
     });
     try {
@@ -134,7 +135,41 @@ export class CopilotService {
     } catch {
       return this.fallbackExplain(issue);
     } finally {
-      await session.destroy().catch(() => {});
+      await session.disconnect().catch(() => {});
+    }
+  }
+
+  async explainCode(result: CodeSearchResult): Promise<string> {
+    const available = await this.ensureClient();
+    if (!available || !this.client) {
+      return this.fallbackExplainCode(result);
+    }
+
+    const session = await this.client.createSession({
+      model: this.model,
+      onPermissionRequest: approveAll,
+    });
+    try {
+      // Build a code fence that is always longer than any backtick sequence in
+      // the snippet (CommonMark §4.5) to prevent fence breakout / prompt injection.
+      const snippetSection = (() => {
+        if (!result.snippet) {
+          return `(no snippet available — see full file at ${result.url})`;
+        }
+        const runs = [...result.snippet.matchAll(/`+/g)].map((m) => m[0].length);
+        const fence = '`'.repeat(Math.max(3, runs.length > 0 ? Math.max(...runs) + 1 : 3));
+        return `${fence}\n${result.snippet}\n${fence}`;
+      })();
+      const prompt = `Explain the following code snippet found in ${result.repository} at ${result.path}.
+Describe what it does, its likely purpose, and flag any security implications. Be concise (3-5 sentences).
+
+${snippetSection}`;
+      const event: AssistantMessageEvent | undefined = await session.sendAndWait({ prompt });
+      return event?.data.content ?? this.fallbackExplainCode(result);
+    } catch {
+      return this.fallbackExplainCode(result);
+    } finally {
+      await session.disconnect().catch(() => {});
     }
   }
 
@@ -142,8 +177,14 @@ export class CopilotService {
     if (this.client) {
       await this.client.stop().catch(() => {});
       this.client = null;
-      this.initPromise = null;
     }
+    // Always reset initPromise so the next ensureClient() call retries init
+    // rather than returning a cached rejected/stale promise.
+    this.initPromise = null;
+  }
+
+  private fallbackExplainCode(result: CodeSearchResult): string {
+    return `Code found in ${result.repository} at ${result.path}. Review the file at ${result.url} for full context.`;
   }
 
   // ── Fallback analysis (no SDK required) ──────────────────────────────────

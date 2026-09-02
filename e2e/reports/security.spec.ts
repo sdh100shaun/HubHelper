@@ -218,7 +218,7 @@ test.describe('HTML Report Security', () => {
     const reportPath = await generateTestReport();
     await page.goto(`file://${reportPath}`);
 
-    const content = await page.content();
+    const _content = await page.content();
 
     // Check that styles are in <style> tags, not inline
     // This is okay: <style>...</style>

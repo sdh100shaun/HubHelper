@@ -13,14 +13,8 @@
  */
 
 import { SecurityAnalyzer } from '../analyzers/security-analyzer.js';
-import type {
-  SecurityIssue as FullSecurityIssue,
-  PullRequest,
-  Repository,
-  WorkflowRun,
-} from '../types/index.js';
-import type { WatchConfig, WatchScanResult, WatchStatistics } from '../types/watch.js';
-import type { StateManagerConfig } from '../types/watch.js';
+import type { PullRequest, Repository, WorkflowRun } from '../types/index.js';
+import type { StateManagerConfig, WatchConfig, WatchStatistics } from '../types/watch.js';
 import { ChangeDetector } from './change-detector.js';
 import { GitHubFetcher } from './github-fetcher.js';
 import { StateManager } from './state-manager.js';
@@ -157,7 +151,7 @@ export class WatchOrchestrator {
           this.currentScanPromise,
           new Promise((_, reject) => setTimeout(() => reject(new Error('Scan timeout')), 30000)),
         ]);
-      } catch (error) {
+      } catch (_error) {
         console.warn('⚠️ Scan did not complete within timeout');
       }
     }

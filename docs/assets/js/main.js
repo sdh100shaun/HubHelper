@@ -108,7 +108,7 @@
           button.textContent = 'Copy';
           button.style.background = 'rgba(102, 126, 234, 0.8)';
         }, 2000);
-      } catch (err) {
+      } catch (_err) {
         button.textContent = 'Failed';
         setTimeout(() => {
           button.textContent = 'Copy';

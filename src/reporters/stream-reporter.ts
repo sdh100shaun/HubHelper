@@ -111,11 +111,7 @@ export class StreamReporter {
     }
   }
 
-  printShutdown(stats: {
-    eventsProcessed: number;
-    violationsFound: number;
-    uptime: number;
-  }): void {
+  printShutdown(stats: { eventsProcessed: number; violationsFound: number; uptime: number }): void {
     const uptimeMin = Math.floor(stats.uptime / 60);
     const uptimeSec = stats.uptime % 60;
     console.log(chalk.bold('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));

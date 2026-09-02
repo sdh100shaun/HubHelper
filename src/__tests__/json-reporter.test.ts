@@ -96,7 +96,7 @@ describe('JSONReporter', () => {
     it('should overwrite existing file', () => {
       reporter.saveToFile(mockResult, testFilePath);
       const firstContent = readFileSync(testFilePath, 'utf-8');
-      const firstParsed = JSON.parse(firstContent);
+      const _firstParsed = JSON.parse(firstContent);
 
       const updatedResult: AnalysisResult = {
         ...mockResult,

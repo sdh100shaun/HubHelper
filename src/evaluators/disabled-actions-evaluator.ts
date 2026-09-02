@@ -22,7 +22,7 @@ export class DisabledActionsEvaluator extends BaseEvaluator {
 
   async evaluate(
     context: EvaluationContext,
-    parameters: Record<string, unknown>,
+    _parameters: Record<string, unknown>,
     severity: Severity
   ): Promise<EvaluationResult> {
     const startTime = Date.now();

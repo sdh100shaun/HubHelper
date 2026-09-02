@@ -216,6 +216,7 @@ The PR title is used as the squash-merge commit message, so it must be valid on 
 
 ### Secrets Management
 - **NEVER** commit tokens, passwords, or API keys
+- **NEVER** put sensitive data (tokens, passwords, API keys, real org/user names from production, customer data, internal URLs, real example outputs containing secrets) into plan files, RFCs, design docs, issue bodies, PR descriptions, or commit messages — use placeholders like `<token>`, `<org>`, `$GITHUB_TOKEN` instead
 - Use environment variables (`process.env`)
 - Store sensitive config in `.env` (gitignored)
 - Use `.env.example` for templates

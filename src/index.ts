@@ -5,8 +5,8 @@ import { config } from 'dotenv';
 import ora from 'ora';
 import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
-import { PolicyEngine } from './policy/engine.js';
 import type { PolicyEngineResult } from './policy/engine.js';
+import { PolicyEngine } from './policy/engine.js';
 import { ComplianceReporter } from './reporters/compliance-reporter.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
@@ -535,6 +535,7 @@ program
 
       let analysisResult: AnalysisResult;
       let githubToken: string | undefined;
+      let org: string | undefined;
 
       // Load analysis from file or fetch fresh data
       if (options.from) {
@@ -584,7 +585,7 @@ program
           consoleReporter.printInfo('Set GITHUB_ORG environment variable or use --org flag');
           process.exit(1);
         }
-        const org = orgValidation.sanitized as string;
+        org = orgValidation.sanitized as string;
 
         const daysValidation = validateDays(options.days);
         if (!daysValidation.valid) {
@@ -611,8 +612,10 @@ program
         analysisResult = analyzer.generateAnalysisResult(repositories, pullRequests, workflowRuns);
       }
 
-      // Copilot SDK — no separate API key required; passes GitHub token for MCP
-      const queryService = new SecurityQueryService(githubToken);
+      // Copilot SDK — no separate API key required; passes GitHub token and org
+      // for MCP. When the token is set, the AI can use the GitHub MCP server's
+      // search_code tool scoped to the organisation.
+      const queryService = new SecurityQueryService(githubToken, undefined, org);
 
       try {
         // Interactive mode

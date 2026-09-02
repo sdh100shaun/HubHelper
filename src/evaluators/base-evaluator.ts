@@ -34,7 +34,7 @@ export abstract class BaseEvaluator implements Evaluator {
   /**
    * Validate parameters - override for custom validation
    */
-  validateParameters(parameters: Record<string, unknown>): void {
+  validateParameters(_parameters: Record<string, unknown>): void {
     // Base implementation - subclasses can override
   }
 

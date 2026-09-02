@@ -106,7 +106,7 @@ export class ActionFailureEvaluator extends BaseEvaluator {
 
   async evaluate(
     context: EvaluationContext,
-    parameters: Record<string, unknown>,
+    _parameters: Record<string, unknown>,
     severity: Severity
   ): Promise<EvaluationResult> {
     const startTime = Date.now();
@@ -127,7 +127,7 @@ export class ActionFailureEvaluator extends BaseEvaluator {
     }
 
     // Report single failures (workflows with exactly 1 failure)
-    for (const [key, failures] of failuresByWorkflow) {
+    for (const [_key, failures] of failuresByWorkflow) {
       if (failures.length === 1) {
         const run = failures[0];
         issues.push({

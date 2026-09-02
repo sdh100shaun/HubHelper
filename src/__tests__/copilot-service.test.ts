@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { CopilotService } from '../services/copilot-service.js';
-import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/index.js';
 
 // ── SDK mock setup ────────────────────────────────────────────────────────────
 
 const mockStop = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-const mockDestroy = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const mockDisconnect = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 // biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
 const mockSendAndWait = jest.fn() as jest.Mock<any>;
 // biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
@@ -56,7 +56,7 @@ function makeValidAIJson(overrides: object = {}): string {
 }
 
 function makeSession() {
-  return { sendAndWait: mockSendAndWait, destroy: mockDestroy };
+  return { sendAndWait: mockSendAndWait, disconnect: mockDisconnect };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ describe('CopilotService', () => {
 
       await service.analyzeWithAI(BASE_RESULT);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('always destroys the session on success', async () => {
@@ -146,7 +146,7 @@ describe('CopilotService', () => {
 
       await service.analyzeWithAI(BASE_RESULT);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('reuses the same client across multiple calls', async () => {
@@ -244,7 +244,7 @@ describe('CopilotService', () => {
 
       await service.explainIssue(SELF_MERGE_ISSUE);
 
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('provides a non-empty fallback for every issue type', async () => {
@@ -315,6 +315,113 @@ describe('CopilotService', () => {
       const result = await service.analyzeWithAI(BASE_RESULT);
 
       expect(result.risk_level).toBe('medium');
+    });
+  });
+
+  // ── explainCode ─────────────────────────────────────────────────────────────
+
+  describe('explainCode', () => {
+    const CODE_RESULT: CodeSearchResult = {
+      repository: 'test-org/repo1',
+      path: 'src/utils.ts',
+      url: 'https://github.com/test-org/repo1/blob/main/src/utils.ts',
+      sha: 'abc123',
+      snippet: 'const x = eval(userInput);',
+    };
+
+    it('returns AI explanation when SDK is available', async () => {
+      mockSendAndWait.mockResolvedValue({
+        data: { content: 'This code evaluates user input directly, which is a security risk.' },
+      });
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toBe(
+        'This code evaluates user input directly, which is a security risk.'
+      );
+      expect(mockCreateSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('includes repository, path and snippet in the prompt', async () => {
+      mockSendAndWait.mockResolvedValue({ data: { content: 'explanation' } });
+
+      await service.explainCode(CODE_RESULT);
+
+      const promptArg = (mockSendAndWait.mock.calls[0] as unknown as [{ prompt: string }])[0];
+      expect(promptArg.prompt).toContain('test-org/repo1');
+      expect(promptArg.prompt).toContain('src/utils.ts');
+      expect(promptArg.prompt).toContain('const x = eval(userInput);');
+    });
+
+    it('returns fallback string when SDK is unavailable', async () => {
+      mockStart.mockRejectedValue(new Error('SDK not available'));
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toContain('test-org/repo1');
+      expect(explanation).toContain('src/utils.ts');
+      expect(explanation).toContain('https://github.com/test-org/repo1/blob/main/src/utils.ts');
+    });
+
+    it('returns fallback string when sendAndWait throws', async () => {
+      mockSendAndWait.mockRejectedValue(new Error('Network error'));
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toContain('test-org/repo1');
+    });
+
+    it('returns fallback string when sendAndWait returns undefined', async () => {
+      mockSendAndWait.mockResolvedValue(undefined);
+
+      const explanation = await service.explainCode(CODE_RESULT);
+
+      expect(explanation).toContain('src/utils.ts');
+    });
+
+    it('destroys session in finally block even when sendAndWait throws', async () => {
+      mockSendAndWait.mockRejectedValue(new Error('fail'));
+
+      await service.explainCode(CODE_RESULT);
+
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses file URL in fallback when snippet is empty', async () => {
+      mockStart.mockRejectedValue(new Error('SDK not available'));
+      const noSnippet: CodeSearchResult = { ...CODE_RESULT, snippet: '' };
+
+      const explanation = await service.explainCode(noSnippet);
+
+      expect(explanation).toContain(noSnippet.url);
+    });
+
+    it('uses a dynamic fence longer than any backtick run in the snippet', async () => {
+      // Snippet containing ``` which would close a standard triple-backtick fence
+      const snippetWithFence: CodeSearchResult = {
+        ...CODE_RESULT,
+        snippet: 'const x = `foo` + ```bar``` + y;',
+      };
+      mockSendAndWait.mockResolvedValue({ data: { content: 'ok' } });
+
+      await service.explainCode(snippetWithFence);
+
+      const promptArg = (mockSendAndWait.mock.calls[0] as unknown as [{ prompt: string }])[0];
+      // The snippet contains ```, so the outer fence must be ```` or longer
+      expect(promptArg.prompt).toContain('````');
+      // The raw snippet content must still appear verbatim inside the fence
+      expect(promptArg.prompt).toContain('const x = `foo` + ```bar``` + y;');
+    });
+
+    it('uses the configured model when creating sessions', async () => {
+      const customService = new CopilotService('claude-opus-4-7');
+      mockSendAndWait.mockResolvedValue({ data: { content: 'explanation' } });
+
+      await customService.explainCode(CODE_RESULT);
+
+      expect(mockCreateSession).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'claude-opus-4-7' })
+      );
     });
   });
 });
