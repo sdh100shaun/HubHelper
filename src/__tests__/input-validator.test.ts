@@ -218,6 +218,11 @@ describe('Input Validator', () => {
       expect(validateGitHubToken(token).valid).toBe(true);
     });
 
+    it('should accept gho_ tokens issued by the GitHub CLI', () => {
+      const token = 'gho_16C7e42F292c6912E7710c838347Ae178B4a';
+      expect(validateGitHubToken(token).valid).toBe(true);
+    });
+
     it('should sanitize and trim tokens', () => {
       const token = `  ${'a'.repeat(40)}  `;
       const result = validateGitHubToken(token);

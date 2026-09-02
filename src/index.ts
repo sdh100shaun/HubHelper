@@ -13,9 +13,10 @@ import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
 import { AIExplainerService } from './services/ai-explainer.js';
+import { PROBE_IDENTITY, PROBE_ORG_MEMBERS, checkAuthStatus } from './services/auth-status.js';
 import type { AIModel } from './services/copilot-ai-client.js';
 import { CopilotService } from './services/copilot-service.js';
-import { type AuthConfig, resolveAuthFromEnv } from './services/github-auth.js';
+import { type AuthConfig, createGitHubClient, resolveAuthFromEnv } from './services/github-auth.js';
 import { GitHubFetcher } from './services/github-fetcher.js';
 import { PolicyAuthorService } from './services/policy-author.js';
 import { RealtimeOrchestrator } from './services/realtime-orchestrator.js';
@@ -48,7 +49,7 @@ function resolveCliAuth(
       consoleReporter.printInfo('Set GITHUB_TOKEN environment variable or use --token flag');
       return null;
     }
-    return { mode: 'pat', token: validation.sanitized as string };
+    return { mode: 'pat', token: validation.sanitized as string, source: 'env' };
   }
   try {
     const auth = resolveAuthFromEnv();
@@ -61,7 +62,7 @@ function resolveCliAuth(
         return null;
       }
 
-      return { mode: 'pat', token: validation.sanitized as string };
+      return { mode: 'pat', token: validation.sanitized as string, source: auth.source };
     }
 
     return auth;
@@ -69,7 +70,7 @@ function resolveCliAuth(
     consoleReporter.printError(err as Error);
     consoleReporter.printInfo(
       'Set GITHUB_TOKEN (PAT) or GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + ' +
-        'GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App)'
+        'GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App), or run: gh auth login -s read:org'
     );
     return null;
   }
@@ -1058,6 +1059,125 @@ program
       process.exit(1);
     } finally {
       await author.dispose();
+    }
+  });
+
+// Authentication Commands
+const authCmd = program.command('auth').description('Inspect GitHub credentials and permissions');
+
+authCmd
+  .command('status')
+  .description('Report the active credential and the permissions it grants')
+  .option('-o, --org <organisation>', 'Organisation to probe for real access')
+  .option('-t, --token <token>', 'GitHub personal access token')
+  .action(async (options) => {
+    const consoleReporter = new ConsoleReporter();
+
+    const authConfig = resolveCliAuth(options.token, consoleReporter);
+    if (!authConfig) {
+      process.exit(1);
+    }
+
+    let org: string | undefined;
+    const orgInput = options.org || process.env.GITHUB_ORG;
+    if (orgInput) {
+      const orgValidation = validateOrganizationName(orgInput);
+      if (!orgValidation.valid) {
+        consoleReporter.printError(new Error(orgValidation.error!));
+        process.exit(1);
+      }
+      org = orgValidation.sanitized as string;
+    }
+
+    try {
+      const status = await checkAuthStatus(createGitHubClient(authConfig), authConfig, org);
+
+      const identityProbe = status.probes.find((result) => result.name === PROBE_IDENTITY);
+      const identity =
+        status.login ??
+        (identityProbe && !identityProbe.ok
+          ? 'could not be determined — see access checks below'
+          : 'not applicable to this credential type');
+
+      console.log(`\nCredential:  ${status.source}`);
+      console.log(`Identity:    ${identity}`);
+
+      if (identityProbe && !identityProbe.ok) {
+        console.log('Scopes:      unknown (the credential was rejected)');
+      } else if (status.scopes === null) {
+        console.log('Scopes:      not enumerable (fine-grained token or GitHub App)');
+      } else if (status.scopes.length === 0) {
+        console.log('Scopes:      none');
+      } else {
+        console.log(`Scopes:      ${status.scopes.join(', ')}`);
+      }
+
+      if (status.requiredScopes.length > 0) {
+        console.log('\nRequired scopes');
+        for (const check of status.requiredScopes) {
+          const line = `${check.scope} — ${check.purpose}`;
+          if (check.granted) {
+            consoleReporter.printSuccess(line);
+          } else {
+            consoleReporter.printWarning(`${line} (missing)`);
+          }
+        }
+      }
+
+      if (status.probes.length > 0) {
+        console.log('\nAccess checks');
+        for (const result of status.probes) {
+          const line = `${result.name}: ${result.detail}`;
+          if (result.ok) {
+            consoleReporter.printSuccess(line);
+          } else {
+            consoleReporter.printWarning(line);
+          }
+        }
+      }
+
+      if (status.elevated.length > 0) {
+        console.log('\nElevated access (optional — affects result fidelity)');
+        for (const result of status.elevated) {
+          if (result.ok) {
+            consoleReporter.printSuccess(`${result.name}: ${result.detail}`);
+          } else {
+            consoleReporter.printWarning(`${result.name}: ${result.detail}`);
+            consoleReporter.printInfo(
+              'Without repository admin, actions_enabled and security_enabled are reported ' +
+                'as false for repositories you do not administer. Findings will be ' +
+                'incomplete rather than wrong.'
+            );
+          }
+        }
+      }
+
+      if (!status.ok) {
+        console.log();
+        // A missing scope is fixable by re-authorising; a credential that cannot
+        // even identify itself needs replacing, so do not suggest a refresh.
+        const scopeGap =
+          status.requiredScopes.some((check) => !check.granted) ||
+          status.probes.some((result) => result.name === PROBE_ORG_MEMBERS && !result.ok);
+
+        if (scopeGap) {
+          consoleReporter.printInfo(
+            'Top up a GitHub CLI login with: gh auth refresh -h github.com -s read:org'
+          );
+        } else {
+          consoleReporter.printInfo(
+            'The credential itself was rejected. Re-authenticate with `gh auth login`, ' +
+              'or replace GITHUB_TOKEN with a valid token.'
+          );
+        }
+        process.exit(1);
+      }
+
+      console.log();
+      consoleReporter.printSuccess('Credential has everything HubHelper requires.');
+    } catch (error) {
+      consoleReporter.printError(error as Error);
+      process.exit(1);
     }
   });
 
