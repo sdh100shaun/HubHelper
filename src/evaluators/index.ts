@@ -18,6 +18,7 @@ export {
   ActionFailureEvaluator,
 } from './action-failure-evaluator.js';
 export { SecurityPRVolumeEvaluator } from './security-pr-volume-evaluator.js';
+export { ContractorRepoAccessEvaluator } from './contractor-repo-access-evaluator.js';
 
 // Import to trigger decorator registration
 import './security-pr-classifier.js';
@@ -28,3 +29,4 @@ import './paused-workflow-evaluator.js';
 import './disabled-workflow-evaluator.js';
 import './action-failure-evaluator.js';
 import './security-pr-volume-evaluator.js';
+import './contractor-repo-access-evaluator.js';

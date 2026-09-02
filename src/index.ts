@@ -150,6 +150,10 @@ program
       const workflowRuns = await fetcher.getRecentWorkflowRuns(days);
       spinner.succeed(`Fetched ${workflowRuns.length} workflow runs`);
 
+      spinner.start('Fetching org members...');
+      const orgMembers = await fetcher.getOrgMembers();
+      spinner.succeed(`Fetched ${orgMembers.length} org members`);
+
       // Analyze data
       let analysisResult: AnalysisResult;
       let engineResultForSarif: PolicyEngineResult | undefined;
@@ -176,7 +180,12 @@ program
         }
 
         spinner.start('Analyzing with policy-driven evaluation...');
-        const engineResult = await policyEngine.evaluate(repositories, pullRequests, workflowRuns);
+        const engineResult = await policyEngine.evaluate(
+          repositories,
+          pullRequests,
+          workflowRuns,
+          orgMembers
+        );
         spinner.succeed('Policy-driven analysis complete');
 
         // Store for SARIF reporter

@@ -22,6 +22,7 @@ controls:
     - HH-GH-007
     - HH-GH-008
     - HH-GH-009
+    - HH-GH-010
 
   # Tailor controls for stricter enforcement
   tailoring:
@@ -107,6 +108,10 @@ controls:
     - control-id: HH-GH-009
       parameter-values:
         threshold: 3  # Alert after 3 security PRs instead of 5
+
+    # Contractor access violations are critical in strict mode
+    - control-id: HH-GH-010
+      severity: critical
 
 scope:
   lookback-days: 30
