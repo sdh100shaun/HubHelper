@@ -98,6 +98,30 @@ describe('ExplanationCache', () => {
       const result = await cache.get(makeIssue());
       expect(result).toBeNull();
     });
+
+    it('returns null when cachedAt is missing (would otherwise NaN the TTL check)', async () => {
+      const entry = JSON.stringify({ explanation: 'stale text' }); // no cachedAt
+      // biome-ignore lint/suspicious/noExplicitAny: mock return
+      mockReadFile.mockResolvedValueOnce(entry as any);
+      const result = await cache.get(makeIssue());
+      expect(result).toBeNull();
+    });
+
+    it('returns null when cachedAt is not a number', async () => {
+      const entry = JSON.stringify({ explanation: 'text', cachedAt: 'yesterday' });
+      // biome-ignore lint/suspicious/noExplicitAny: mock return
+      mockReadFile.mockResolvedValueOnce(entry as any);
+      const result = await cache.get(makeIssue());
+      expect(result).toBeNull();
+    });
+
+    it('returns null when explanation is not a string', async () => {
+      const entry = JSON.stringify({ explanation: 42, cachedAt: Date.now() });
+      // biome-ignore lint/suspicious/noExplicitAny: mock return
+      mockReadFile.mockResolvedValueOnce(entry as any);
+      const result = await cache.get(makeIssue());
+      expect(result).toBeNull();
+    });
   });
 
   describe('set()', () => {

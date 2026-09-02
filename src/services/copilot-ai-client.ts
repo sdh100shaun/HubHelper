@@ -80,12 +80,15 @@ export class CopilotAIClient {
         await sleep(BACKOFF_BASE_MS * 2 ** (attempt - 1));
       }
 
-      const session = await this.client.createSession({
-        model: this.model,
-        onPermissionRequest: approveAll,
-      });
-
+      // Session creation must be inside the try/catch so auth/network/SDK
+      // errors during createSession() count as retryable failures rather
+      // than escaping as an uncaught rejection.
+      let session: Awaited<ReturnType<CopilotClient['createSession']>> | undefined;
       try {
+        session = await this.client.createSession({
+          model: this.model,
+          onPermissionRequest: approveAll,
+        });
         const event: AssistantMessageEvent | undefined = await session.sendAndWait({ prompt });
         if (event?.data.content) {
           return event.data.content;
@@ -94,7 +97,9 @@ export class CopilotAIClient {
       } catch (err) {
         lastError = err;
       } finally {
-        await session.destroy().catch(() => {});
+        if (session) {
+          await session.destroy().catch(() => {});
+        }
       }
     }
 

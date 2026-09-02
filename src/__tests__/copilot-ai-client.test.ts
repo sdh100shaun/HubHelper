@@ -126,6 +126,34 @@ describe('CopilotAIClient', () => {
       consoleSpy.mockRestore();
     });
 
+    it('retries when createSession() itself throws (not just sendAndWait)', async () => {
+      // First attempt: createSession fails (auth / network / SDK error).
+      // Second attempt: createSession succeeds and sendAndWait returns content.
+      mockCreateSession
+        .mockRejectedValueOnce(new Error('session create failed'))
+        .mockResolvedValueOnce({ sendAndWait: mockSendAndWait, destroy: mockDestroy });
+      mockSendAndWait.mockResolvedValueOnce(makeResponse('retry after create-fail'));
+
+      const client = new CopilotAIClient({ maxAttempts: 3 });
+      const completePromise = client.complete('test');
+      await jest.advanceTimersByTimeAsync(2001);
+      const result = await completePromise;
+
+      expect(result).toBe('retry after create-fail');
+      expect(mockCreateSession).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not attempt to destroy a session that failed to create', async () => {
+      mockCreateSession.mockRejectedValue(new Error('cannot create'));
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const client = new CopilotAIClient({ maxAttempts: 1 });
+      await client.complete('test');
+
+      expect(mockDestroy).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
     it('destroys session after successful call', async () => {
       mockSendAndWait.mockResolvedValue(makeResponse('ok'));
       const client = new CopilotAIClient();

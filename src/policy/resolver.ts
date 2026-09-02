@@ -119,8 +119,12 @@ function filterControls(controls: Control[], profile: Profile): Control[] {
 }
 
 /**
- * Map the legacy `enabled` boolean to a ControlState, with `state` taking precedence.
- * Tailoring state > tailoring enabled > catalog state > catalog enabled > default 'active'.
+ * Map a single (state, enabled) pair from one source (catalog or tailoring)
+ * to a ControlState. Explicit `state` wins over the legacy `enabled` boolean;
+ * a missing pair defaults to 'active'.
+ *
+ * Combining catalog and tailoring precedence is the caller's job — see
+ * `resolveControl()` where tailoring's resolved state overrides the catalog's.
  */
 function resolveControlState(
   state: ControlState | undefined,

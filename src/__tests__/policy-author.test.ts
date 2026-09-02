@@ -138,6 +138,27 @@ describe('generateCatalogSnippet()', () => {
     });
     expect(snippet).not.toContain('mappings');
   });
+
+  it('safely encodes a statement that would break a naive YAML template', async () => {
+    // A statement containing quotes, a colon, and a newline: attempted YAML
+    // injection. yaml.stringify must escape it into a single valid scalar.
+    const snippet = generateCatalogSnippet({
+      controlId: 'HH-GH-999',
+      statement: 'Sneaky: "value"\nnew-key: pwned',
+      family: 'repository',
+      detectorSlug: 'test-slug',
+      kind: 'github.repository',
+      severity: 'high',
+    });
+
+    // Round-trip: the emitted YAML must parse and preserve the statement as
+    // one scalar; the injected `new-key` must not appear as a top-level key.
+    const { parse: parseYaml } = await import('yaml');
+    const parsed = parseYaml(snippet) as Array<Record<string, unknown>>;
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed[0].statement).toBe('Sneaky: "value"\nnew-key: pwned');
+    expect(parsed[0]['new-key']).toBeUndefined();
+  });
 });
 
 // ─── Tests: PolicyAuthorService ───────────────────────────────────────────
@@ -166,6 +187,61 @@ describe('PolicyAuthorService', () => {
     const service = new PolicyAuthorService();
     const result = await service.authorControl('test description', 'HH-GH-011');
     expect(result).toBeNull();
+  });
+
+  it('returns null when kind is not in the allowed enum', async () => {
+    mockComplete.mockResolvedValueOnce(makeValidAIResponse({ kind: 'github.arbitrary-thing' }));
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'HH-GH-011');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when severity is not in the allowed enum', async () => {
+    mockComplete.mockResolvedValueOnce(makeValidAIResponse({ severity: 'catastrophic' }));
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'HH-GH-011');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when family is not in the allowed enum', async () => {
+    mockComplete.mockResolvedValueOnce(makeValidAIResponse({ family: 'invented-family' }));
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'HH-GH-011');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when controlId does not match HH-GH-### format', async () => {
+    mockComplete.mockResolvedValueOnce(makeValidAIResponse({ controlId: 'FOO-BAR-1' }));
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'FOO-BAR-1');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when detectorSlug contains a path traversal sequence', async () => {
+    mockComplete.mockResolvedValueOnce(
+      makeValidAIResponse({ detectorSlug: '../../.ssh/authorized_keys' })
+    );
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'HH-GH-011');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when detectorSlug contains uppercase or non-kebab characters', async () => {
+    mockComplete.mockResolvedValueOnce(makeValidAIResponse({ detectorSlug: 'HasUppercase' }));
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'HH-GH-011');
+    expect(result).toBeNull();
+  });
+
+  it('discards malformed NIST mappings and keeps the well-formed ones', async () => {
+    mockComplete.mockResolvedValueOnce(
+      makeValidAIResponse({ nistMappings: ['AC-2', 'ignore-me', 'SA-15(2)'] })
+    );
+    const service = new PolicyAuthorService();
+    const result = await service.authorControl('test', 'HH-GH-011');
+    expect(result?.catalogSnippet).toContain('AC-2');
+    expect(result?.catalogSnippet).toContain('SA-15(2)');
+    expect(result?.catalogSnippet).not.toContain('ignore-me');
   });
 
   it('returns AuthoredPolicy on valid AI response', async () => {

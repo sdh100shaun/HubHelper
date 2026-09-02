@@ -41,7 +41,12 @@ export class ExplanationCache {
     const filePath = join(this.cacheDir, `${key}.json`);
     try {
       const content = await readFile(filePath, 'utf8');
-      const entry: CacheEntry = JSON.parse(content) as CacheEntry;
+      const parsed = JSON.parse(content) as unknown;
+      const entry = validateCacheEntry(parsed);
+      // Malformed/tampered file → miss, not a hit with NaN TTL that never expires.
+      if (entry === null) {
+        return null;
+      }
       if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
         return null;
       }
@@ -58,4 +63,12 @@ export class ExplanationCache {
     const entry: CacheEntry = { explanation, cachedAt: Date.now() };
     await writeFile(filePath, JSON.stringify(entry), 'utf8');
   }
+}
+
+function validateCacheEntry(value: unknown): CacheEntry | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.explanation !== 'string') return null;
+  if (typeof obj.cachedAt !== 'number' || !Number.isFinite(obj.cachedAt)) return null;
+  return { explanation: obj.explanation, cachedAt: obj.cachedAt };
 }

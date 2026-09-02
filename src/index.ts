@@ -229,8 +229,11 @@ program
         await copilotService.dispose();
       }
 
-      // AI per-issue explanations and/or executive summary
-      if (options.aiExplain || options.aiSummary) {
+      // AI per-issue explanations and/or executive summary.
+      // Skipped entirely when --no-ai is passed (options.ai === false) so that
+      // opt-out is genuine: users can't be surprised by Copilot calls while
+      // they've explicitly disabled AI.
+      if (options.ai !== false && (options.aiExplain || options.aiSummary)) {
         const explainer = new AIExplainerService({
           model: options.aiModel as AIModel | undefined,
         });

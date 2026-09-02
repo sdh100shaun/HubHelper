@@ -78,7 +78,9 @@ export class PolicyEngine {
 
     // Execute controls in order (already sorted by resolver)
     for (const control of this.policy.controls) {
-      // disabled controls are filtered out during resolution; skip any that slip through
+      // Disabled controls may still be present in the resolved policy (for
+      // example when profile tailoring sets state: 'disabled'), so skip them
+      // here rather than evaluating a no-op control.
       if (control.state === 'disabled') {
         continue;
       }

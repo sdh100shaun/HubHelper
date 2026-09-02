@@ -7,6 +7,8 @@
  * @module templates/evaluator-stub
  */
 
+import { stringify as stringifyYaml } from 'yaml';
+
 export interface EvaluatorStubParams {
   /** Control ID, e.g. HH-GH-011 */
   controlId: string;
@@ -64,6 +66,10 @@ export class ${className} extends BaseEvaluator {
 
 /**
  * Generate a catalog.yaml snippet for a new control.
+ *
+ * All values are serialised via `yaml.stringify` so quotes, colons, newlines,
+ * and other YAML metacharacters inside AI-generated strings cannot break out
+ * of their scalar and inject structure into the emitted catalog fragment.
  */
 export function generateCatalogSnippet(params: {
   controlId: string;
@@ -76,17 +82,24 @@ export function generateCatalogSnippet(params: {
 }): string {
   const { controlId, statement, family, detectorSlug, kind, severity, nistMappings = [] } = params;
 
-  const mappingLines =
-    nistMappings.length > 0
-      ? `\n  mappings:\n    NIST-800-53:\n${nistMappings.map((m) => `      - ${m}`).join('\n')}`
-      : '';
+  const control: Record<string, unknown> = {
+    id: controlId,
+    statement,
+    family,
+    evaluator: {
+      kind,
+      detector: detectorSlug,
+    },
+    'default-severity': severity,
+  };
 
-  return `- id: ${controlId}
-  statement: "${statement}"
-  family: ${family}
-  evaluator:
-    kind: ${kind}
-    detector: ${detectorSlug}
-  default-severity: ${severity}${mappingLines}
-`;
+  if (nistMappings.length > 0) {
+    control.mappings = { 'NIST-800-53': nistMappings };
+  }
+
+  // stringify produces `id: ...` at column 0; the catalog uses a list item
+  // (`- id: ...`), so indent all trailing lines by two spaces after prefixing
+  // the leading `- `.
+  const yaml = stringifyYaml([control]);
+  return yaml;
 }
