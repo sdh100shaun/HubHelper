@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
-import { PolicyEngine } from '../policy/engine.js';
 import type { PolicyEngineResult } from '../policy/engine.js';
+import { PolicyEngine } from '../policy/engine.js';
 import { StreamReporter } from '../reporters/stream-reporter.js';
 import type {
   GitHubEvent,

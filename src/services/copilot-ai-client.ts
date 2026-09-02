@@ -9,8 +9,8 @@
  * @module services/copilot-ai-client
  */
 
-import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { AssistantMessageEvent } from '@github/copilot-sdk';
+import { approveAll, CopilotClient } from '@github/copilot-sdk';
 
 export type AIModel =
   | 'claude-sonnet-4-6'
@@ -98,7 +98,7 @@ export class CopilotAIClient {
         lastError = err;
       } finally {
         if (session) {
-          await session.destroy().catch(() => {});
+          await session.disconnect().catch(() => {});
         }
       }
     }

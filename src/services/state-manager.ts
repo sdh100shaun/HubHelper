@@ -24,7 +24,6 @@ export class StateManager {
   private readonly stateFile: string;
   private readonly lockFile: string;
   private readonly organization: string;
-  private lockFd: number | null = null;
 
   constructor(config: StateManagerConfig) {
     this.organization = config.organization;

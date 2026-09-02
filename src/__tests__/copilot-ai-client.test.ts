@@ -8,7 +8,7 @@ import { CopilotAIClient } from '../services/copilot-ai-client.js';
 
 // ─── Mock @github/copilot-sdk ─────────────────────────────────────────────
 
-const mockDestroy = jest.fn().mockResolvedValue(undefined);
+const mockDisconnect = jest.fn().mockResolvedValue(undefined);
 const mockSendAndWait = jest.fn();
 const mockCreateSession = jest.fn();
 const mockStart = jest.fn().mockResolvedValue(undefined);
@@ -39,10 +39,10 @@ describe('CopilotAIClient', () => {
     jest.clearAllMocks();
     mockStart.mockResolvedValue(undefined);
     mockStop.mockResolvedValue(undefined);
-    mockDestroy.mockResolvedValue(undefined);
+    mockDisconnect.mockResolvedValue(undefined);
     mockCreateSession.mockResolvedValue({
       sendAndWait: mockSendAndWait,
-      destroy: mockDestroy,
+      disconnect: mockDisconnect,
     });
   });
 
@@ -131,7 +131,7 @@ describe('CopilotAIClient', () => {
       // Second attempt: createSession succeeds and sendAndWait returns content.
       mockCreateSession
         .mockRejectedValueOnce(new Error('session create failed'))
-        .mockResolvedValueOnce({ sendAndWait: mockSendAndWait, destroy: mockDestroy });
+        .mockResolvedValueOnce({ sendAndWait: mockSendAndWait, disconnect: mockDisconnect });
       mockSendAndWait.mockResolvedValueOnce(makeResponse('retry after create-fail'));
 
       const client = new CopilotAIClient({ maxAttempts: 3 });
@@ -150,7 +150,7 @@ describe('CopilotAIClient', () => {
       const client = new CopilotAIClient({ maxAttempts: 1 });
       await client.complete('test');
 
-      expect(mockDestroy).not.toHaveBeenCalled();
+      expect(mockDisconnect).not.toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
@@ -158,7 +158,7 @@ describe('CopilotAIClient', () => {
       mockSendAndWait.mockResolvedValue(makeResponse('ok'));
       const client = new CopilotAIClient();
       await client.complete('test');
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('destroys session even after failure', async () => {
@@ -166,7 +166,7 @@ describe('CopilotAIClient', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const client = new CopilotAIClient({ maxAttempts: 1 });
       await client.complete('test');
-      expect(mockDestroy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
       consoleSpy.mockRestore();
     });
 

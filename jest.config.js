@@ -6,6 +6,7 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@github/copilot-sdk$': '<rootDir>/src/__mocks__/@github/copilot-sdk.ts',
     '^@octokit/auth-app$': '<rootDir>/src/__mocks__/@octokit/auth-app.ts',
+    '^@octokit/rest$': '<rootDir>/src/__mocks__/@octokit/rest.ts',
   },
   transform: {
     '^.+\\.ts$': [

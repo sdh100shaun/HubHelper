@@ -2,7 +2,7 @@
 jest.mock('chalk');
 
 import { ConsoleReporter } from '../reporters/console-reporter';
-import type { AnalysisResult, SecurityIssue } from '../types/index';
+import type { AnalysisResult } from '../types/index';
 
 // Mock console methods
 const mockLog = jest.spyOn(console, 'log').mockImplementation();

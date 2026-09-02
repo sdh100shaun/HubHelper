@@ -14,60 +14,56 @@
  * @module policy
  */
 
+export type { PolicyEngineResult } from './engine.js';
 // Policy engine
 export { PolicyEngine } from './engine.js';
-export type { PolicyEngineResult } from './engine.js';
-
-// Type definitions and schemas
-export type {
-  Catalog,
-  Profile,
-  Control,
-  Parameter,
-  EvaluatorConfig,
-  FrameworkMapping,
-  ControlTailoring,
-  ParameterValue,
-  ScopeConfig,
-  ReportingConfig,
-  ResolvedPolicy,
-  ResolvedControl,
-  ResolvedParameter,
-  EvaluationContext,
-  EvaluationResult,
-  Evaluator,
-  Severity,
-  EvaluatorKind,
-  DetectorType,
-  ParameterType,
-  ReportFormat,
-} from './types.js';
-
+// Errors
 export {
-  CatalogSchema,
-  ProfileSchema,
-  SeveritySchema,
-  EvaluatorKindSchema,
-  DetectorTypeSchema,
-  ParameterTypeSchema,
-  ReportFormatSchema,
-} from './types.js';
-
-// Loaders
-export { loadCatalog, loadProfile, loadCatalogForProfile } from './loader.js';
-
-// Policy resolution
-export { resolvePolicy } from './resolver.js';
-
+  EvaluatorError,
+  ParameterValidationError,
+  PolicyError,
+  PolicyLoadError,
+  PolicyResolutionError,
+  PolicyValidationError,
+} from './errors.js';
 // Evaluator registry
 export { evaluatorRegistry, registerEvaluator } from './evaluator-registry.js';
 
-// Errors
+// Loaders
+export { loadCatalog, loadCatalogForProfile, loadProfile } from './loader.js';
+
+// Policy resolution
+export { resolvePolicy } from './resolver.js';
+// Type definitions and schemas
+export type {
+  Catalog,
+  Control,
+  ControlTailoring,
+  DetectorType,
+  EvaluationContext,
+  EvaluationResult,
+  Evaluator,
+  EvaluatorConfig,
+  EvaluatorKind,
+  FrameworkMapping,
+  Parameter,
+  ParameterType,
+  ParameterValue,
+  Profile,
+  ReportFormat,
+  ReportingConfig,
+  ResolvedControl,
+  ResolvedParameter,
+  ResolvedPolicy,
+  ScopeConfig,
+  Severity,
+} from './types.js';
 export {
-  PolicyError,
-  PolicyLoadError,
-  PolicyValidationError,
-  PolicyResolutionError,
-  EvaluatorError,
-  ParameterValidationError,
-} from './errors.js';
+  CatalogSchema,
+  DetectorTypeSchema,
+  EvaluatorKindSchema,
+  ParameterTypeSchema,
+  ProfileSchema,
+  ReportFormatSchema,
+  SeveritySchema,
+} from './types.js';

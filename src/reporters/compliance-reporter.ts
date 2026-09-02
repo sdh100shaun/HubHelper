@@ -66,7 +66,7 @@ export class ComplianceReporter {
 
     // Process each control
     for (const control of engineResult.policy.controls) {
-      if (!control.mappings || !control.mappings[framework]) {
+      if (!control.mappings?.[framework]) {
         continue; // Skip controls not mapped to this framework
       }
 

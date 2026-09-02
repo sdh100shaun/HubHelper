@@ -22,11 +22,9 @@ import type {
   ControlTailoring,
   Parameter,
   Profile,
-  ReportingConfig,
   ResolvedControl,
   ResolvedParameter,
   ResolvedPolicy,
-  ScopeConfig,
 } from './types.js';
 
 /**

@@ -7,8 +7,8 @@
  * also connected so the AI can answer questions about live repository state.
  */
 
-import { CopilotClient, approveAll, defineTool } from '@github/copilot-sdk';
 import type { MCPHTTPServerConfig } from '@github/copilot-sdk';
+import { approveAll, CopilotClient, defineTool } from '@github/copilot-sdk';
 import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
@@ -156,7 +156,7 @@ export class SecurityQueryService {
     } catch (error) {
       throw new Error(`Query failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      await session.destroy().catch(() => {});
+      await session.disconnect().catch(() => {});
     }
   }
 

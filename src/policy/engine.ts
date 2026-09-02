@@ -19,7 +19,7 @@ import type {
 } from '../types/index.js';
 import { EvaluatorError } from './errors.js';
 import { evaluatorRegistry } from './evaluator-registry.js';
-import { loadCatalog, loadCatalogForProfile, loadProfile } from './loader.js';
+import { loadCatalogForProfile, loadProfile } from './loader.js';
 import { resolvePolicy } from './resolver.js';
 import type {
   EvaluationContext,
