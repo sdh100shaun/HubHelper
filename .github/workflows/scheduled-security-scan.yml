@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v1.2.2
+        uses: actions/create-github-app-token@v3.2.0
         with:
           app-id: ${{ secrets.SECURITY_SCANNER_APP_ID }}
           private-key: ${{ secrets.SECURITY_SCANNER_APP_PRIVATE_KEY }}
