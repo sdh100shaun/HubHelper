@@ -135,6 +135,57 @@ export const createResultWithIssues = (): AnalysisResult => {
 };
 
 /**
+ * Create a result that includes both active issues and review-state issues
+ */
+export const createResultWithReviewIssues = (): AnalysisResult => {
+  return createMockAnalysisResult({
+    summary: 'Found 2 active issues and 2 issues under review',
+    statistics: {
+      total_repos: 10,
+      total_prs: 50,
+      self_merges: 1,
+      security_prs: 1,
+      repos_with_disabled_actions: 0,
+      paused_workflows: 0,
+      disabled_workflows: 0,
+    },
+    issues: [
+      createMockSecurityIssue({
+        type: 'self-merge',
+        severity: 'high',
+        repository: 'org/active-repo',
+        description: 'Active: self-merged pull request',
+        details: { pr_number: 1, url: 'https://github.com/org/active-repo/pull/1' },
+      }),
+      createMockSecurityIssue({
+        type: 'disabled-actions',
+        severity: 'medium',
+        repository: 'org/another-repo',
+        description: 'Active: GitHub Actions disabled',
+        details: { repo_name: 'org/another-repo' },
+      }),
+    ],
+    reviewIssues: [
+      createMockSecurityIssue({
+        type: 'paused-workflow',
+        severity: 'low',
+        repository: 'org/review-repo-1',
+        description: 'Review: workflow paused due to inactivity',
+        details: { workflow_name: 'CI', repo_name: 'org/review-repo-1' },
+      }),
+      createMockSecurityIssue({
+        type: 'security-pr',
+        severity: 'medium',
+        repository: 'org/review-repo-2',
+        description: 'Review: security-related pull request detected',
+        details: { pr_number: 99, url: 'https://github.com/org/review-repo-2/pull/99' },
+      }),
+    ],
+    recommendations: ['Enable branch protection rules'],
+  });
+};
+
+/**
  * Create a result with XSS attack vectors for security testing
  */
 export const createResultWithXSSVectors = (): AnalysisResult => {

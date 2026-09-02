@@ -95,6 +95,8 @@ export interface OrganizationActivity {
 export interface AnalysisResult {
   summary: string;
   issues: SecurityIssue[];
+  /** Issues from controls in 'review' state — informational only, not scored. */
+  reviewIssues?: SecurityIssue[];
   recommendations: string[];
   statistics: {
     total_repos: number;

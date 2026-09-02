@@ -18,6 +18,7 @@ import { ParameterValidationError, PolicyResolutionError } from './errors.js';
 import type {
   Catalog,
   Control,
+  ControlState,
   ControlTailoring,
   Parameter,
   Profile,
@@ -111,10 +112,26 @@ function filterControls(controls: Control[], profile: Profile): Control[] {
     filtered = filtered.filter((c) => !excludeSet.has(c.id));
   }
 
-  // Filter out disabled controls
-  filtered = filtered.filter((c) => c.enabled !== false);
+  // Filter out disabled controls (supports both `state` field and legacy `enabled` alias)
+  filtered = filtered.filter((c) => resolveControlState(c.state, c.enabled) !== 'disabled');
 
   return filtered;
+}
+
+/**
+ * Map a single (state, enabled) pair from one source (catalog or tailoring)
+ * to a ControlState. Explicit `state` wins over the legacy `enabled` boolean;
+ * a missing pair defaults to 'active'.
+ *
+ * Combining catalog and tailoring precedence is the caller's job — see
+ * `resolveControl()` where tailoring's resolved state overrides the catalog's.
+ */
+function resolveControlState(
+  state: ControlState | undefined,
+  enabled: boolean | undefined
+): ControlState {
+  if (state !== undefined) return state;
+  return (enabled ?? true) ? 'active' : 'disabled';
 }
 
 /**
@@ -131,8 +148,14 @@ function resolveControl(control: Control, tailoring?: ControlTailoring): Resolve
   // Determine severity (tailoring > control default)
   const severity = tailoring?.severity || control['default-severity'];
 
-  // Determine enabled status
-  const enabled = tailoring?.enabled ?? control.enabled ?? true;
+  // Resolve lifecycle state: tailoring state > tailoring enabled > catalog state > catalog enabled
+  const tailoringState = resolveControlState(tailoring?.state, tailoring?.enabled);
+  const catalogState = resolveControlState(control.state, control.enabled);
+  // Tailoring can only narrow/change from catalog; if tailoring has an explicit state/enabled use it
+  const state =
+    tailoring?.state !== undefined || tailoring?.enabled !== undefined
+      ? tailoringState
+      : catalogState;
 
   return {
     id: control.id,
@@ -142,7 +165,8 @@ function resolveControl(control: Control, tailoring?: ControlTailoring): Resolve
     parameters,
     severity,
     mappings: control.mappings,
-    enabled,
+    state,
+    enabled: state !== 'disabled',
   };
 }
 

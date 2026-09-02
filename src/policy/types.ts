@@ -2,10 +2,6 @@
  * Policy System Type Definitions
  *
  * Zod schemas and TypeScript types for the YAML-based policy system.
- * Defines the structure for:
- * - Control Catalog (controls definitions with parameters)
- * - Profiles (control selections and tailoring)
- * - Policy Resolution (merged runtime configuration)
  *
  * @module policy/types
  */
@@ -43,6 +39,20 @@ export const DetectorTypeSchema = z.enum([
 ]);
 export type DetectorType = z.infer<typeof DetectorTypeSchema>;
 
+/**
+ * Lifecycle state of a resolved control.
+ * - active   : evaluated; issues included in compliance reports and fail-threshold
+ * - disabled : not evaluated; no issues generated
+ * - review   : evaluated; issues are collected but excluded from compliance reports
+ *              and fail-threshold — appears in a separate informational section
+ *
+ * The legacy `enabled: boolean` field is kept as a backward-compatible alias:
+ *   enabled: false  → state: 'disabled'
+ *   enabled: true   → state: 'active'
+ */
+export const ControlStateSchema = z.enum(['active', 'disabled', 'review']);
+export type ControlState = z.infer<typeof ControlStateSchema>;
+
 export const ParameterTypeSchema = z.enum([
   'string',
   'number',
@@ -60,9 +70,6 @@ export type ReportFormat = z.infer<typeof ReportFormatSchema>;
 // Catalog Schema (catalog.yaml)
 // ============================================================================
 
-/**
- * Catalog metadata
- */
 const CatalogMetadataSchema = z.object({
   title: z.string(),
   version: z.string(),
@@ -70,43 +77,30 @@ const CatalogMetadataSchema = z.object({
   'oscal-version': z.string(),
 });
 
-/**
- * Parameter definition in a control
- */
 const ParameterSchema = z.object({
   id: z.string(),
   label: z.string(),
   description: z.string().optional(),
   type: ParameterTypeSchema,
-  'item-type': z.string().optional(), // For arrays, the type of array items
-  default: z.unknown().optional(), // Can be any type - validated by resolver based on 'type' field
-  values: z.array(z.string()).optional(), // Allowed values (enum)
+  'item-type': z.string().optional(),
+  default: z.unknown().optional(),
+  values: z.array(z.string()).optional(),
   required: z.boolean().optional().default(false),
 });
 
 export type Parameter = z.infer<typeof ParameterSchema>;
 
-/**
- * Evaluator configuration in a control
- */
 const EvaluatorConfigSchema = z.object({
   kind: EvaluatorKindSchema,
   detector: DetectorTypeSchema,
-  'depends-on': z.array(z.string()).optional(), // Control IDs this evaluator depends on
+  'depends-on': z.array(z.string()).optional(),
 });
 
 export type EvaluatorConfig = z.infer<typeof EvaluatorConfigSchema>;
 
-/**
- * Framework mapping for compliance
- */
 const FrameworkMappingSchema = z.record(z.string(), z.array(z.string()));
-
 export type FrameworkMapping = z.infer<typeof FrameworkMappingSchema>;
 
-/**
- * Control definition in catalog
- */
 const ControlSchema = z.object({
   id: z.string(),
   statement: z.string(),
@@ -115,14 +109,13 @@ const ControlSchema = z.object({
   parameter: z.array(ParameterSchema).optional().default([]),
   'default-severity': SeveritySchema,
   mappings: FrameworkMappingSchema.optional(),
+  // `state` takes precedence; `enabled` is a deprecated backward-compat alias
+  state: ControlStateSchema.optional(),
   enabled: z.boolean().optional().default(true),
 });
 
 export type Control = z.infer<typeof ControlSchema>;
 
-/**
- * Complete catalog structure
- */
 export const CatalogSchema = z.object({
   metadata: CatalogMetadataSchema,
   controls: z.array(ControlSchema),
@@ -134,9 +127,6 @@ export type Catalog = z.infer<typeof CatalogSchema>;
 // Profile Schema (profile.yaml)
 // ============================================================================
 
-/**
- * Profile metadata
- */
 const ProfileMetadataSchema = z.object({
   title: z.string(),
   version: z.string(),
@@ -145,68 +135,48 @@ const ProfileMetadataSchema = z.object({
   description: z.string().optional(),
 });
 
-/**
- * Catalog reference
- */
 const CatalogReferenceSchema = z.object({
-  href: z.string(), // Path to catalog.yaml
+  href: z.string(),
   version: z.string(),
 });
 
-/**
- * Parameter value override in profile
- */
-const ParameterValueSchema = z.record(z.string(), z.unknown()); // Values can be any type
-
+const ParameterValueSchema = z.record(z.string(), z.unknown());
 export type ParameterValue = z.infer<typeof ParameterValueSchema>;
 
-/**
- * Control tailoring (overrides)
- */
 const ControlTailoringSchema = z.object({
   'control-id': z.string(),
   'parameter-values': ParameterValueSchema.optional(),
   severity: SeveritySchema.optional(),
+  // `state` takes precedence; `enabled` is a deprecated backward-compat alias
+  state: ControlStateSchema.optional(),
   enabled: z.boolean().optional(),
 });
 
 export type ControlTailoring = z.infer<typeof ControlTailoringSchema>;
 
-/**
- * Controls selection and tailoring
- */
 const ControlsConfigSchema = z.object({
-  include: z.array(z.string()).optional(), // Control IDs to include (if omitted, all)
+  include: z.array(z.string()).optional(),
   exclude: z.array(z.string()).optional().default([]),
   tailoring: z.array(ControlTailoringSchema).optional().default([]),
 });
 
-/**
- * Scope configuration
- */
 const ScopeConfigSchema = z.object({
-  repositories: z.array(z.string()).optional(), // Specific repos (if omitted, all in org)
-  topics: z.array(z.string()).optional(), // Filter by topic
+  repositories: z.array(z.string()).optional(),
+  topics: z.array(z.string()).optional(),
   'lookback-days': z.number().int().positive().optional().default(30),
 });
 
 export type ScopeConfig = z.infer<typeof ScopeConfigSchema>;
 
-/**
- * Reporting configuration
- */
 const ReportingConfigSchema = z.object({
   formats: z.array(ReportFormatSchema),
   'output-dir': z.string().optional(),
-  'fail-threshold': SeveritySchema.optional(), // Exit with error if issues >= threshold
+  'fail-threshold': SeveritySchema.optional(),
   'include-recommendations': z.boolean().optional().default(true),
 });
 
 export type ReportingConfig = z.infer<typeof ReportingConfigSchema>;
 
-/**
- * Complete profile structure
- */
 export const ProfileSchema = z.object({
   metadata: ProfileMetadataSchema,
   'catalog-ref': CatalogReferenceSchema,
@@ -221,16 +191,10 @@ export type Profile = z.infer<typeof ProfileSchema>;
 // Resolved Policy (runtime merged configuration)
 // ============================================================================
 
-/**
- * Resolved parameter with value
- */
 export interface ResolvedParameter extends Parameter {
-  value: unknown; // Type depends on parameter 'type' field
+  value: unknown;
 }
 
-/**
- * Resolved control (catalog + profile tailoring)
- */
 export interface ResolvedControl {
   id: string;
   statement: string;
@@ -239,12 +203,12 @@ export interface ResolvedControl {
   parameters: ResolvedParameter[];
   severity: Severity;
   mappings?: FrameworkMapping;
+  /** Resolved lifecycle state — replaces the legacy `enabled` boolean. */
+  state: ControlState;
+  /** @deprecated Use `state` instead. Kept for backward compatibility. */
   enabled: boolean;
 }
 
-/**
- * Resolved policy (ready for evaluation)
- */
 export interface ResolvedPolicy {
   metadata: {
     catalogVersion: string;
@@ -260,47 +224,32 @@ export interface ResolvedPolicy {
 // Evaluator Interface
 // ============================================================================
 
-/**
- * Context passed to evaluators
- */
 export interface EvaluationContext {
   repositories: Repository[];
   pullRequests: PullRequest[];
   workflowRuns: WorkflowRun[];
   scope: ScopeConfig;
-  classifierResults?: Map<string, unknown>; // Results from classifier controls
+  classifierResults?: Map<string, unknown>;
 }
 
-/**
- * Result from an evaluator
- */
 export interface EvaluationResult {
   controlId: string;
-  issues: unknown[]; // SecurityIssue[] or classifier data
+  issues: unknown[];
   metadata?: {
     itemsEvaluated: number;
     executionTimeMs: number;
   };
 }
 
-/**
- * Base evaluator interface
- */
 export interface Evaluator {
   readonly controlId: string;
   readonly kind: EvaluatorKind;
 
-  /**
-   * Execute evaluation with resolved parameters
-   */
   evaluate(
     context: EvaluationContext,
     parameters: Record<string, unknown>,
     severity: Severity
   ): Promise<EvaluationResult>;
 
-  /**
-   * Validate that required parameters are present
-   */
   validateParameters(parameters: Record<string, unknown>): void;
 }

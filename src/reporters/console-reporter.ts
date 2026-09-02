@@ -37,6 +37,11 @@ export class ConsoleReporter {
       this.printDetailedIssues(result.issues);
     }
 
+    // Controls under review — informational only, not scored
+    if (result.reviewIssues && result.reviewIssues.length > 0) {
+      this.printReviewIssues(result.reviewIssues);
+    }
+
     console.log(`${chalk.bold.cyan('═'.repeat(80))}\n`);
   }
 
@@ -118,6 +123,29 @@ export class ConsoleReporter {
         console.log(chalk.gray(`  └─ ... and ${typeIssues.length - 5} more`));
       }
 
+      console.log();
+    }
+  }
+
+  private printReviewIssues(issues: SecurityIssue[]): void {
+    console.log(
+      `\n${chalk.bold.magenta('🔬 Controls Under Review')} ${chalk.gray('(informational — not included in compliance score):')}\n`
+    );
+    const grouped = this.groupIssuesByType(issues);
+    for (const [type, typeIssues] of Object.entries(grouped)) {
+      const emoji = this.getEmojiForType(type as SecurityIssue['type']);
+      console.log(
+        chalk.magenta(`${emoji} ${this.formatType(type)}:`) + chalk.gray(` (${typeIssues.length})`)
+      );
+      typeIssues.slice(0, 5).forEach((issue, idx) => {
+        const prefix = idx === Math.min(typeIssues.length, 5) - 1 ? '└─' : '├─';
+        console.log(
+          `${chalk.gray(`  ${prefix} `) + chalk.magenta(`[${issue.severity.toUpperCase()}]`)} ${issue.description}`
+        );
+      });
+      if (typeIssues.length > 5) {
+        console.log(chalk.gray(`  └─ ... and ${typeIssues.length - 5} more`));
+      }
       console.log();
     }
   }
