@@ -1,4 +1,5 @@
 import type { Octokit } from '@octokit/rest';
+import { describeError, statusOf } from '../utils/http-errors.js';
 import { type AuthConfig, describeAuth } from './github-auth.js';
 
 /** A classic OAuth scope HubHelper needs, and why. */
@@ -35,6 +36,7 @@ export const PROBE_IDENTITY = 'Identify credential';
 export const PROBE_ORG_MEMBERS = 'Read organisation members';
 export const PROBE_ORG_REPOS = 'List organisation repositories';
 export const PROBE_REPO_ADMIN = 'Repository administration (Actions and security settings)';
+export const PROBE_LIST_WORKFLOWS = 'List repository workflows (Actions:Read)';
 
 /** Classic scopes HubHelper depends on, mapped to the features that need them. */
 const REQUIRED_SCOPES: ReadonlyArray<{ scope: string; purpose: string }> = [
@@ -48,25 +50,11 @@ const REQUIRED_SCOPES: ReadonlyArray<{ scope: string; purpose: string }> = [
   },
 ];
 
-function statusOf(err: unknown): number | null {
-  if (typeof err === 'object' && err !== null) {
-    const status = (err as { status?: unknown }).status;
-    if (typeof status === 'number') return status;
-  }
-  return null;
-}
-
-function messageOf(err: unknown): string {
-  const status = statusOf(err);
-  if (status !== null) return `HTTP ${status}`;
-  return err instanceof Error ? err.message : String(err);
-}
-
 async function probe(name: string, run: () => Promise<string>): Promise<ProbeResult> {
   try {
     return { name, ok: true, detail: await run() };
   } catch (err) {
-    return { name, ok: false, detail: messageOf(err) };
+    return { name, ok: false, detail: describeError(err) };
   }
 }
 
@@ -146,7 +134,7 @@ export async function checkAuthStatus(
     probes.push({
       name: PROBE_IDENTITY,
       ok: userError === null,
-      detail: userError === null ? `authenticated as ${login}` : messageOf(userError),
+      detail: userError === null ? `authenticated as ${login}` : describeError(userError),
     });
   }
 
@@ -173,7 +161,7 @@ export async function checkAuthStatus(
       probes.push({
         name: PROBE_ORG_REPOS,
         ok: false,
-        detail: messageOf(err),
+        detail: describeError(err),
       });
     }
 
@@ -185,6 +173,28 @@ export async function checkAuthStatus(
           return `admin-level reads succeed on ${org}/${repo}`;
         })
       );
+
+      // Explicitly checks the endpoint that generates the noisy per-repo 403 in
+      // analyze runs. Reported as elevated rather than required because a repo
+      // can legitimately have Actions disabled at the org level.
+      try {
+        await octokit.actions.listRepoWorkflows({ owner: org, repo, per_page: 1 });
+        elevated.push({
+          name: PROBE_LIST_WORKFLOWS,
+          ok: true,
+          detail: `workflows readable on ${org}/${repo}`,
+        });
+      } catch (err) {
+        const status = statusOf(err);
+        elevated.push({
+          name: PROBE_LIST_WORKFLOWS,
+          ok: false,
+          detail:
+            status === 403
+              ? `HTTP 403 on ${org}/${repo} — fine-grained tokens need Actions:Read; classic tokens need repo (and SSO authorisation if enabled)`
+              : describeError(err),
+        });
+      }
     }
   }
 

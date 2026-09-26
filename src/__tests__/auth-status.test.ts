@@ -18,6 +18,7 @@ interface OctokitStub {
   reposError?: unknown;
   repoNames?: string[];
   actionsError?: unknown;
+  workflowsError?: unknown;
 }
 
 function httpError(status: number): Error {
@@ -60,6 +61,10 @@ function makeOctokit(stub: OctokitStub = {}): Octokit {
       getGithubActionsPermissionsRepository: jest.fn(async () => {
         if (stub.actionsError) throw stub.actionsError;
         return { data: { enabled: true } };
+      }),
+      listRepoWorkflows: jest.fn(async () => {
+        if (stub.workflowsError) throw stub.workflowsError;
+        return { data: { workflows: [] } };
       }),
     },
   } as unknown as Octokit;
@@ -184,8 +189,9 @@ describe('checkAuthStatus', () => {
       'test-org'
     );
 
-    expect(result.elevated).toHaveLength(1);
-    expect(result.elevated[0].ok).toBe(false);
+    const admin = result.elevated.find((p) => p.name.startsWith('Repository administration'));
+    if (!admin) throw new Error('no admin probe');
+    expect(admin.ok).toBe(false);
     expect(result.ok).toBe(true);
   });
 
@@ -211,5 +217,32 @@ describe('checkAuthStatus', () => {
 
     expect(probeNamed(result, 'List organisation repositories').ok).toBe(false);
     expect(result.ok).toBe(false);
+  });
+
+  it('records a workflows probe and names Actions:Read guidance on 403', async () => {
+    const result = await checkAuthStatus(
+      makeOctokit({ scopes: 'repo, read:org', workflowsError: httpError(403) }),
+      PAT,
+      'test-org'
+    );
+
+    const workflows = result.elevated.find((p) => p.name.startsWith('List repository workflows'));
+    if (!workflows) throw new Error('no workflows probe');
+    expect(workflows.ok).toBe(false);
+    expect(workflows.detail).toContain('Actions:Read');
+    // Workflow probe is elevated; a failure here must not fail the overall verdict.
+    expect(result.ok).toBe(true);
+  });
+
+  it('records workflows probe success when the endpoint is reachable', async () => {
+    const result = await checkAuthStatus(
+      makeOctokit({ scopes: 'repo, read:org' }),
+      PAT,
+      'test-org'
+    );
+
+    const workflows = result.elevated.find((p) => p.name.startsWith('List repository workflows'));
+    if (!workflows) throw new Error('no workflows probe');
+    expect(workflows.ok).toBe(true);
   });
 });

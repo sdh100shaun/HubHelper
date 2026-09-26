@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+ROOT="$(cd -P "$DIR/.." && pwd)"
+
+ENTRY="$ROOT/dist/index.js"
+
+if [ ! -f "$ENTRY" ]; then
+  echo "hubhelper: dist/index.js not found — building..." >&2
+  (cd "$ROOT" && npm run build >&2)
+fi
+
+exec node "$ENTRY" "$@"

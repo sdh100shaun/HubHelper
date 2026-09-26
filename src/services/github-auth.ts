@@ -100,6 +100,29 @@ function loadPrivateKey(config: AppAuthConfig): string {
 }
 
 /**
+ * Octokit emits one warn line per 4xx response by default. We surface our own
+ * friendly, deduped warning for a 403 on the workflow list endpoint (see
+ * GitHubFetcher.getWorkflows), so let the raw form of that specific line pass
+ * silently. Every other warning stays on default.
+ */
+export function isSuppressibleOctokitWarn(message: unknown): boolean {
+  if (typeof message !== 'string') return false;
+  return /^GET \/repos\/[^/]+\/[^/]+\/actions\/workflows.*\s-\s403\b/.test(message);
+}
+
+const filteredLog = {
+  debug: () => {},
+  info: () => {},
+  warn: (message: string, ...args: unknown[]) => {
+    if (isSuppressibleOctokitWarn(message)) return;
+    console.warn(message, ...args);
+  },
+  error: (message: string, ...args: unknown[]) => {
+    console.error(message, ...args);
+  },
+};
+
+/**
  * Create an authenticated Octokit instance for either PAT or GitHub App auth.
  *
  * The returned client handles installation token refresh automatically when
@@ -107,7 +130,7 @@ function loadPrivateKey(config: AppAuthConfig): string {
  */
 export function createGitHubClient(config: AuthConfig): Octokit {
   if (config.mode === 'pat') {
-    return new Octokit({ auth: config.token });
+    return new Octokit({ auth: config.token, log: filteredLog });
   }
 
   const privateKey = loadPrivateKey(config);
@@ -119,6 +142,7 @@ export function createGitHubClient(config: AuthConfig): Octokit {
       privateKey,
       installationId: config.installationId,
     },
+    log: filteredLog,
   });
 }
 

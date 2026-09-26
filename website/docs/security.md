@@ -293,7 +293,7 @@ If you discover a security vulnerability, please report it responsibly:
 - ❌ Exploit the vulnerability
 
 **Do**:
-- ✅ Use [GitHub Security Advisories](https://github.com/sdh100shaun/gh-tools/security/advisories)
+- ✅ Use [GitHub Security Advisories](https://github.com/sdh100shaun/HubHelper/security/advisories)
 - ✅ Email security details privately
 - ✅ Allow reasonable time for a fix before disclosure
 
@@ -338,7 +338,7 @@ We aim to:
 
 **Total Test Coverage**: 128 tests, all passing
 
-See [SECURITY_REVIEW.md](https://github.com/sdh100shaun/gh-tools/blob/main/SECURITY_REVIEW.md) for full details.
+See [SECURITY_REVIEW.md](https://github.com/sdh100shaun/HubHelper/blob/main/SECURITY_REVIEW.md) for full details.
 
 ## Security-Related Configuration
 
@@ -557,7 +557,7 @@ The tool only connects to:
 
 ### License
 
-MIT License - See [LICENSE](https://github.com/sdh100shaun/gh-tools/blob/main/LICENSE)
+MIT License - See [LICENSE](https://github.com/sdh100shaun/HubHelper/blob/main/LICENSE)
 
 ### Dependencies
 
@@ -588,6 +588,6 @@ Planned security enhancements:
 ## Questions?
 
 For security-related questions:
-- Use [GitHub Security Advisories](https://github.com/sdh100shaun/gh-tools/security/advisories) for vulnerabilities
-- Use [GitHub Discussions](https://github.com/sdh100shaun/gh-tools/discussions) for general security questions
+- Use [GitHub Security Advisories](https://github.com/sdh100shaun/HubHelper/security/advisories) for vulnerabilities
+- Use [GitHub Discussions](https://github.com/sdh100shaun/HubHelper/discussions) for general security questions
 - Check the [FAQ](/docs/getting-started#troubleshooting) for common issues

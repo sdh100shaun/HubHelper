@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Octokit } from '@octokit/rest';
 import { getGhCliToken } from '../services/gh-cli-token.js';
-import { createGitHubClient, describeAuth, resolveAuthFromEnv } from '../services/github-auth.js';
+import {
+  createGitHubClient,
+  describeAuth,
+  isSuppressibleOctokitWarn,
+  resolveAuthFromEnv,
+} from '../services/github-auth.js';
 
 jest.mock('@octokit/rest', () => ({
   Octokit: jest.fn().mockImplementation(() => ({})),
@@ -156,7 +161,7 @@ describe('createGitHubClient', () => {
 
   it('creates a PAT-authenticated client', () => {
     createGitHubClient({ mode: 'pat', token: 'ghp_abc' });
-    expect(MockOctokit).toHaveBeenCalledWith({ auth: 'ghp_abc' });
+    expect(MockOctokit).toHaveBeenCalledWith(expect.objectContaining({ auth: 'ghp_abc' }));
   });
 
   it('creates an App-authenticated client with inline private key', () => {
@@ -181,5 +186,34 @@ describe('createGitHubClient', () => {
         installationId: '99',
       })
     ).toThrow(/no privateKey or privateKeyPath/);
+  });
+
+  it('installs a log filter on the Octokit instance', () => {
+    createGitHubClient({ mode: 'pat', token: 'ghp_abc' });
+    const call = MockOctokit.mock.calls[0][0] as { log?: unknown };
+    expect(call.log).toBeDefined();
+  });
+});
+
+describe('isSuppressibleOctokitWarn', () => {
+  it('drops the default 403 warn for the workflow list endpoint', () => {
+    const line =
+      'GET /repos/dvsa/motr/actions/workflows?per_page=100 - 403 with id 3F61:982B5 in 217ms';
+    expect(isSuppressibleOctokitWarn(line)).toBe(true);
+  });
+
+  it('lets a 404 on the same endpoint through', () => {
+    const line = 'GET /repos/dvsa/motr/actions/workflows?per_page=100 - 404 with id X in 30ms';
+    expect(isSuppressibleOctokitWarn(line)).toBe(false);
+  });
+
+  it('lets a 403 on any other endpoint through', () => {
+    const line = 'GET /repos/dvsa/motr/pulls?per_page=100 - 403 with id X in 30ms';
+    expect(isSuppressibleOctokitWarn(line)).toBe(false);
+  });
+
+  it('ignores non-string log input', () => {
+    expect(isSuppressibleOctokitWarn(undefined)).toBe(false);
+    expect(isSuppressibleOctokitWarn({ some: 'object' })).toBe(false);
   });
 });

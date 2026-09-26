@@ -13,7 +13,13 @@ import { HTMLReporter } from './reporters/html-reporter.js';
 import { JSONReporter } from './reporters/json-reporter.js';
 import { SarifReporter } from './reporters/sarif-reporter.js';
 import { AIExplainerService } from './services/ai-explainer.js';
-import { checkAuthStatus, PROBE_IDENTITY, PROBE_ORG_MEMBERS } from './services/auth-status.js';
+import {
+  checkAuthStatus,
+  PROBE_IDENTITY,
+  PROBE_LIST_WORKFLOWS,
+  PROBE_ORG_MEMBERS,
+  PROBE_REPO_ADMIN,
+} from './services/auth-status.js';
 import type { AIModel } from './services/copilot-ai-client.js';
 import { CopilotService } from './services/copilot-service.js';
 import { type AuthConfig, createGitHubClient, resolveAuthFromEnv } from './services/github-auth.js';
@@ -79,7 +85,7 @@ function resolveCliAuth(
 const program = new Command();
 
 program
-  .name('gh-tools')
+  .name('hubhelper')
   .description('AI-powered tools to visualize GitHub activity and flag security issues')
   .version('1.0.0');
 
@@ -766,7 +772,7 @@ listCmd
     try {
       const lists = manager.getAllLists();
       if (lists.length === 0) {
-        console.log('No lists found. Create one with: gh-security list create <name>');
+        console.log('No lists found. Create one with: hubhelper list create <name>');
         return;
       }
       console.log('\n📋 Repository Lists:\n');
@@ -1146,11 +1152,19 @@ authCmd
             consoleReporter.printSuccess(`${result.name}: ${result.detail}`);
           } else {
             consoleReporter.printWarning(`${result.name}: ${result.detail}`);
-            consoleReporter.printInfo(
-              'Without repository admin, actions_enabled and security_enabled are reported ' +
-                'as false for repositories you do not administer. Findings will be ' +
-                'incomplete rather than wrong.'
-            );
+            if (result.name === PROBE_REPO_ADMIN) {
+              consoleReporter.printInfo(
+                'Without repository admin, actions_enabled and security_enabled are reported ' +
+                  'as false for repositories you do not administer. Findings will be ' +
+                  'incomplete rather than wrong.'
+              );
+            } else if (result.name === PROBE_LIST_WORKFLOWS) {
+              consoleReporter.printInfo(
+                'Analyze will skip workflow findings on repositories you cannot read. ' +
+                  "Fine-grained tokens need Actions:Read; classic tokens need 'repo' " +
+                  '(and SSO authorisation, if your org enforces SAML).'
+              );
+            }
           }
         }
       }
