@@ -57,7 +57,7 @@ GitHub Apps provide a more secure and scalable way to authenticate automated wor
    |-------|-------|
    | **GitHub App name** | `Security Scanner` (must be unique) |
    | **Description** | `Automated security analysis for organization repositories` |
-   | **Homepage URL** | `https://github.com/sdh100shaun/gh-tools` |
+   | **Homepage URL** | `https://github.com/sdh100shaun/HubHelper` |
    | **Webhook** | Uncheck "Active" (not needed for this use case) |
 
 4. **Set Permissions**
@@ -148,7 +148,7 @@ The scheduled workflow automatically uses the app credentials:
 - name: Run security analysis
   env:
     GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-  run: gh-security analyze --org ${{ github.repository_owner }}
+  run: hubhelper analyze --org ${{ github.repository_owner }}
 ```
 
 ## Scheduled Workflow Setup
@@ -267,7 +267,7 @@ workflow_dispatch:
 ```yaml
 - name: Run security analysis
   run: |
-    gh-security analyze \
+    hubhelper analyze \
       --org "$GITHUB_ORG" \
       --days 30 \
       --json report.json \
@@ -317,7 +317,7 @@ steps:
   - name: Run security analysis
     env:
       GITHUB_ORG: ${{ matrix.org }}
-    run: gh-security analyze --org "$GITHUB_ORG"
+    run: hubhelper analyze --org "$GITHUB_ORG"
 ```
 
 ## Security Best Practices
@@ -570,4 +570,4 @@ EOF
 
 ---
 
-**Questions?** Check the [Getting Started Guide](/pages/getting-started/) or [open a discussion](https://github.com/sdh100shaun/gh-tools/discussions).
+**Questions?** Check the [Getting Started Guide](/pages/getting-started/) or [open a discussion](https://github.com/sdh100shaun/HubHelper/discussions).

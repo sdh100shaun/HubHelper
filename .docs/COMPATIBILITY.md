@@ -109,7 +109,7 @@ If you encounter compatibility issues with a specific Node.js version:
 
 1. Check that you're using a supported version (>= 20.0.0)
 2. Try updating to the latest patch version of your Node.js major version
-3. Report the issue at https://github.com/sdh100shaun/gh-tools/issues with:
+3. Report the issue at https://github.com/sdh100shaun/HubHelper/issues with:
    - Node.js version (`node --version`)
    - npm version (`npm --version`)
    - Operating system

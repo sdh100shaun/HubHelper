@@ -7,8 +7,8 @@ Thank you for your interest in contributing! This document provides guidelines a
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/gh-tools.git
-   cd gh-tools
+   git clone https://github.com/YOUR_USERNAME/HubHelper.git
+   cd HubHelper
    ```
 3. Install dependencies:
    ```bash

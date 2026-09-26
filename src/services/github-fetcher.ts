@@ -9,6 +9,7 @@ import type {
   WorkflowJob,
   WorkflowRun,
 } from '../types/index.js';
+import { describeError, statusOf } from '../utils/http-errors.js';
 import { isSecurityRelated } from '../utils/security-utils.js';
 import { type AuthConfig, createGitHubClient } from './github-auth.js';
 
@@ -16,11 +17,24 @@ export class GitHubFetcher {
   private octokit: Octokit;
   private org: string;
   private cachedRepos: Repository[] | null = null;
+  /** Repos we've already warned about for a given endpoint, to keep output to one line each. */
+  private warnedRepos = new Map<string, Set<string>>();
 
   constructor(auth: string | AuthConfig, organization: string) {
     const config: AuthConfig = typeof auth === 'string' ? { mode: 'pat', token: auth } : auth;
     this.octokit = createGitHubClient(config);
     this.org = organization;
+  }
+
+  private warnOnce(endpoint: string, repo: string, message: string): void {
+    let seen = this.warnedRepos.get(endpoint);
+    if (!seen) {
+      seen = new Set();
+      this.warnedRepos.set(endpoint, seen);
+    }
+    if (seen.has(repo)) return;
+    seen.add(repo);
+    console.warn(message);
   }
 
   async getRepositories(includeWorkflows = true): Promise<Repository[]> {
@@ -48,9 +62,27 @@ export class GitHubFetcher {
               repo: repo.name,
             });
           actionsEnabled = actionsData.enabled;
-        } catch (_error) {
-          // If we get a 404, Actions might not be enabled
-          actionsEnabled = false;
+        } catch (error) {
+          const status = statusOf(error);
+          if (status === 404) {
+            // Actions is not available on this repo at all.
+            actionsEnabled = false;
+          } else if (status === 403) {
+            // The token cannot see Actions settings on this repo — usually a
+            // fine-grained PAT lacking Administration:Read. Downgrade cleanly
+            // and skip the workflows call so we don't stack a second 403.
+            this.warnOnce(
+              'actions-permissions',
+              repo.name,
+              `Skipping ${this.org}/${repo.name}: token lacks Administration:Read (or classic 'repo' + repository admin); Actions status reported as disabled.`
+            );
+            actionsEnabled = false;
+          } else {
+            console.error(
+              `Failed to check Actions permissions for ${this.org}/${repo.name}: ${describeError(error)}`
+            );
+            actionsEnabled = false;
+          }
         }
 
         // Check security settings
@@ -119,8 +151,19 @@ export class GitHubFetcher {
           is_scheduled: isScheduled,
         };
       });
-    } catch (_error) {
-      // If we can't fetch workflows, return empty array
+    } catch (error) {
+      const status = statusOf(error);
+      if (status === 403) {
+        this.warnOnce(
+          'list-workflows',
+          repoName,
+          `Skipping workflows for ${this.org}/${repoName}: token lacks Actions:Read (fine-grained) or 'workflow' scope (classic PAT).`
+        );
+      } else if (status !== 404) {
+        console.error(
+          `Failed to list workflows for ${this.org}/${repoName}: ${describeError(error)}`
+        );
+      }
       return [];
     }
   }

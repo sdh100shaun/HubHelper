@@ -1,6 +1,6 @@
 # HubHelper
 
-[![CI](https://github.com/sdh100shaun/gh-tools/workflows/CI/badge.svg)](https://github.com/sdh100shaun/gh-tools/actions/workflows/ci.yml)
+[![CI](https://github.com/sdh100shaun/HubHelper/workflows/CI/badge.svg)](https://github.com/sdh100shaun/HubHelper/actions/workflows/ci.yml)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org)
 [![npm version](https://img.shields.io/npm/v/@sdh100shaun/hubhelper)](https://www.npmjs.com/package/@sdh100shaun/hubhelper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -40,7 +40,7 @@ AI-powered policy-driven security analysis tool for GitHub organizations. Uses d
 - Schedule security scans with GitHub Actions
 - GitHub Code Scanning integration via SARIF upload
 - Use GitHub Apps for automated workflows
-- See [GitHub App Setup](https://sdh100shaun.github.io/gh-tools/pages/github-app/) for automated scanning
+- See [GitHub App Setup](https://sdh100shaun.github.io/HubHelper/pages/github-app/) for automated scanning
 
 ## Requirements
 
@@ -75,14 +75,45 @@ hubhelper analyze --org <your-org>
 Clone and install for development:
 
 ```bash
-git clone https://github.com/sdh100shaun/gh-tools.git
-cd gh-tools
+git clone https://github.com/sdh100shaun/HubHelper.git
+cd HubHelper
 npm install
 ```
 
 ## Authentication
 
-Generate a GitHub token with appropriate permissions:
+HubHelper resolves credentials in this order:
+
+1. **GitHub App** — `GITHUB_APP_ID` + `GITHUB_APP_INSTALLATION_ID` + `GITHUB_APP_PRIVATE_KEY[_PATH]`
+2. **`GITHUB_TOKEN`** — a PAT from the environment or `.env`
+3. **GitHub CLI** — the credential from `gh auth login`
+
+CI, which sets `GITHUB_TOKEN` explicitly, therefore never picks up an ambient `gh` login.
+
+### ⚡ GitHub CLI (fastest for local development)
+
+If you already use the [GitHub CLI](https://cli.github.com), HubHelper can borrow its
+credential — no token to mint, paste, or rotate:
+
+```bash
+gh auth login              # default scopes already cover HubHelper
+hubhelper auth status --org your-org   # confirm what you can actually see
+hubhelper analyze --org your-org
+```
+
+`gh auth login` grants `repo`, `read:org` and `gist` by default, which is everything HubHelper
+needs. Topping up an older login:
+
+```bash
+gh auth refresh -h github.com -s read:org
+```
+
+**Trade-off:** a `gh` credential is a *classic* OAuth token, and its `repo` scope includes
+**write** access. It is broader than the fine-grained read-only token described below. Use the
+GitHub CLI for local development convenience; prefer a fine-grained PAT or a GitHub App for CI
+and scheduled scans.
+
+Set `HUBHELPER_NO_GH_CLI=1` to disable GitHub CLI discovery entirely.
 
 ### 🔒 Fine-Grained Personal Access Token (Recommended)
 
@@ -91,7 +122,7 @@ Generate a GitHub token with appropriate permissions:
 1. Navigate to [GitHub Settings → Personal Access Tokens → Fine-grained tokens](https://github.com/settings/tokens?type=beta)
 2. Click **"Generate new token"**
 3. Configure:
-   - **Token name**: `gh-security-tools-readonly`
+   - **Token name**: `hubhelper-readonly`
    - **Resource owner**: Select your organization
    - **Repository access**: All repositories (or select specific repos)
    - **Permissions** (all read-only):
@@ -102,6 +133,11 @@ Generate a GitHub token with appropriate permissions:
    - **Expiration**: 90 days (recommended)
 4. Click **"Generate token"**
 5. Copy the token (starts with `github_pat_...`)
+
+> 💡 **Note:** Omitting **Actions: Read** produces one
+> `Skipping workflows for <repo>: token lacks Actions:Read` warning per
+> repository. HubHelper still returns partial results, but workflow-based
+> controls will be empty.
 
 **Advantages:**
 - ✅ Read-only access (cannot modify anything)
@@ -117,10 +153,13 @@ For backward compatibility:
 1. Navigate to [GitHub Settings → Tokens](https://github.com/settings/tokens)
 2. Click **"Generate new token"** → **"Generate new token (classic)"**
 3. Select scopes:
-   - ✅ `repo` (if analyzing private repositories)
+   - ✅ `repo` (if analyzing private repositories; also grants workflow reads)
    - ✅ `read:org` (read organization membership)
 4. Click **"Generate token"**
 5. Copy the token (starts with `ghp_...`)
+6. If your organisation enforces SAML SSO, click **Configure SSO** next to the
+   token and authorise it for the org — otherwise the workflow endpoints
+   return `403` even with `repo` granted.
 
 **Note:** Classic tokens grant broader access than needed. Fine-grained tokens are strongly recommended.
 
@@ -129,18 +168,42 @@ For backward compatibility:
 ```bash
 # Option 1: Environment variable
 export GITHUB_TOKEN="your_token_here"
-gh-security analyze --org your-org
+hubhelper analyze --org your-org
 
 # Option 2: .env file (recommended for local development)
 cat > .env <<EOF
 GITHUB_TOKEN=your_token_here
 GITHUB_ORG=your-org
 EOF
-gh-security analyze
+hubhelper analyze
 
 # Option 3: Command line (not recommended - visible in shell history)
-gh-security analyze --org your-org --token your_token_here
+hubhelper analyze --org your-org --token your_token_here
 ```
+
+### Permissions HubHelper Needs
+
+| Feature | Classic scope | Fine-grained permission |
+|---|---|---|
+| Repositories, pull requests, workflow runs, file contents | `repo` | Metadata, Pull requests, Actions, Contents — all Read |
+| Organisation members and the org event stream (`watch`, `stream`) | `read:org` | Organisation → Members: Read |
+| Actions-enabled and security-features-enabled status | `repo` **+ repository admin** | Administration: Read |
+
+⚠️ **Without repository admin**, the Actions permissions endpoint and the `security_and_analysis`
+block are not returned, so `actions_enabled` and `security_enabled` are reported as `false` for
+every repository you do not administer. Findings are then **incomplete rather than wrong**, and
+an incomplete report looks exactly like a clean one. Run `hubhelper auth status --org your-org`
+to see whether this affects you.
+
+### Checking Your Permissions
+
+```bash
+hubhelper auth status --org your-org
+```
+
+Reports the active credential, your identity, the granted scopes, whether the required access
+actually works against your organisation, and whether the admin-only extras above are available.
+Exits non-zero when something required is missing.
 
 ### Token Security Best Practices
 
@@ -242,6 +305,19 @@ npx @sdh100shaun/hubhelper analyze
 ```
 
 ## Command Reference
+
+### `auth status`
+
+Report the active credential and the permissions it grants.
+
+**Options:**
+- `-o, --org <organisation>` - Organisation to probe for real access (default: from `.env`)
+- `-t, --token <token>` - GitHub token (default: resolved from App, `GITHUB_TOKEN`, then `gh`)
+
+**Example:**
+```bash
+npm run dev auth status --org myorg
+```
 
 ### `analyze`
 

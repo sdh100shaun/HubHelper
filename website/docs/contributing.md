@@ -15,12 +15,12 @@ Thank you for your interest in contributing to HubHelper! This document provides
 Found a bug? Help us fix it!
 
 **Before Reporting**:
-- Check [existing issues](https://github.com/sdh100shaun/gh-tools/issues) to avoid duplicates
+- Check [existing issues](https://github.com/sdh100shaun/HubHelper/issues) to avoid duplicates
 - Verify you're using the latest version
 - Gather relevant information (Node version, command used, error message)
 
 **How to Report**:
-1. Open a [new issue](https://github.com/sdh100shaun/gh-tools/issues/new)
+1. Open a [new issue](https://github.com/sdh100shaun/HubHelper/issues/new)
 2. Use the bug report template
 3. Provide:
    - Clear description of the problem
@@ -39,7 +39,7 @@ Have an idea for improvement?
 - Why it would be valuable
 - Potential implementation ideas (optional)
 
-Open a [feature request issue](https://github.com/sdh100shaun/gh-tools/issues/new) to start the discussion.
+Open a [feature request issue](https://github.com/sdh100shaun/HubHelper/issues/new) to start the discussion.
 
 ### 3. Improve Documentation
 
@@ -69,19 +69,19 @@ Ready to contribute code? Awesome!
 
 1. **Fork the Repository**
 
-   Click "Fork" on [GitHub](https://github.com/sdh100shaun/gh-tools)
+   Click "Fork" on [GitHub](https://github.com/sdh100shaun/HubHelper)
 
 2. **Clone Your Fork**
 
    ```bash
    git clone https://github.com/YOUR_USERNAME/gh-tools.git
-   cd gh-tools
+   cd HubHelper
    ```
 
 3. **Add Upstream Remote**
 
    ```bash
-   git remote add upstream https://github.com/sdh100shaun/gh-tools.git
+   git remote add upstream https://github.com/sdh100shaun/HubHelper.git
    ```
 
 4. **Install Dependencies**
@@ -449,8 +449,8 @@ Releases are managed by maintainers:
 
 **Questions?**
 - Check the [documentation](/docs/getting-started)
-- Search [existing issues](https://github.com/sdh100shaun/gh-tools/issues)
-- Ask in [GitHub Discussions](https://github.com/sdh100shaun/gh-tools/discussions)
+- Search [existing issues](https://github.com/sdh100shaun/HubHelper/issues)
+- Ask in [GitHub Discussions](https://github.com/sdh100shaun/HubHelper/discussions)
 
 **Stuck?**
 - Comment on your PR or issue

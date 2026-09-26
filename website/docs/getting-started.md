@@ -46,8 +46,8 @@ hubhelper analyze --org your-org
 Clone the repository for development or customisation:
 
 ```bash
-git clone https://github.com/sdh100shaun/gh-tools.git
-cd gh-tools
+git clone https://github.com/sdh100shaun/HubHelper.git
+cd HubHelper
 npm install
 ```
 
@@ -75,7 +75,7 @@ Fine-grained tokens provide the most secure access with minimal read-only permis
 
    | Setting | Value |
    |---------|-------|
-   | Token name | `gh-security-tools-readonly` |
+   | Token name | `hubhelper-readonly` |
    | Expiration | 90 days |
    | Resource owner | *Select your organisation* |
    | Repository access | All repositories |
@@ -106,6 +106,11 @@ Fine-grained tokens provide the most secure access with minimal read-only permis
 
 **Note:** Without `Administration: Read`, security scanning status checks will be skipped, but the tool will still work.
 
+**Note:** Omitting `Actions: Read` causes `analyze` to emit one
+`Skipping workflows for <repo>: token lacks Actions:Read` warning per
+repository — workflow controls report no findings, other controls still run.
+Run `hubhelper auth status --org your-org` to confirm.
+
 ### Classic Token (Alternative)
 
 If you prefer classic tokens (not recommended for security):
@@ -114,10 +119,13 @@ If you prefer classic tokens (not recommended for security):
 2. Click "Generate new token" → "Generate new token (classic)"
 3. Give your token a descriptive name (e.g., "Security Analysis Tool")
 4. Select the following scopes:
-   - ✅ `repo` (if analyzing private repositories)
+   - ✅ `repo` (if analyzing private repositories; also grants workflow reads)
    - ✅ `read:org` (read organisation membership)
 5. Click "Generate token"
 6. **Copy the token immediately** - you won't be able to see it again!
+7. If your organisation enforces SAML SSO, click **Configure SSO** next to
+   the token and authorise it for the org — without this, workflow endpoints
+   return `403` even when `repo` is granted.
 
 **Security Note:** Classic tokens grant broader access than necessary. Fine-grained tokens are more secure.
 
@@ -211,7 +219,7 @@ Use in workflow:
 - name: Run security analysis
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: npx @sdh100shaun/gh-security-tools analyze --org ${{ github.repository_owner }}
+  run: npx @sdh100shaun/hubhelper analyze --org ${{ github.repository_owner }}
 ```
 
 #### Token Security Checklist
@@ -418,9 +426,9 @@ Add to your CI pipeline (e.g., GitHub Actions):
 
 If you encounter issues:
 
-1. Check the [GitHub Issues](https://github.com/sdh100shaun/gh-tools/issues) for similar problems
+1. Check the [GitHub Issues](https://github.com/sdh100shaun/HubHelper/issues) for similar problems
 2. Review the [API documentation](/docs/api-reference) for detailed usage
-3. [Open a new issue](https://github.com/sdh100shaun/gh-tools/issues/new) with:
+3. [Open a new issue](https://github.com/sdh100shaun/HubHelper/issues/new) with:
    - Your Node.js version (`node --version`)
    - The command you ran
    - The full error message

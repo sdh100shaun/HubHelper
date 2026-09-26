@@ -1,12 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { createAppAuth } from '@octokit/auth-app';
 import { Octokit } from '@octokit/rest';
+import { describeGhCliFailure, getGhCliToken } from './gh-cli-token.js';
 
 export type AuthMode = 'pat' | 'app';
+
+/** Where a PAT came from. Absent means the environment, for backwards compatibility. */
+export type PatSource = 'env' | 'gh-cli' | 'flag';
 
 export interface PatAuthConfig {
   mode: 'pat';
   token: string;
+  source?: PatSource;
 }
 
 /**
@@ -28,8 +33,10 @@ export type AuthConfig = PatAuthConfig | AppAuthConfig;
 /**
  * Resolve authentication configuration from environment variables.
  *
- * GitHub App auth is selected when GITHUB_APP_ID is present.
- * Otherwise falls back to GITHUB_TOKEN (PAT).
+ * Resolution order: GitHub App (GITHUB_APP_ID) → GITHUB_TOKEN → the GitHub CLI.
+ *
+ * The GitHub CLI is tried last so that CI, which sets GITHUB_TOKEN explicitly,
+ * never picks up a developer's ambient `gh auth login` credential by accident.
  *
  * Throws if no usable credentials are found.
  */
@@ -59,13 +66,20 @@ export function resolveAuthFromEnv(env: NodeJS.ProcessEnv = process.env): AuthCo
   }
 
   if (env.GITHUB_TOKEN) {
-    return { mode: 'pat', token: env.GITHUB_TOKEN };
+    return { mode: 'pat', token: env.GITHUB_TOKEN, source: 'env' };
   }
 
-  throw new Error(
+  const ghCli = getGhCliToken(env);
+  if (ghCli.ok) {
+    return { mode: 'pat', token: ghCli.token, source: 'gh-cli' };
+  }
+
+  const guidance =
     'No GitHub credentials found. Set either GITHUB_TOKEN (PAT) or ' +
-      'GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App).'
-  );
+    'GITHUB_APP_ID + GITHUB_APP_INSTALLATION_ID + GITHUB_APP_PRIVATE_KEY[_PATH] (GitHub App), ' +
+    'or authenticate the GitHub CLI.';
+
+  throw new Error(`${guidance} ${describeGhCliFailure(ghCli.reason)}`);
 }
 
 function loadPrivateKey(config: AppAuthConfig): string {
@@ -86,6 +100,29 @@ function loadPrivateKey(config: AppAuthConfig): string {
 }
 
 /**
+ * Octokit emits one warn line per 4xx response by default. We surface our own
+ * friendly, deduped warning for a 403 on the workflow list endpoint (see
+ * GitHubFetcher.getWorkflows), so let the raw form of that specific line pass
+ * silently. Every other warning stays on default.
+ */
+export function isSuppressibleOctokitWarn(message: unknown): boolean {
+  if (typeof message !== 'string') return false;
+  return /^GET \/repos\/[^/]+\/[^/]+\/actions\/workflows.*\s-\s403\b/.test(message);
+}
+
+const filteredLog = {
+  debug: () => {},
+  info: () => {},
+  warn: (message: string, ...args: unknown[]) => {
+    if (isSuppressibleOctokitWarn(message)) return;
+    console.warn(message, ...args);
+  },
+  error: (message: string, ...args: unknown[]) => {
+    console.error(message, ...args);
+  },
+};
+
+/**
  * Create an authenticated Octokit instance for either PAT or GitHub App auth.
  *
  * The returned client handles installation token refresh automatically when
@@ -93,7 +130,7 @@ function loadPrivateKey(config: AppAuthConfig): string {
  */
 export function createGitHubClient(config: AuthConfig): Octokit {
   if (config.mode === 'pat') {
-    return new Octokit({ auth: config.token });
+    return new Octokit({ auth: config.token, log: filteredLog });
   }
 
   const privateKey = loadPrivateKey(config);
@@ -105,6 +142,7 @@ export function createGitHubClient(config: AuthConfig): Octokit {
       privateKey,
       installationId: config.installationId,
     },
+    log: filteredLog,
   });
 }
 
@@ -116,7 +154,9 @@ export function createGitHubClientFromEnv(env: NodeJS.ProcessEnv = process.env):
 /** Describe the active auth mode for logging without leaking secrets. */
 export function describeAuth(config: AuthConfig): string {
   if (config.mode === 'pat') {
-    return 'Personal Access Token';
+    return config.source === 'gh-cli'
+      ? 'Personal Access Token (via GitHub CLI)'
+      : 'Personal Access Token';
   }
   return `GitHub App (appId=${config.appId}, installationId=${config.installationId})`;
 }

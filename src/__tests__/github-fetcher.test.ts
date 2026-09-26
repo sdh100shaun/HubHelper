@@ -230,6 +230,94 @@ describe('GitHubFetcher', () => {
 
       expect(workflows).toEqual([]);
     });
+
+    it('emits a single friendly warn on 403 and returns []', async () => {
+      const err = Object.assign(new Error('Forbidden'), { status: 403 });
+      mockListRepoWorkflows.mockRejectedValue(err);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const first = await fetcher.getWorkflows('repo-a');
+      const second = await fetcher.getWorkflows('repo-a');
+
+      expect(first).toEqual([]);
+      expect(second).toEqual([]);
+      // Deduped: only one warn line even after repeated calls on the same repo.
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/lacks Actions:Read/);
+      warnSpy.mockRestore();
+    });
+
+    it('warns per repo but does not repeat for the same repo across endpoints', async () => {
+      const err = Object.assign(new Error('Forbidden'), { status: 403 });
+      mockListRepoWorkflows.mockRejectedValue(err);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await fetcher.getWorkflows('repo-a');
+      await fetcher.getWorkflows('repo-b');
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      warnSpy.mockRestore();
+    });
+
+    it('routes non-403/404 errors to console.error and returns []', async () => {
+      const err = Object.assign(new Error('Boom'), { status: 500 });
+      mockListRepoWorkflows.mockRejectedValue(err);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await fetcher.getWorkflows('repo-a');
+
+      expect(result).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('HTTP 500'));
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    });
+
+    it('stays silent on 404 (repo has no Actions)', async () => {
+      const err = Object.assign(new Error('Not found'), { status: 404 });
+      mockListRepoWorkflows.mockRejectedValue(err);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await fetcher.getWorkflows('archived');
+
+      expect(result).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    });
+  });
+
+  describe('getRepositories permissions error handling', () => {
+    beforeEach(() => {
+      // Sibling tests leave mockResolvedValueOnce queues behind that jest.clearAllMocks
+      // doesn't drain. Reset here to isolate this suite.
+      mockListForOrg.mockReset();
+      mockGetGithubActionsPermissions.mockReset();
+      mockGetRepo.mockReset();
+      mockListRepoWorkflows.mockReset();
+    });
+
+    it('warns and marks actions disabled when permissions endpoint returns 403', async () => {
+      mockListForOrg.mockResolvedValueOnce({
+        data: [{ name: 'locked', full_name: 'test-org/locked', private: true }],
+      });
+      const err = Object.assign(new Error('Forbidden'), { status: 403 });
+      mockGetGithubActionsPermissions.mockRejectedValue(err);
+      mockGetRepo.mockResolvedValue({ data: { security_and_analysis: {} } });
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const repos = await fetcher.getRepositories();
+
+      expect(repos).toHaveLength(1);
+      expect(repos[0].actions_enabled).toBe(false);
+      // Workflows should not be fetched when actions look disabled.
+      expect(mockListRepoWorkflows).not.toHaveBeenCalled();
+      expect(warnSpy.mock.calls[0][0]).toMatch(/Administration:Read/);
+      warnSpy.mockRestore();
+    });
   });
 
   describe('getRecentPullRequests', () => {

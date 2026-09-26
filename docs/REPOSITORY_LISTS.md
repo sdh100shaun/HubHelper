@@ -19,38 +19,38 @@ The repository list management feature allows you to create curated lists of rep
 
 ```bash
 # Create a new list
-gh-security list create production --description "Production repositories"
+hubhelper list create production --description "Production repositories"
 
 # Add repositories
-gh-security list add production myorg/api-gateway
-gh-security list add production myorg/auth-service
-gh-security list add production myorg/web-app
+hubhelper list add production myorg/api-gateway
+hubhelper list add production myorg/auth-service
+hubhelper list add production myorg/web-app
 ```
 
 ### Viewing Lists
 
 ```bash
 # Show all lists
-gh-security list show
+hubhelper list show
 
 # Show repositories in a list
-gh-security list repos production
+hubhelper list repos production
 ```
 
 ### Generating Reports
 
 ```bash
 # Generate console report
-gh-security report production --org myorg --token ghp_xxx
+hubhelper report production --org myorg --token ghp_xxx
 
 # Export to JSON
-gh-security report production --format json --output report.json
+hubhelper report production --format json --output report.json
 
 # Export to CSV
-gh-security report production --format csv --output report.csv
+hubhelper report production --format csv --output report.csv
 
 # Export to Markdown
-gh-security report production --format markdown --output report.md
+hubhelper report production --format markdown --output report.md
 ```
 
 ## CLI Commands
@@ -65,7 +65,7 @@ Create a new repository list.
 
 **Example:**
 ```bash
-gh-security list create critical-prod --description "Critical production services"
+hubhelper list create critical-prod --description "Critical production services"
 ```
 
 #### `list add <list> <repository>`
@@ -73,7 +73,7 @@ Add a repository to a list. Repository format: `org/repo`
 
 **Example:**
 ```bash
-gh-security list add critical-prod myorg/payment-api
+hubhelper list add critical-prod myorg/payment-api
 ```
 
 #### `list remove <list> <repository>`
@@ -81,7 +81,7 @@ Remove a repository from a list.
 
 **Example:**
 ```bash
-gh-security list remove critical-prod myorg/old-service
+hubhelper list remove critical-prod myorg/old-service
 ```
 
 #### `list show`
@@ -89,7 +89,7 @@ Display all repository lists.
 
 **Example:**
 ```bash
-gh-security list show
+hubhelper list show
 ```
 
 #### `list repos <list>`
@@ -97,7 +97,7 @@ Show all repositories in a specific list.
 
 **Example:**
 ```bash
-gh-security list repos critical-prod
+hubhelper list repos critical-prod
 ```
 
 #### `list delete <name>`
@@ -105,7 +105,7 @@ Delete a repository list.
 
 **Example:**
 ```bash
-gh-security list delete old-list
+hubhelper list delete old-list
 ```
 
 ### Report Generation
@@ -122,16 +122,16 @@ Generate a report for a repository list.
 **Examples:**
 ```bash
 # Console report
-gh-security report production
+hubhelper report production
 
 # JSON export
-gh-security report production --format json --output prod-report.json
+hubhelper report production --format json --output prod-report.json
 
 # CSV export
-gh-security report production --format csv --output prod-report.csv
+hubhelper report production --format csv --output prod-report.csv
 
 # Markdown export
-gh-security report production --format markdown --output prod-report.md
+hubhelper report production --format markdown --output prod-report.md
 ```
 
 ## Report Contents
@@ -232,44 +232,44 @@ Repository lists are stored in `.gh-lists/lists.json` in your project directory.
 
 ```bash
 # Create production list
-gh-security list create production
+hubhelper list create production
 
 # Add critical services
-gh-security list add production myorg/api
-gh-security list add production myorg/web
-gh-security list add production myorg/mobile
+hubhelper list add production myorg/api
+hubhelper list add production myorg/web
+hubhelper list add production myorg/mobile
 
 # Weekly report
-gh-security report production --format markdown --output weekly-report.md
+hubhelper report production --format markdown --output weekly-report.md
 ```
 
 ### 2. Security Audit
 
 ```bash
 # Create audit list
-gh-security list create security-audit
+hubhelper list create security-audit
 
 # Add repositories to audit
-gh-security list add security-audit myorg/auth
-gh-security list add security-audit myorg/payment
+hubhelper list add security-audit myorg/auth
+hubhelper list add security-audit myorg/payment
 
 # Generate security-focused report
-gh-security report security-audit --format json --output audit-$(date +%Y%m%d).json
+hubhelper report security-audit --format json --output audit-$(date +%Y%m%d).json
 ```
 
 ### 3. Team Tracking
 
 ```bash
 # Track team repositories
-gh-security list create team-alpha
+hubhelper list create team-alpha
 
 # Add team repos
 for repo in api web mobile; do
-  gh-security list add team-alpha myorg/team-alpha-$repo
+  hubhelper list add team-alpha myorg/team-alpha-$repo
 done
 
 # Monthly report
-gh-security report team-alpha --format csv --output team-alpha-$(date +%Y%m).csv
+hubhelper report team-alpha --format csv --output team-alpha-$(date +%Y%m).csv
 ```
 
 ## Best Practices
@@ -305,7 +305,7 @@ gh-security report team-alpha --format csv --output team-alpha-$(date +%Y%m).csv
 
 **Error**: `List 'name' not found`
 
-**Solution**: Check available lists with `gh-security list show`
+**Solution**: Check available lists with `hubhelper list show`
 
 ### Invalid repository format
 
@@ -358,23 +358,23 @@ Planned features for future releases:
 
 ```bash
 # 1. Create list
-gh-security list create infrastructure --description "Infrastructure repositories"
+hubhelper list create infrastructure --description "Infrastructure repositories"
 
 # 2. Add repositories
-gh-security list add infrastructure myorg/terraform
-gh-security list add infrastructure myorg/kubernetes
-gh-security list add infrastructure myorg/ansible
+hubhelper list add infrastructure myorg/terraform
+hubhelper list add infrastructure myorg/kubernetes
+hubhelper list add infrastructure myorg/ansible
 
 # 3. View list
-gh-security list repos infrastructure
+hubhelper list repos infrastructure
 
 # 4. Generate report
-gh-security report infrastructure --org myorg
+hubhelper report infrastructure --org myorg
 
 # 5. Export to multiple formats
-gh-security report infrastructure --format json --output infra.json
-gh-security report infrastructure --format csv --output infra.csv
-gh-security report infrastructure --format markdown --output infra.md
+hubhelper report infrastructure --format json --output infra.json
+hubhelper report infrastructure --format csv --output infra.csv
+hubhelper report infrastructure --format markdown --output infra.md
 ```
 
 ## Related Documentation

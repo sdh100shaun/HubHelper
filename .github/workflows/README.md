@@ -1,6 +1,6 @@
 # GitHub Workflows
 
-This directory contains GitHub Actions workflows for the gh-security-tools project.
+This directory contains GitHub Actions workflows for the HubHelper project.
 
 ## Available Workflows
 
@@ -29,7 +29,7 @@ Deploys documentation site to GitHub Pages.
 **Deployment:**
 - Builds Eleventy static site
 - Deploys to GitHub Pages
-- Available at: https://sdh100shaun.github.io/gh-tools/
+- Available at: https://sdh100shaun.github.io/HubHelper/
 
 ### 3. npm Publishing (`npm-publish.yml`)
 
@@ -60,7 +60,7 @@ Publishes package to npm registry.
 - Uploads artifacts with 90-day retention
 
 **Setup Required:**
-1. Create a GitHub App (see [documentation](https://sdh100shaun.github.io/gh-tools/pages/github-app/))
+1. Create a GitHub App (see [documentation](https://sdh100shaun.github.io/HubHelper/pages/github-app/))
 2. Add secrets to repository:
    - `SECURITY_SCANNER_APP_ID`
    - `SECURITY_SCANNER_APP_PRIVATE_KEY`
@@ -76,11 +76,11 @@ Publishes package to npm registry.
    ```bash
    mkdir -p .github/workflows
    curl -o .github/workflows/security-scan.yml \
-     https://raw.githubusercontent.com/sdh100shaun/gh-tools/main/.github/workflows/scheduled-security-scan.yml
+     https://raw.githubusercontent.com/sdh100shaun/HubHelper/main/.github/workflows/scheduled-security-scan.yml
    ```
 
 2. **Create a GitHub App**:
-   - Follow the [GitHub App Setup Guide](https://sdh100shaun.github.io/gh-tools/pages/github-app/)
+   - Follow the [GitHub App Setup Guide](https://sdh100shaun.github.io/HubHelper/pages/github-app/)
    - Required permissions:
      - Actions: Read
      - Pull requests: Read
@@ -175,7 +175,7 @@ steps:
   - name: Run security analysis
     env:
       GITHUB_ORG: ${{ matrix.org }}
-    run: gh-security analyze --org "$GITHUB_ORG"
+    run: hubhelper analyze --org "$GITHUB_ORG"
 ```
 
 ## Workflow Security
@@ -186,7 +186,7 @@ steps:
    - Tokens expire automatically (1 hour)
    - Better audit trail
    - Separate identity from users
-   - See [GitHub App documentation](https://sdh100shaun.github.io/gh-tools/pages/github-app/)
+   - See [GitHub App documentation](https://sdh100shaun.github.io/HubHelper/pages/github-app/)
 
 2. **Store secrets securely**
    - Use repository/organization secrets
