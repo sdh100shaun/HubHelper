@@ -30,7 +30,8 @@ import {
 import { validateFilePath } from './utils/path-validator.js';
 
 // Load environment variables
-config();
+// dotenv 17+ logs a banner to stdout by default, which would corrupt piped JSON/SARIF output.
+config({ quiet: true });
 
 /**
  * Resolve CLI auth: explicit --token flag wins (validated as PAT),
