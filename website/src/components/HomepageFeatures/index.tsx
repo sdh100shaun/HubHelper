@@ -41,7 +41,7 @@ const FEATURES: FeatureCard[] = [
     icon: '⚡',
     title: 'Zero-Install Usage',
     description:
-      'Run with a single npx command. No global install required. Works with Node.js 18 through 24+. First scan in under 60 seconds.',
+      'Run with a single npx command. No global install required. Works with Node.js 24 and later. First scan in under 60 seconds.',
   },
 ];
 
