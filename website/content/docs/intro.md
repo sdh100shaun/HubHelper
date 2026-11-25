@@ -1,8 +1,6 @@
 ---
-sidebar_position: 1
 title: Introduction
 description: What HubHelper is, why it exists, and what it can do for your organisation.
-slug: /intro
 ---
 
 # HubHelper

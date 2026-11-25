@@ -120,7 +120,10 @@ src/
 ├── reporters/       # Output formatters
 └── __tests__/       # Test files
 
-docs/                # Documentation
+website/             # Public docs site (docmd) — see "Documentation Site"
+├── content/docs/    # User-facing documentation pages (Markdown)
+└── content/index.md # Landing page (hand-written HTML)
+docs/                # Internal plans, specs and RFCs (not published)
 .claude/            # Claude-specific files
 ```
 
@@ -241,7 +244,7 @@ The PR title is used as the squash-merge commit message, so it must be valid on 
 
 ### User Documentation
 - Update README.md for new features
-- Create detailed guides in docs/
+- Create detailed user guides in `website/content/docs/` and add them to `navigation` in `website/docmd.config.js`
 - Include examples and use cases
 - Add troubleshooting sections
 
@@ -369,9 +372,11 @@ npm run lint             # biome check .
 npm run lint:fix         # biome check --apply .
 npm run format           # biome format --write .
 
-# Documentation site (Eleventy)
-npm run docs:build       # Build to _site/
-npm run docs:serve       # Dev server with hot reload
+# Documentation site (docmd, npm workspace in website/)
+npm run docs:start       # Dev server with live reload at http://127.0.0.1:3000/
+npm run docs:build       # Build to website/build/
+npm run docs:serve       # Serve the build at http://localhost:3000/HubHelper/
+npm run docs:validate    # Check internal links
 ```
 
 ## Architecture
@@ -446,6 +451,17 @@ GitHubEventsFetcher (ETag polling) → RealtimeOrchestrator → PolicyEngine.eva
   - `security-utils.ts` — Shared `isSecurityRelated()` helper (keyword/label/file detection)
 
 - **types/index.ts** — Core interfaces: `Repository`, `PullRequest`, `Workflow`, `SecurityIssue`, `AnalysisResult`, `OrganizationActivity`, `GitHubEvent`, `StreamConfig`, `StreamEventResult`
+
+## Documentation Site
+
+The public site (https://sdh100shaun.github.io/HubHelper/) is built with **docmd** (`@docmd/core`, pinned exactly because it is pre-1.0) from the `website/` npm workspace. It replaced Docusaurus, whose build chain carried most of the repo's `npm audit` findings. See `website/README.md` for full details.
+
+- **Config** — `website/docmd.config.js`: base path comes from `url`; sidebar order is the explicit `navigation` array (frontmatter such as `sidebar_position` is ignored); menubar, footer and theme live under `layout`/`theme`.
+- **Plugins** — docmd enables every bundled plugin by default. Keep the explicit `plugins` block: only search, SEO, sitemap and llms are on; the AI assistant (hosted relay), analytics, git, OpenAPI, Mermaid, MDX, OKF and playground are off. Do not enable anything that sends data to a third party without asking.
+- **Content** — Markdown in `website/content/docs/`. Use absolute site links (`/docs/getting-started/`). Callouts use `::: callout tip "Title"` … `:::` (types: info, tip, warning, danger, success). Give every code fence a language (`text` for plain output).
+- **Landing page** — `website/content/index.md` is hand-written HTML with `noStyle: true`; docmd passes it through without Markdown processing. Styles: `website/assets/css/hubhelper.css`; behaviour: `website/assets/js/landing.js`. Keep its links relative.
+- **Theme** — dark-only HubHelper palette in `hubhelper.css`; text colours must meet WCAG AAA. `e2e/accessibility.spec.ts` runs axe against the built site (CI: `playwright.yml`).
+- **Verify a docs change** — `npm run docs:validate` and `npm run docs:build` must succeed with no warnings; for layout/styling changes also serve the build and run the accessibility tests.
 
 ## Working with Policies
 
@@ -522,5 +538,4 @@ All work sessions must satisfy these standards before considering work complete:
 ```
 GITHUB_TOKEN=<personal_access_token>
 GITHUB_ORG=<organization_name>
-ELEVENTY_PATH_PREFIX=/HubHelper/    # for docs deployment only
 ```

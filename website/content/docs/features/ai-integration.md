@@ -1,5 +1,4 @@
 ---
-sidebar_position: 2
 title: AI Integration
 description: GitHub Copilot SDK powers pattern analysis, risk scoring, and contextual recommendations across your organisation.
 ---
@@ -8,7 +7,7 @@ description: GitHub Copilot SDK powers pattern analysis, risk scoring, and conte
 
 HubHelper's AI layer translates raw security findings into actionable intelligence. Rather than handing you a list of issues, it explains patterns, scores overall risk, and generates prioritised recommendations in plain language.
 
-:::info[Copilot SDK Status]
+::: callout info "Copilot SDK Status"
 The GitHub Copilot SDK (`@github/copilot-sdk`) is in **technical preview**. HubHelper ships a fully featured structured-analysis fallback that provides equivalent output without requiring an active Copilot session. When the SDK reaches general availability, HubHelper will automatically use it for richer natural-language responses.
 :::
 
@@ -16,7 +15,7 @@ The GitHub Copilot SDK (`@github/copilot-sdk`) is in **technical preview**. HubH
 
 ## Architecture
 
-```
+```text
 AnalysisResult (from SecurityAnalyzer)
         │
         ├── CopilotService.analyzeWithAI()
@@ -74,7 +73,7 @@ else                        risk_level = 'low';
 
 Each analysis run produces a structured insight summary. Here's an annotated example:
 
-```
+```text
 === Security Analysis Insights ===
 
 📊 Issue Detection Rate: 9.8% of PRs flagged        ← overall health metric
