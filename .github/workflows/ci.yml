@@ -34,5 +34,8 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Type-check sources and tests
+        run: npm run typecheck
+
       - name: Run tests
         run: npm test

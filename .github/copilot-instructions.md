@@ -8,10 +8,11 @@ npm run build            # TypeScript → dist/ via tsc
 npm run dev              # Run without building: tsx src/index.ts [command] [options]
 
 # Test
-npm test                 # Full suite (Jest + ts-jest, ESM mode)
+npm test                 # Full suite (Jest 30; TypeScript compiled by babel-jest)
 npm run test:watch       # Watch mode
 npm run test:coverage    # Coverage report to coverage/
-npx jest --testPathPattern=security-analyzer   # Run a single test file by name
+npx jest --testPathPatterns=security-analyzer  # Run a single test file by name
+npm run typecheck        # Type-check sources and tests (Babel does not type-check)
 
 # Lint & Format (Biome — not ESLint)
 npm run lint             # Check
@@ -68,7 +69,8 @@ import { GitHubFetcher } from './services/github-fetcher';     // ❌
 
 ### Testing
 - Tests live in `src/__tests__/*.test.ts`; module mocks in `src/__mocks__/`
-- Jest uses `ts-jest/presets/default-esm` with `moduleNameMapper` to strip `.js` extensions at runtime
+- Jest compiles TypeScript with `babel-jest` (`@babel/preset-typescript`, stage-3 decorators, CommonJS output so `jest.mock()` is hoisted); ts-jest cannot be used because TypeScript 7 has no compiler API. `moduleNameMapper` strips `.js` extensions at runtime
+- Type the mocks: under Jest 30 an untyped `jest.fn()` only accepts `never` in `mockResolvedValue`, so write `jest.fn<(...args: unknown[]) => Promise<unknown>>()` rather than casting to `jest.Mock<any>`
 - `src/index.ts` is excluded from coverage collection
 - Mock external dependencies (Octokit, fs, chalk) — never hit the network in tests
 

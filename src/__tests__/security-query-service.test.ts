@@ -6,10 +6,10 @@ import type { AnalysisResult, SecurityIssue } from '../types/index.js';
 
 const mockStop = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 const mockDisconnect = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-// biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
-const mockSendAndWait = jest.fn() as jest.Mock<any>;
-// biome-ignore lint/suspicious/noExplicitAny: test mock needs flexible return type
-const mockCreateSession = jest.fn() as jest.Mock<any>;
+// Async SDK methods whose resolved values vary per test.
+type AsyncMock = (...args: unknown[]) => Promise<unknown>;
+const mockSendAndWait = jest.fn<AsyncMock>();
+const mockCreateSession = jest.fn<AsyncMock>();
 const mockStart = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
 jest.mock('@github/copilot-sdk', () => ({
