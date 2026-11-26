@@ -318,6 +318,7 @@ Review the AI-powered HTML report in your browser.</p></div>
       <h2 class="hh-footer__title">Documentation</h2>
       <ul>
         <li><a href="docs/getting-started/">Getting Started</a></li>
+        <li><a href="docs/authentication/">Authentication</a></li>
         <li><a href="docs/api-reference/">API Reference</a></li>
         <li><a href="docs/github-app/">GitHub App Setup</a></li>
         <li><a href="docs/security/">Security</a></li>

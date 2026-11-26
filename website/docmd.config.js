@@ -60,6 +60,7 @@ export default {
           title: 'Documentation',
           links: [
             { text: 'Getting Started', url: '/docs/getting-started/' },
+            { text: 'Authentication', url: '/docs/authentication/' },
             { text: 'API Reference', url: '/docs/api-reference/' },
             { text: 'GitHub App Setup', url: '/docs/github-app/' },
             { text: 'Security', url: '/docs/security/' },
@@ -91,6 +92,10 @@ export default {
     },
   },
 
+  // CommonMark line handling, as with Docusaurus: a single newline inside a
+  // paragraph is a space, not a hard break (docmd defaults to breaks: true).
+  markdown: { breaks: false },
+
   minify: true,
   autoTitleFromH1: true,
   copyCode: true,
@@ -100,6 +105,7 @@ export default {
   navigation: [
     { title: 'Introduction', path: '/docs/intro/' },
     { title: 'Getting Started', path: '/docs/getting-started/' },
+    { title: 'Authentication', path: '/docs/authentication/' },
     {
       title: '✨ Features',
       collapsible: true,

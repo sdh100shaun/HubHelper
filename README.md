@@ -40,7 +40,7 @@ AI-powered policy-driven security analysis tool for GitHub organizations. Uses d
 - Schedule security scans with GitHub Actions
 - GitHub Code Scanning integration via SARIF upload
 - Use GitHub Apps for automated workflows
-- See [GitHub App Setup](https://sdh100shaun.github.io/gh-tools/pages/github-app/) for automated scanning
+- See [GitHub App Setup](https://sdh100shaun.github.io/HubHelper/docs/github-app/) for automated scanning
 
 ## Requirements
 
