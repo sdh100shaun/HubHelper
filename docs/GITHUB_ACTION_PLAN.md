@@ -1,6 +1,11 @@
 # Plan: Run HubHelper as a GitHub Action
 
-Status: Draft · Owner: TBC · Target: v1.1.0 · See also [`AGENTIC_WORKFLOW_PLAN.md`](./AGENTIC_WORKFLOW_PLAN.md) for the GitHub Agentic Workflows version
+Status: **Superseded** by [`AGENTIC_WORKFLOW_PLAN.md`](./AGENTIC_WORKFLOW_PLAN.md) (decided 2026-11-26)
+
+> The composite `action.yml` described here won't be built: HubHelper will run through GitHub Agentic
+> Workflows only. The "Current state" findings and the CLI changes (bundled policies, SARIF fixes, CI-friendly
+> output) still apply, and the agentic plan refers to them. `--fail-on` and the Actions reporter are no
+> longer planned.
 
 ## Goal
 

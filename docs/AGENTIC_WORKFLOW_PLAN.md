@@ -1,6 +1,6 @@
 # Plan: Run HubHelper with GitHub Agentic Workflows
 
-Status: Draft · Owner: TBC · Target: v1.1.0 · Builds on [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md)
+Status: Draft · Owner: TBC · Target: v1.1.0 · Replaces the composite-action approach in [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md)
 
 Checked against the gh-aw reference docs (`github/gh-aw`, `docs/src/content/docs/`) on 2026-11-26. gh-aw changes
 quickly, so re-check key names with `gh aw compile --strict` before merging.
@@ -44,7 +44,7 @@ Why this split:
 Trigger: `weekly on monday` (gh-aw fuzzy schedule: Monday at a stable, scattered time) plus `workflow_dispatch`.
 
 1. **`jobs.hubhelper_scan`** (custom job, runs before `agent`). Installs `@sdh100shaun/hubhelper` at a pinned
-   version (or uses the composite action from the earlier plan). Runs
+   version with `npx`. Runs
    `analyze --no-ai --json --sarif --compliance --compliance-format markdown` with App auth through HubHelper's
    own `GITHUB_APP_ID` / `GITHUB_APP_INSTALLATION_ID` / `GITHUB_APP_PRIVATE_KEY` variables. Uploads SARIF with
    `github/codeql-action/upload-sarif` and the reports as an artifact.
@@ -226,7 +226,7 @@ token-minting step.
 
 ## HubHelper changes this depends on
 
-From [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md), still required:
+CLI changes carried over from [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md):
 
 1. **Ship `policies/` in the npm package** and resolve the `default`/`strict` profile names to the bundled files.
    Without this, `npx @sdh100shaun/hubhelper analyze` can't find a policy.
@@ -234,7 +234,8 @@ From [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md), still required:
    JSON Schema file in `website/content/docs/`. Include a **stable fingerprint per finding** (control ID +
    repository + subject) so de-duplication doesn't rely on the agent.
 3. **SARIF fixes:** a fallback physical location and `partialFingerprints`, so the upload in the scan job is accepted.
-4. Fix `scheduled-security-scan.yml` (wrong package and binary), or replace it with the agentic workflow.
+4. **Delete `.github/workflows/scheduled-security-scan.yml`.** It installs the wrong package and binary, and
+   the agentic workflow replaces it.
 
 New for gh-aw:
 
@@ -258,6 +259,7 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
 | `.github/dependabot.yml` | Keep the `github-actions` ecosystem on, for SHAs in the custom job |
 | `package.json`, `src/…` | CLI changes above |
 | `website/content/docs/agentic-workflows.md` | User guide: install, App setup, secrets, customising the prompt and outputs, cost controls, troubleshooting. Add to `navigation` in `website/docmd.config.js` |
+| `.github/workflows/scheduled-security-scan.yml` | Delete (replaced by the agentic workflow) |
 | `README.md`, `.github/workflows/README.md`, `CHANGELOG.md` | Document the workflow and remove the stale `gh-security-tools` references |
 
 ## Security and cost
@@ -290,8 +292,6 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
   `gh aw compile --strict`.
 - `gh aw add` path layout and `aw.yml` fields.
 - Copilot can't use `web-search`, which this workflow doesn't need.
-- Whether the existing composite-action plan is still wanted for people who don't use gh-aw. The scan job can
-  call that action rather than `npx`, so the two plans share one implementation.
 
 ## Decisions
 
@@ -300,10 +300,11 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
   any other workflow changes.
 - **Findings go to a private security repository.** The workflow is installed and runs there (see
   Distribution), not in a public repository.
+- **gh-aw only.** No composite `action.yml`. The scan job installs the CLI with `npx` at a pinned version.
+  People who don't use gh-aw can still run the CLI from any workflow, as the docs page will show.
 - **Weekly cadence:** `schedule: weekly on monday` plus manual runs. The digest stays a **Discussion** in the
   `audits` category, with `fallback-to-issue` (on by default) creating an issue if Discussions is off.
 
 ## Open questions
 
 1. Should the digest be a Discussion (current default, falls back to an issue) or always an issue?
-2. Should we still build the plain composite action, or go gh-aw only?
