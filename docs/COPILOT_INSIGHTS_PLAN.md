@@ -134,6 +134,7 @@ src/services/copilot/store/                # SQLite store
   ├─ migrator.ts                           #   applies migrations, tracks user_version
   ├─ copilot-store.ts                      #   ingest (upsert), sync bookkeeping, retention
   └─ queries.ts                            #   typed, parameterised read queries for the aggregator
+src/services/copilot/user-profile.ts      # Individual usage profile (see "Individual usage")
 src/services/copilot/usage-aggregator.ts   # Builds CopilotUsageModel; team joins; derived KPIs
 src/services/copilot/insights-service.ts   # Copilot SDK narrative + defineTool-based Q&A
 src/evaluators/copilot/*.ts                # One evaluator per control (see below)
@@ -208,6 +209,8 @@ website/content/docs/copilot-insights.md   # User guide (UK English)
              quantity, gross_amount, discount_amount, net_amount)
    agent_prs(scope_id, repo, number, org_id, opened_at, merged_at, human_approved, …)
    findings(scope_id, run_id, control_id, severity, fingerprint, subject, detected_at)
+   access_log(id PK, viewed_at, viewer /* token's GitHub login */, scope_id, subject_user_id,
+              command, reason)
    ```
 
    - The long-format `user_day_breakdown` table means new breakdown dimensions from GitHub need
@@ -252,6 +255,47 @@ website/content/docs/copilot-insights.md   # User guide (UK English)
    - Time series at day, week and month granularity, with "suppressed" gaps kept rather than
      filled in.
 
+#### Individual usage (`user-profile.ts`)
+
+`buildUserProfile(scope, login, range)` returns a `CopilotUserProfile` for one person. Everything
+comes from tables that already exist, so this needs no new fetching:
+
+- **Identity and seat**: login, the orgs where they hold a seat, the billed org, assigning team or
+  direct assignment, plan type, cost centre(s), and seat start and cancellation dates. Includes
+  seat history from `seat_day` (assigned, moved between orgs, removed).
+- **Activity timeline**: a daily series of interactions, code generations and acceptances, lines
+  suggested and accepted, chat turns and agent turns. Also active days per week, current and
+  longest active streak, first and last activity, and days since last activity (from both the
+  reports and the seat's `last_activity_at`).
+- **How they use Copilot**: feature mix over time (completions, chat, agent mode, edits, CLI, code
+  review, coding agent), acceptance rate by language, and their IDEs, models and clients
+  (including third-party clients). Also the date each feature was first used, which shows how
+  their adoption has progressed.
+- **Spend**: AI credits or premium requests per day and per model, month to date, and their share
+  of the team, org and enterprise total.
+- **Coding agent work**: Copilot coding agent PRs they started or reviewed, merge rate, median time
+  to merge, and whether each had a human approval.
+- **Context against peers**: percentile rank against their team(s), their org and the enterprise
+  for activity, acceptance rate and spend. Peer groups smaller than five people are left out, to
+  match GitHub's own threshold and avoid comparisons that identify individuals.
+- **Findings**: any HH-GH-0xx findings for this user, such as an idle seat, an unapproved model or
+  client, being over the per-user spend cap, or holding seats in several orgs.
+- **Data quality**: days where telemetry gaps or outdated-client flags apply, so low numbers are
+  not misread.
+- **Comparison**: `compareUsers(a, b)` and `compareToSelf(login, periodA, periodB)`, for example
+  usage before and after enablement training.
+
+**Safeguards for looking at individuals**
+
+- Every profile view is written to an `access_log` table (who ran it, when, which login, which
+  command). `hubhelper copilot db access-log` lists entries.
+- `--anonymise` cannot be combined with `copilot user`. In org and team reports it hides logins
+  as before.
+- The docs page explains that these metrics show tool usage, not productivity or performance, and
+  advises against using them for performance reviews.
+- `purge-user` also deletes cached AI summaries about that user. Their `access_log` entries are
+  kept with the login replaced by a hash, so the record of who looked at the data survives.
+
 ### Phase 3: Policy controls (`kind: github.copilot`)
 
 9. Add `github.copilot` to `EvaluatorKindSchema` (`src/policy/types.ts`). Extend the engine context
@@ -290,7 +334,8 @@ website/content/docs/copilot-insights.md   # User guide (UK English)
     - **Q&A** (`ask(question)`): registers `defineTool` tools so the model pulls only what it
       needs, instead of receiving the whole dataset in the prompt:
       `get_adoption_trend(granularity, from, to)`, `get_breakdown(dimension, metric, filter)`,
-      `get_team_summary(team)`, `get_user_activity(login)`, `get_spend(groupBy, from, to)`,
+      `get_team_summary(team)`, `get_user_profile(login, from, to)`,
+      `compare_users(a, b, metric)`, `get_spend(groupBy, from, to)`,
       `list_findings(minSeverity)`, `compare_periods(metric, a, b)`, and in enterprise scope
       `get_org_league_table(metric)` and `get_cost_centre_spend(from, to)`.
     - Each tool calls a fixed, parameterised query in `queries.ts`. The model **never writes
@@ -299,6 +344,12 @@ website/content/docs/copilot-insights.md   # User guide (UK English)
       explains the top anomalies, for example "agent-mode usage up 3× on Tuesday".
     - **Privacy**: a `--anonymise` flag replaces logins with stable hashes in prompts and reports.
       Logins are never sent to the model unless the user asks about a named user.
+    - **Individual summary** (`summariseUser(profile)`): a short narrative for one person: how
+      their usage has changed, which features they have not tried yet that their peers use
+      (for example "uses chat daily but has never used agent mode"), and practical next steps such
+      as training or a client upgrade. It is written as enablement advice, not as an assessment of
+      the person. Questions such as "how has @dev's usage changed since March?" go through
+      `ask`, which uses `get_user_profile`.
 
 ### Phase 5: CLI (`src/index.ts`)
 
@@ -315,6 +366,11 @@ hubhelper copilot spend     <scope> [--month YYYY-MM] [--by user|model|org|cost-
                             [--budget <n>]
 hubhelper copilot insights  <scope> [--days 90] [--anonymise] [--model <id>]
 hubhelper copilot ask       "which teams adopted agent mode fastest?" <scope>
+hubhelper copilot user      <login> <scope> [--days 90 | --from <day> --to <day>]
+                            [--compare <login> | --compare-period <from>:<to>]
+                            [--summarise] [--format console|json|csv|md|html]
+hubhelper copilot users     <scope> [--sort activity|acceptance|spend|last-active]
+                            [--team <slug>] [--idle] [--limit 50]   # find people to drill into
 hubhelper copilot report    <scope> --output copilot.html [--profile policies/copilot.yaml]
 hubhelper copilot sql       "SELECT … FROM v_daily_adoption" [--format table|csv|json]
 hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
@@ -340,6 +396,11 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
     - Seat table with filters (idle, team, editor), PR impact panel, AI narrative and findings.
     - Enterprise view: an org league table, cost-centre chargeback, users with seats in several
       orgs, and per-org policy drift. The scope selector filters every chart.
+    - **Individual page**: clicking a login anywhere in the dashboard opens that person's profile,
+      as does running `copilot user --format html`. It shows a seat card, an activity heatmap
+      (calendar style), feature mix over time, IDE, language, model and client breakdowns, spend
+      by model, coding agent PRs, peer percentiles, findings and the AI summary. The console view
+      has the same sections, using sparklines and tables.
     - Every value is escaped with `html-sanitizer.ts`, and the dashboard must meet WCAG AAA
       contrast, as the docs site does.
 15. **JSON, CSV and Markdown**: the full `CopilotUsageModel` plus findings. CSV gives one table per
@@ -364,7 +425,10 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
     - Each evaluator, with compliant, violating and not-applicable cases.
     - Insights service with the mocked SDK, extending `src/__mocks__/@github/copilot-sdk.ts`, and
       its fallback path.
-    - The reporters.
+    - `user-profile.ts`: a user with no activity, a user in several orgs and teams, a peer group
+      below five (comparison left out), suppressed days, a period comparison, and every profile
+      view being written to `access_log`.
+    - The reporters, including the individual page.
 19. Docs: `website/content/docs/copilot-insights.md`, covering permissions, the five-licence
     threshold, the privacy flags and example output. Add it to `navigation` in
     `website/docmd.config.js`. The guide covers enterprise permissions and the SQLite schema and
@@ -381,9 +445,11 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
    `engines` bump)
 2. `feat(copilot): add org and enterprise copilot metrics, seats and billing fetchers` (Phase 1)
 3. `feat(copilot): add copilot sync, usage, seats, spend and sql commands` (aggregator and Phase 5)
-4. `feat(policy): add github.copilot governance controls HH-GH-011..020` (Phase 3)
-5. `feat(copilot): add AI insights and natural-language queries via copilot sdk` (Phase 4)
-6. `feat(reporters): add copilot html dashboard` (Phase 6) plus docs
+4. `feat(copilot): add individual user profiles and copilot user command` (`user-profile.ts`,
+   `copilot user`/`users`, `access_log`)
+5. `feat(policy): add github.copilot governance controls HH-GH-011..020` (Phase 3)
+6. `feat(copilot): add AI insights and natural-language queries via copilot sdk` (Phase 4)
+7. `feat(reporters): add copilot html dashboard` (Phase 6) plus docs
 
 ## Open Questions
 
@@ -399,3 +465,6 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
   agent PRs, and whether a sessions or tasks API is available to the org's plan.
 - **Retention and privacy**: per-user history is personal data. Decide the default retention, and
   whether `--anonymise` should be on by default for HTML reports that are shared.
+- **Who may view individuals**: should `copilot user` be limited to particular people (for
+  example, a configured allow-list of viewers) or need a stated reason recorded in `access_log`?
+  Some organisations will have works-council or data-protection rules about this.
