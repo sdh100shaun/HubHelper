@@ -209,8 +209,9 @@ website/content/docs/copilot-insights.md   # User guide (UK English)
              quantity, gross_amount, discount_amount, net_amount)
    agent_prs(scope_id, repo, number, org_id, opened_at, merged_at, human_approved, …)
    findings(scope_id, run_id, control_id, severity, fingerprint, subject, detected_at)
-   access_log(id PK, viewed_at, viewer /* token's GitHub login */, scope_id, subject_user_id,
-              command, reason)
+   access_batch(id PK, viewed_at, viewer /* token's GitHub login */, scope_id, command,
+                reason_code, reason, prev_hash, row_hash)
+   access_log(id PK, batch_id FK, subject_user_id)
    ```
 
    - The long-format `user_day_breakdown` table means new breakdown dimensions from GitHub need
@@ -287,8 +288,41 @@ comes from tables that already exist, so this needs no new fetching:
 
 **Safeguards for looking at individuals**
 
-- Every profile view is written to an `access_log` table (who ran it, when, which login, which
-  command). `hubhelper copilot db access-log` lists entries.
+- **A logged reason is required to see any named individual's data.** This cannot be switched
+  off. It applies to every route that shows per-user data with logins:
+
+  | Route | When a reason is needed |
+  |-------|-------------------------|
+  | `copilot user`, `copilot users` | Always |
+  | `copilot usage --user`, `copilot seats`, `copilot spend --by user` | Always (these list named people) |
+  | `copilot report` | Only when it includes individual pages or named-user tables. `--anonymise` builds a report that needs no reason |
+  | `copilot ask` | When the model calls `get_user_profile` or `compare_users`. The tool returns "reason required" unless the session was started with `--reason`, and the model passes that on to the user |
+  | `copilot sql` | When the query reads a table or view with per-user rows (checked against the list of user-level objects) |
+  | `copilot db export` | Always, because the export contains per-user rows |
+
+- **How the reason is given**:
+  - `--reason "<text>"` with an optional `--reason-code`
+    (`enablement | licence-review | cost-review | security-investigation | data-subject-request |
+    other`, default `other`).
+  - Without `--reason`, an interactive terminal prompts for one. A non-interactive run (CI,
+    scripts) fails with a clear error instead of continuing.
+  - Validation: 10–500 characters after trimming. Control characters and newlines are stripped,
+    and obvious placeholders (`test`, `n/a`, `asdf`, repeated characters) are rejected. The
+    reason is stored as written. It is never sent to the Copilot model and never written to the
+    console log.
+- **What is logged**: every such view writes one `access_log` row per subject user, holding the
+  viewer, time, scope, command (with its arguments, minus any token), `reason_code` and `reason`.
+  For multi-user views (`users`, `seats`, reports), one `access_batch` row holds the reason, and
+  each subject row points at it, so the log stays small.
+- **Seeing the log**: `hubhelper copilot db access-log [--viewer <login>] [--subject <login>]
+  [--since <day>] [--format table|csv|json]`. `copilot user` also shows the subject's five most
+  recent views (viewer, date, reason code), so access stays visible.
+- **The reason travels with the output**: HTML, Markdown and JSON outputs that contain individual
+  data carry a footer or field with the viewer, time and reason code, so a forwarded file shows
+  why it was produced.
+- **Tamper evidence**: each `access_log` row stores a SHA-256 hash chained to the previous row.
+  `copilot db access-log --verify` reports any break. This cannot stop someone from deleting the
+  local database, but it does show edits.
 - `--anonymise` cannot be combined with `copilot user`. In org and team reports it hides logins
   as before.
 - The docs page explains that these metrics show tool usage, not productivity or performance, and
@@ -369,11 +403,13 @@ hubhelper copilot ask       "which teams adopted agent mode fastest?" <scope>
 hubhelper copilot user      <login> <scope> [--days 90 | --from <day> --to <day>]
                             [--compare <login> | --compare-period <from>:<to>]
                             [--summarise] [--format console|json|csv|md|html]
+                            --reason "<why>" [--reason-code <code>]
 hubhelper copilot users     <scope> [--sort activity|acceptance|spend|last-active]
                             [--team <slug>] [--idle] [--limit 50]   # find people to drill into
+                            --reason "<why>" [--reason-code <code>]
 hubhelper copilot report    <scope> --output copilot.html [--profile policies/copilot.yaml]
 hubhelper copilot sql       "SELECT … FROM v_daily_adoption" [--format table|csv|json]
-hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
+hubhelper copilot db        status | vacuum | purge-user <login> | export <dir> | access-log
 ```
 
 - `GITHUB_ENTERPRISE` joins `GITHUB_ORG` as an environment default, and `.env.example` is updated.
@@ -428,6 +464,14 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
     - `user-profile.ts`: a user with no activity, a user in several orgs and teams, a peer group
       below five (comparison left out), suppressed days, a period comparison, and every profile
       view being written to `access_log`.
+    - Reason enforcement:
+      - every route in the table fails without a reason when not in a terminal, and prompts when
+        in one;
+      - reason validation (length, control characters, placeholders);
+      - `ask` tools refuse when no reason is set;
+      - `copilot sql` detects user-level tables, including through views and subqueries;
+      - the hash chain verifies, and detects an edited row;
+      - the reason never appears in prompts sent to the mocked SDK.
     - The reporters, including the individual page.
 19. Docs: `website/content/docs/copilot-insights.md`, covering permissions, the five-licence
     threshold, the privacy flags and example output. Add it to `navigation` in
@@ -446,7 +490,7 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
 2. `feat(copilot): add org and enterprise copilot metrics, seats and billing fetchers` (Phase 1)
 3. `feat(copilot): add copilot sync, usage, seats, spend and sql commands` (aggregator and Phase 5)
 4. `feat(copilot): add individual user profiles and copilot user command` (`user-profile.ts`,
-   `copilot user`/`users`, `access_log`)
+   `copilot user`/`users`, mandatory logged reasons, `access_log`)
 5. `feat(policy): add github.copilot governance controls HH-GH-011..020` (Phase 3)
 6. `feat(copilot): add AI insights and natural-language queries via copilot sdk` (Phase 4)
 7. `feat(reporters): add copilot html dashboard` (Phase 6) plus docs
@@ -465,6 +509,10 @@ hubhelper copilot db        status | vacuum | purge-user <login> | export <dir>
   agent PRs, and whether a sessions or tasks API is available to the org's plan.
 - **Retention and privacy**: per-user history is personal data. Decide the default retention, and
   whether `--anonymise` should be on by default for HTML reports that are shared.
-- **Who may view individuals**: should `copilot user` be limited to particular people (for
-  example, a configured allow-list of viewers) or need a stated reason recorded in `access_log`?
-  Some organisations will have works-council or data-protection rules about this.
+- **Decided**: viewing individuals needs a logged reason (see "Safeguards for looking at
+  individuals").
+- **Shared audit trail**: the access log lives in the viewer's local database. Should it also be
+  sent somewhere central (for example a webhook, a file in a repository, or the org audit log
+  through a custom event) so that a reviewer other than the viewer can see it?
+- **`copilot sql` detection**: checking SQL for user-level tables is a best-effort guard. The
+  simpler alternative is to ask for a reason on every `copilot sql` run.
