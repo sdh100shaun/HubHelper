@@ -1,6 +1,6 @@
 # Plan: Run HubHelper with GitHub Agentic Workflows
 
-Status: Draft · Owner: TBC · Target: v1.1.0 · Replaces the composite-action approach in [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md)
+Status: Phase 1 in progress · Owner: TBC · Target: v1.1.0 · Replaces the composite-action approach in [`GITHUB_ACTION_PLAN.md`](./GITHUB_ACTION_PLAN.md)
 
 Checked against the gh-aw reference docs (`github/gh-aw`, `docs/src/content/docs/`) on 2026-11-26. gh-aw changes
 quickly, so re-check key names with `gh aw compile --strict` before merging.
@@ -278,6 +278,18 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
 - **Pin everything:** the npm version, action SHAs, and the gh-aw CLI version used to compile.
 
 ## Phases
+
+Phase 1 progress (2026-11-26):
+
+- [x] Bundle `policies/` in the npm package and resolve `default`/`strict` (`src/policy/profile-resolver.ts`)
+- [x] `schema_version`, `control_id` and `fingerprint` in JSON reports (`src/utils/finding-identity.ts`)
+- [x] Delete `scheduled-security-scan.yml`
+- [x] `gh-aw/workflows/hubhelper-org-audit.md` and `gh-aw/aw.yml` (inert package folder for `gh aw add`)
+- [x] CI strict compile check (`.github/workflows/gh-aw-validate.yml`)
+- [x] Docs page `website/content/docs/agentic-workflows.md`, README and CHANGELOG
+- [ ] Publish HubHelper 1.1.0 (the workflow pins it)
+- [ ] First real run in a private repository of a test organisation
+
 
 1. **MVP:** CLI changes 1, 2 and 4; `hubhelper-org-audit.md` running in a private repository of a test organisation;
    CI compile check; docs page.

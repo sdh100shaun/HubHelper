@@ -114,6 +114,7 @@ export default {
     },
     { title: 'API Reference', path: '/docs/api-reference/' },
     { title: 'GitHub App Setup', path: '/docs/github-app/' },
+    { title: 'Agentic Workflows', path: '/docs/agentic-workflows/' },
     { title: 'Security', path: '/docs/security/' },
     { title: 'Contributing', path: '/docs/contributing/' },
   ],
