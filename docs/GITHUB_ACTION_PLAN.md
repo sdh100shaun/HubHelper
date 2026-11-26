@@ -1,6 +1,6 @@
 # Plan: Run HubHelper as a GitHub Action
 
-Status: Draft · Owner: TBC · Target: v1.1.0
+Status: Draft · Owner: TBC · Target: v1.1.0 · See also [`AGENTIC_WORKFLOW_PLAN.md`](./AGENTIC_WORKFLOW_PLAN.md) for the GitHub Agentic Workflows version
 
 ## Goal
 
