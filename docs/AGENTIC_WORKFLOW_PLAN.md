@@ -96,7 +96,7 @@ permissions:
   actions: read
   discussions: read
 
-engine: copilot          # needs the COPILOT_GITHUB_TOKEN secret; `claude` needs ANTHROPIC_API_KEY
+engine: copilot          # default engine; needs the COPILOT_GITHUB_TOKEN secret
 timeout-minutes: 20
 network: defaults
 
@@ -281,13 +281,18 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
   agent-job `steps:` can download an artifact from a custom job. Both look supported in the docs; confirm with
   `gh aw compile --strict`.
 - `gh aw add` path layout and `aw.yml` fields.
-- Engine choice (Copilot vs Claude) and its secret. Copilot can't use `web-search` (not needed here).
+- Copilot can't use `web-search`, which this workflow doesn't need.
 - Whether the existing composite-action plan is still wanted for people who don't use gh-aw. The scan job can
   call that action rather than `npx`, so the two plans share one implementation.
 
+## Decisions
+
+- **Engine: Copilot** (`engine: copilot`). Set the `COPILOT_GITHUB_TOKEN` secret with `gh aw secrets`. The docs
+  page notes that users can change the engine (for example to `claude` with `ANTHROPIC_API_KEY`) without
+  any other workflow changes.
+
 ## Open questions
 
-1. Which engine should be the default: Copilot (`COPILOT_GITHUB_TOKEN`) or Claude (`ANTHROPIC_API_KEY`)?
-2. Where should findings land: this repository, or a dedicated private security repository?
-3. Digest as a Discussion (needs Discussions on) or as an issue?
-4. Should we still build the plain composite action, or go gh-aw only?
+1. Where should findings land: this repository, or a dedicated private security repository?
+2. Digest as a Discussion (needs Discussions on) or as an issue?
+3. Should we still build the plain composite action, or go gh-aw only?
