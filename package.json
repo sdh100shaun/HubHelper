@@ -12,6 +12,9 @@
   ],
   "files": [
     "dist",
+    "policies/catalog.yaml",
+    "policies/default.yaml",
+    "policies/strict.yaml",
     "README.md",
     "LICENSE"
   ],
@@ -53,12 +56,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sdh100shaun/gh-tools.git"
+    "url": "git+https://github.com/sdh100shaun/HubHelper.git"
   },
   "bugs": {
-    "url": "https://github.com/sdh100shaun/gh-tools/issues"
+    "url": "https://github.com/sdh100shaun/HubHelper/issues"
   },
-  "homepage": "https://github.com/sdh100shaun/gh-tools#readme",
+  "homepage": "https://sdh100shaun.github.io/HubHelper/",
   "engines": {
     "node": ">=24.0.0"
   },

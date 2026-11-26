@@ -13,6 +13,7 @@
 import * as fs from 'node:fs';
 import type { PolicyEngineResult } from '../policy/engine.js';
 import type { SecurityIssue } from '../types/index.js';
+import { getControlId } from '../utils/finding-identity.js';
 
 interface SarifLog {
   version: '2.1.0';
@@ -181,7 +182,7 @@ export class SarifReporter {
    */
   private convertIssueToResult(issue: SecurityIssue): SarifResult {
     const result: SarifResult = {
-      ruleId: this.inferRuleId(issue.type),
+      ruleId: getControlId(issue.type),
       level: this.mapSeverityToLevel(issue.severity),
       message: {
         text: issue.description,
@@ -247,26 +248,6 @@ export class SarifReporter {
     }
 
     return null;
-  }
-
-  /**
-   * Map control ID from issue type
-   */
-  private inferRuleId(issueType: string): string {
-    const typeToControlId: Record<string, string> = {
-      'self-merge': 'HH-GH-001',
-      'unreviewed-security-pr': 'HH-GH-002',
-      'security-pr': 'HH-GH-003',
-      'disabled-actions': 'HH-GH-004',
-      'paused-workflow': 'HH-GH-005',
-      'disabled-workflow': 'HH-GH-006',
-      repeated_action_failure: 'HH-GH-007',
-      action_failure: 'HH-GH-008',
-      'security-pr-volume': 'HH-GH-009',
-      'contractor-repo-access': 'HH-GH-010',
-    };
-
-    return typeToControlId[issueType] || 'HH-GH-000';
   }
 
   /**

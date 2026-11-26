@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { config } from 'dotenv';
 import ora from 'ora';
@@ -7,6 +8,7 @@ import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
 import type { PolicyEngineResult } from './policy/engine.js';
 import { PolicyEngine } from './policy/engine.js';
+import { BUILT_IN_PROFILES, resolveProfilePath } from './policy/profile-resolver.js';
 import { ComplianceReporter } from './reporters/compliance-reporter.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 import { HTMLReporter } from './reporters/html-reporter.js';
@@ -32,6 +34,9 @@ import { validateFilePath } from './utils/path-validator.js';
 // Load environment variables
 // dotenv 17+ logs a banner to stdout by default, which would corrupt piped JSON/SARIF output.
 config({ quiet: true });
+
+// Policies bundled with the package: dist/index.js (or src/index.ts) sits one level below them.
+const BUNDLED_POLICIES_DIR = fileURLToPath(new URL('../policies/', import.meta.url));
 
 /**
  * Resolve CLI auth: explicit --token flag wins (validated as PAT),
@@ -89,7 +94,10 @@ program
   .option('-o, --org <organization>', 'GitHub organization name')
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-d, --days <number>', 'Number of days to look back', '30')
-  .option('--profile <file>', 'Policy profile to use (default: policies/default.yaml)')
+  .option(
+    '--profile <name|file>',
+    `Policy profile: ${BUILT_IN_PROFILES.join(', ')} or a YAML path (default: default)`
+  )
   .option('--legacy', 'Use legacy hardcoded analysis (deprecated)')
   .option('--json <file>', 'Save results as JSON to file')
   .option('--html <file>', 'Save results as HTML to file')
@@ -167,7 +175,9 @@ program
         spinner.succeed('Analysis complete (legacy mode)');
       } else {
         // Policy-driven analysis (default)
-        const profilePath = options.profile || 'policies/default.yaml';
+        const profilePath = resolveProfilePath(options.profile, {
+          bundledDir: BUNDLED_POLICIES_DIR,
+        });
 
         spinner.start(`Loading policy: ${profilePath}...`);
         const policyEngine = new PolicyEngine();
@@ -924,7 +934,10 @@ program
   .option('-t, --token <token>', 'GitHub personal access token')
   .option('-i, --interval <seconds>', 'Poll interval in seconds (10–300)', '30')
   .option('--min-severity <level>', 'Minimum severity to flag (low|medium|high|critical)', 'medium')
-  .option('--profile <file>', 'Policy profile YAML path', 'policies/default.yaml')
+  .option(
+    '--profile <name|file>',
+    `Policy profile: ${BUILT_IN_PROFILES.join(', ')} or a YAML path (default: default)`
+  )
   .option('--show-compliant', 'Also print events that pass all policy checks')
   .option('-v, --verbose', 'Enable verbose logging')
   .action(async (options) => {
@@ -966,19 +979,17 @@ program
 
       const profilePathResult = (() => {
         try {
-          return validateFilePath(options.profile as string, {
-            allowedExtensions: ['.yaml', '.yml'],
-            createDirIfMissing: false,
+          return resolveProfilePath(options.profile as string | undefined, {
+            bundledDir: BUNDLED_POLICIES_DIR,
           });
-        } catch {
+        } catch (error) {
+          consoleReporter.printError(error as Error);
           return null;
         }
       })();
       if (!profilePathResult) {
-        consoleReporter.printError(
-          new Error(
-            'Invalid --profile path: must be a .yaml or .yml file inside the current directory'
-          )
+        consoleReporter.printInfo(
+          `Use --profile ${BUILT_IN_PROFILES.join('|')} or a .yaml/.yml file inside the current directory`
         );
         process.exit(1);
       }
