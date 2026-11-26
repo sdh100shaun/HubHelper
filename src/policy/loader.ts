@@ -9,9 +9,19 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { types } from 'node:util';
 import { parse as parseYaml } from 'yaml';
 import { PolicyLoadError, PolicyValidationError } from './errors.js';
 import { type Catalog, CatalogSchema, type Profile, ProfileSchema } from './types.js';
+
+/**
+ * True for any Error, including ones created in another realm (e.g. Node's
+ * fs errors seen from a vm context such as Jest's sandbox), where
+ * `instanceof Error` is false and the real message would otherwise be lost.
+ */
+function isError(value: unknown): value is Error {
+  return value instanceof Error || types.isNativeError(value);
+}
 
 /**
  * Load and validate a catalog file
@@ -27,9 +37,9 @@ export async function loadCatalog(filePath: string): Promise<Catalog> {
       parsed = parseYaml(content);
     } catch (error) {
       throw new PolicyLoadError(
-        `Failed to parse YAML: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to parse YAML: ${isError(error) ? error.message : 'Unknown error'}`,
         absolutePath,
-        error instanceof Error ? error : undefined
+        isError(error) ? error : undefined
       );
     }
 
@@ -45,14 +55,14 @@ export async function loadCatalog(filePath: string): Promise<Catalog> {
       throw error;
     }
 
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+    if (isError(error) && 'code' in error && error.code === 'ENOENT') {
       throw new PolicyLoadError(`Catalog file not found: ${filePath}`, filePath);
     }
 
     throw new PolicyLoadError(
-      `Failed to load catalog: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Failed to load catalog: ${isError(error) ? error.message : 'Unknown error'}`,
       filePath,
-      error instanceof Error ? error : undefined
+      isError(error) ? error : undefined
     );
   }
 }
@@ -71,9 +81,9 @@ export async function loadProfile(filePath: string): Promise<Profile> {
       parsed = parseYaml(content);
     } catch (error) {
       throw new PolicyLoadError(
-        `Failed to parse YAML: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to parse YAML: ${isError(error) ? error.message : 'Unknown error'}`,
         absolutePath,
-        error instanceof Error ? error : undefined
+        isError(error) ? error : undefined
       );
     }
 
@@ -89,14 +99,14 @@ export async function loadProfile(filePath: string): Promise<Profile> {
       throw error;
     }
 
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+    if (isError(error) && 'code' in error && error.code === 'ENOENT') {
       throw new PolicyLoadError(`Profile file not found: ${filePath}`, filePath);
     }
 
     throw new PolicyLoadError(
-      `Failed to load profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Failed to load profile: ${isError(error) ? error.message : 'Unknown error'}`,
       filePath,
-      error instanceof Error ? error : undefined
+      isError(error) ? error : undefined
     );
   }
 }

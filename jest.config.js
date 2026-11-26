@@ -35,5 +35,9 @@ export default {
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/index.ts'],
   coverageDirectory: 'coverage',
+  // Floor enforced by `npm run test:coverage`; CLAUDE.md targets 75%.
+  coverageThreshold: {
+    global: { statements: 75, lines: 75, functions: 75, branches: 70 },
+  },
   coverageReporters: ['text', 'lcov', 'html'],
 };
