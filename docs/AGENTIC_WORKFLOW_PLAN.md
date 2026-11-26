@@ -41,7 +41,7 @@ Why this split:
 
 ### 1. `hubhelper-org-audit.md`: weekly organisation audit (MVP)
 
-Trigger: `weekly on monday` (gh-aw fuzzy schedule) plus `workflow_dispatch`.
+Trigger: `weekly on monday` (gh-aw fuzzy schedule: Monday at a stable, scattered time) plus `workflow_dispatch`.
 
 1. **`jobs.hubhelper_scan`** (custom job, runs before `agent`). Installs `@sdh100shaun/hubhelper` at a pinned
    version (or uses the composite action from the earlier plan). Runs
@@ -57,7 +57,8 @@ Trigger: `weekly on monday` (gh-aw fuzzy schedule) plus `workflow_dispatch`.
    - `create-issue`: at most 5 a run, for new critical/high findings only (`title-prefix: "[hubhelper] "`,
      labels `security`/`hubhelper`, `deduplicate-by-title`, `expires: 30`).
    - `noop` when there's nothing new.
-   - `target-repo` points at a **private** security repository when the workflow lives in a public one.
+   - The workflow runs **in a private security repository** (for example `<org>/security-audits`), so issues,
+     discussions and SARIF all land there with the default token and no `target-repo`.
 
 ### 2. `hubhelper-policy-tuner.md`: policy tailoring proposals (phase 2)
 
@@ -195,7 +196,7 @@ jobs and step hooks with `gh aw compile --strict` (see the risks below).
 |---------|-----------|-----------------|
 | HubHelper org scan | GitHub App `HUBHELPER_APP_*` (read: metadata, contents, pull requests, actions; org members if needed). Installation ID is a variable | `jobs.hubhelper_scan` step `env`, outside the sandbox |
 | Agent's GitHub reads | Separate read-only App (or the same App) through `tools.github.github-app`. gh-aw mints a short-lived token | GitHub MCP server; the token isn't shown to the model |
-| Safe-output writes | Default workflow token. Use `safe-outputs.github-token`/`github-app` only for `target-repo` in another repository | `safe_outputs` job |
+| Safe-output writes | Default workflow token. The workflow runs in the private security repository, so no cross-repository token is needed | `safe_outputs` job |
 | AI engine | `COPILOT_GITHUB_TOKEN` (Copilot) or `ANTHROPIC_API_KEY` (Claude), set with `gh aw secrets` | Engine; handled by gh-aw |
 
 Don't put secrets in the workflow-level `env:`; gh-aw passes that to the agent container. Strict mode rejects it.
@@ -207,8 +208,13 @@ token-minting step.
 
 ## Distribution
 
-- **This repository:** `.github/workflows/hubhelper-org-audit.md` and its `.lock.yml`, both committed. Add
-  `.gitattributes` entries (`gh aw init` does this). Also a `.github/workflows/aw.json` with `"strict": true`.
+- **Where it runs:** a **private** security repository in the organisation being audited (for example
+  `<org>/security-audits`). `.github/workflows/hubhelper-org-audit.md` and its `.lock.yml` are committed there,
+  with `.gitattributes` entries (`gh aw init` does this) and a `.github/workflows/aw.json` with
+  `"strict": true`. HubHelper's own repository is public, so it **ships** the workflow but doesn't run it
+  against an organisation.
+- **Testing it ourselves:** a private repository in a test organisation installs it from this branch with
+  `gh aw add ./…` or `--gh-aw-ref`, and the CI compile check runs here.
 - **For other organisations:** publish the workflow as a gh-aw package so users can run
   `gh aw add sdh100shaun/HubHelper/hubhelper-org-audit@v1.1.0` (or `--create-pull-request`), then
   `gh aw secrets` and `gh aw compile`. Add an `aw.yml` package manifest at the repository root that lists the
@@ -260,8 +266,10 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
   contributors. Mitigations: the agent is read-only; writes only go through capped safe outputs; gh-aw's
   threat-detection job runs before writes are applied; `network: defaults`; a short `bash` allowlist; and the
   prompt marks this data as untrusted. Keep `tools.github.min-integrity` at its default or stricter.
-- **Data exposure:** findings name private repositories and people. Send issues and discussions to a private
-  security repository (`target-repo`) and keep SARIF uploads there too.
+- **Data exposure:** findings name private repositories and people, so the workflow only runs in a private
+  security repository, which gets the issues, discussions and SARIF. The docs page says so plainly, and the
+  prompt tells the agent to quote no secrets or file contents. Consider a pre-agent check that runs
+  `gh api repos/{repo} --jq .private` and stops if the repository is public.
 - **Cost:** a weekly schedule, `timeout-minutes: 20`, and a cap on daily AI credits (`max-daily-ai-credits`) or
   turns (`max-turns`). The scan job can write a `noop` to `$GH_AW_SAFE_OUTPUTS` to skip the agent entirely
   when there are zero findings and nothing has changed.
@@ -269,7 +277,7 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
 
 ## Phases
 
-1. **MVP:** CLI changes 1, 2 and 4; `hubhelper-org-audit.md` in this repository against a test organisation;
+1. **MVP:** CLI changes 1, 2 and 4; `hubhelper-org-audit.md` running in a private repository of a test organisation;
    CI compile check; docs page.
 2. **Quality:** SARIF fixes, the shared import plus `aw.yml` packaging so other organisations can `gh aw add`
    it, and `hubhelper-policy-tuner.md`.
@@ -290,9 +298,12 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
 - **Engine: Copilot** (`engine: copilot`). Set the `COPILOT_GITHUB_TOKEN` secret with `gh aw secrets`. The docs
   page notes that users can change the engine (for example to `claude` with `ANTHROPIC_API_KEY`) without
   any other workflow changes.
+- **Findings go to a private security repository.** The workflow is installed and runs there (see
+  Distribution), not in a public repository.
+- **Weekly cadence:** `schedule: weekly on monday` plus manual runs. The digest stays a **Discussion** in the
+  `audits` category, with `fallback-to-issue` (on by default) creating an issue if Discussions is off.
 
 ## Open questions
 
-1. Where should findings land: this repository, or a dedicated private security repository?
-2. Digest as a Discussion (needs Discussions on) or as an issue?
-3. Should we still build the plain composite action, or go gh-aw only?
+1. Should the digest be a Discussion (current default, falls back to an issue) or always an issue?
+2. Should we still build the plain composite action, or go gh-aw only?
