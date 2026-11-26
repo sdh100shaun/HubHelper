@@ -1,5 +1,4 @@
 export default {
-  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
@@ -8,12 +7,26 @@ export default {
     '^@octokit/auth-app$': '<rootDir>/src/__mocks__/@octokit/auth-app.ts',
     '^@octokit/rest$': '<rootDir>/src/__mocks__/@octokit/rest.ts',
   },
+  // TypeScript is compiled for tests by Babel rather than ts-jest, because
+  // ts-jest relies on the TypeScript compiler API that TypeScript 7 (the native
+  // compiler) no longer exposes. babel-jest also applies babel-preset-jest, which
+  // hoists jest.mock() calls above imports exactly as ts-jest did. Babel strips
+  // types without checking them: `npm run typecheck` covers the test files.
   transform: {
     '^.+\\.ts$': [
-      'ts-jest',
+      'babel-jest',
       {
-        useESM: true,
-        tsconfig: 'tsconfig.test.json',
+        babelrc: false,
+        configFile: false,
+        presets: [['@babel/preset-typescript', { onlyRemoveTypeImports: false }]],
+        plugins: [
+          // TC39 (stage 3) decorators, as emitted by TypeScript without
+          // experimentalDecorators — used by @registerEvaluator.
+          ['@babel/plugin-proposal-decorators', { version: '2023-11' }],
+          '@babel/plugin-transform-modules-commonjs',
+          // import() -> require(), as ts-jest emitted for CommonJS output.
+          '@babel/plugin-transform-dynamic-import',
+        ],
       },
     ],
   },

@@ -363,7 +363,8 @@ npm run build            # TypeScript compilation (tsc) → dist/
 npm run dev              # Run with tsx (e.g. npm run dev analyze --org myorg --days 30)
 
 # Test
-npm test                 # Jest (ESM via ts-jest)
+npm test                 # Jest 30 (TypeScript compiled by babel-jest)
+npm run typecheck        # tsc on sources + tests (Babel strips types without checking)
 npm run test:watch       # Watch mode
 npm run test:coverage    # Coverage report (text + lcov + html)
 
@@ -517,6 +518,8 @@ Edit profiles to tailor controls without touching code:
 ## Key Conventions
 
 - **ES Modules** — `"type": "module"` in package.json; TypeScript targets ES2022
+- **TypeScript 7** (native compiler) — it has no JavaScript compiler API, so tools that load `typescript` as a library (e.g. ts-jest) do not work. Tests are compiled by `babel-jest` (see `jest.config.js`) and type-checked separately by `npm run typecheck`.
+- **Jest 30 mocks** — give `jest.fn` a function type (`jest.fn<(...args: unknown[]) => Promise<unknown>>()`); an untyped `jest.fn()` only accepts `never` in `mockResolvedValue`, and casting to `jest.Mock<any>` no longer helps.
 - **Biome** for linting/formatting — 100-char line width, 2-space indent, single quotes, trailing commas (ES5)
 - **Tests** live in `src/__tests__/` matching `*.test.ts`; mocks in `src/__mocks__/`
 - **Node >=24** required; CI tests against 24, 26
@@ -531,7 +534,7 @@ All work sessions must satisfy these standards before considering work complete:
 1. **Linting** — `npm run lint` must pass with zero errors or warnings.
 2. **Unit tests** — `npm test` must pass with zero failures.
 3. **Test coverage** — Every new or modified function must have corresponding tests in `src/__tests__/`.
-4. **CI compatibility** — Changes must pass the full GitHub Actions CI matrix (`npm run lint`, `npm run build`, `npm test` across Node 24/26). Run `npm run lint && npm run build && npm test` locally before finishing.
+4. **CI compatibility** — Changes must pass the full GitHub Actions CI matrix (`npm run lint`, `npm run build`, `npm run typecheck`, `npm test` across Node 24/26). Run `npm run lint && npm run build && npm run typecheck && npm test` locally before finishing.
 
 ## Environment Variables
 
