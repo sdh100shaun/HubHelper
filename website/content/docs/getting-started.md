@@ -1,5 +1,4 @@
 ---
-sidebar_position: 2
 title: Getting Started
 description: Complete guide to installing and using HubHelper
 ---

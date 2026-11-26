@@ -35,7 +35,8 @@
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:report": "playwright show-report",
     "test:all": "npm test && npm run test:e2e",
-    "prepublishOnly": "npm run lint && npm run build"
+    "prepublishOnly": "npm run lint && npm run build",
+    "docs:validate": "cd website && npm run validate"
   },
   "keywords": [
     "github",

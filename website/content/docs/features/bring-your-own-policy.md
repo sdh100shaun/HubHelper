@@ -1,5 +1,4 @@
 ---
-sidebar_position: 1
 title: Bring Your Own Policy
 description: Define custom compliance rules in a repository you control. HubHelper reads your policy at runtime — no source changes required.
 ---
@@ -8,7 +7,7 @@ description: Define custom compliance rules in a repository you control. HubHelp
 
 HubHelper's compliance engine lets you define exactly what "compliant" means for your organisation. You write the rules; HubHelper enforces them.
 
-:::tip[What this means in practice]
+::: callout tip "What this means in practice"
 Your policy lives in a JSON file in a repository you control. Update the file and the next scan automatically picks up the new rules — no HubHelper version update, no code change, no redeployment.
 :::
 
@@ -18,7 +17,7 @@ Your policy lives in a JSON file in a repository you control. Update the file an
 
 The compliance pipeline has three layers:
 
-```
+```text
 Policy Repository (.hubhelper/approved-emails.json)
         │
         ▼
@@ -41,7 +40,7 @@ The `ComplianceAnalyzer` orchestrates the fetcher and the checker, then returns 
 
 In any repository inside your organisation, create the directory and file:
 
-```
+```text
 your-policy-repo/
 └── .hubhelper/
     └── approved-emails.json

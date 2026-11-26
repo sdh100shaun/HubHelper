@@ -29,7 +29,7 @@ updates:
       prefix: chore(deps)
       include: scope
 
-  # Website workspace (Docusaurus docs site)
+  # Website workspace (docmd docs site; @docmd/core is pinned exactly as it is pre-1.0)
   - package-ecosystem: npm
     directory: /website
     schedule:

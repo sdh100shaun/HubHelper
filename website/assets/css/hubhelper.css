@@ -1,24 +1,24 @@
-/* HubHelper brand palette — Infima token overrides
-   All text colours verified for WCAG AAA (≥ 7:1 normal, ≥ 4.5:1 large). */
-:root {
-  /* Light-mode primary darkened for AAA on white (7.7:1) */
-  --ifm-color-primary: #3348ae;
-  --ifm-color-primary-dark: #2c3e99;
-  --ifm-color-primary-darker: #27378a;
-  --ifm-color-primary-darkest: #1e2b6e;
-  --ifm-color-primary-light: #4a5cba;
-  --ifm-color-primary-lighter: #5b6cc3;
-  --ifm-color-primary-lightest: #7d8dd4;
+/* HubHelper theme for docmd.
+ *
+ * 1. Brand tokens and their mapping onto docmd's theme variables
+ * 2. Docs pages (docmd layout) — brand colours, headings, callouts
+ * 3. Landing page (content/index.md, body.hh-landing) — carried over from the
+ *    former Docusaurus custom.css; navbar/footer recreate the previous chrome
+ * 4. Accessibility: focus, link discrimination, reduced motion
+ *
+ * All text colours were verified for WCAG AAA (≥ 7:1 normal, ≥ 4.5:1 large)
+ * in the previous site; the same values are used here. The site is dark-only.
+ */
 
-  --ifm-code-font-size: 90%;
-  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --ifm-heading-font-weight: 700;
-  --ifm-heading-color: #6b21a8;
-  --docusaurus-highlighted-code-line-bg: rgba(102, 126, 234, 0.15);
+/* ─── 1. Tokens ──────────────────────────────────────────────────────────── */
+:root,
+:root[data-theme='dark'],
+:root[data-theme='light'] {
+  --hh-primary: #a0b0f3;
+  --hh-primary-strong: #c8d2f9;
+  --hh-heading: #c890ff;
 
-  /* Decorative gradient — used for eyebrow text, step numbers, non-text elements */
   --hubhelper-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  /* Darkened gradient for text-bearing surfaces (≥ 7:1 with #fff) */
   --hubhelper-gradient-accessible: linear-gradient(135deg, #3a4a98 0%, #543278 100%);
   --hubhelper-gradient-subtle: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
   --hubhelper-accent: #f6ad55;
@@ -26,49 +26,243 @@
   --hubhelper-dark-surface: #13131f;
   --hubhelper-dark-border: rgba(102, 126, 234, 0.2);
   --hubhelper-terminal-bg: #0a0a12;
+  --hubhelper-text-dim: #ababbb;
+  --hubhelper-text-muted: #c0c0ce;
 
-  /* Accessible text tokens for dark surfaces (AAA on all dark bgs incl. #1a1a2e) */
-  --hubhelper-text-dim: #ababbb;       /* ≥ 7.3:1 on #1a1a2e, ≥ 8.6:1 on #0d0d1a */
-  --hubhelper-text-muted: #c0c0ce;     /* ≥ 9.8:1 on #1a1a2e */
-
-  --ifm-navbar-background-color: #0d0d1a;
-  --ifm-navbar-shadow: 0 1px 0 0 rgba(102, 126, 234, 0.2);
+  /* docmd theme variables */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --bg-color: #0d0d1a;
+  --text-color: #e3e3ea;
+  --text-muted: var(--hubhelper-text-dim);
+  --text-heading: var(--hh-heading);
+  --link-color: var(--hh-primary);
+  --link-color-hover: var(--hh-primary-strong);
+  --border-color: var(--hubhelper-dark-border);
+  --header-bg: rgba(13, 13, 26, 0.92);
+  --header-border: var(--hubhelper-dark-border);
+  --menubar-bg: #0d0d1a;
+  --menubar-border: var(--hubhelper-dark-border);
+  --menubar-text: #e3e3ea;
+  --menubar-link-hover-bg: rgba(102, 126, 234, 0.12);
+  --sidebar-bg: #0d0d1a;
+  --sidebar-text: #e3e3ea;
+  --sidebar-link-active-bg: rgba(102, 126, 234, 0.15);
+  --sidebar-link-active-text: var(--hh-primary);
+  --code-bg: #13131f;
+  --glow-color: rgba(102, 126, 234, 0.2);
+  --glow-color-strong: rgba(102, 126, 234, 0.32);
+  --halo-soft: 0 0 0 4px rgba(102, 126, 234, 0.2);
+  color-scheme: dark;
 }
 
-[data-theme='dark'] {
-  --ifm-color-primary: #a0b0f3;
-  --ifm-color-primary-dark: #8fa0f0;
-  --ifm-color-primary-darker: #7d92ed;
-  --ifm-color-primary-darkest: #667eea;
-  --ifm-color-primary-light: #b5c2f6;
-  --ifm-color-primary-lighter: #c8d2f9;
-  --ifm-color-primary-lightest: #d4dcfb;
-  --ifm-heading-color: #c890ff;
-  --docusaurus-highlighted-code-line-bg: rgba(102, 126, 234, 0.2);
+/* ─── 2. Docs pages ──────────────────────────────────────────────────────── */
+.main-content h1 { font-weight: 800; letter-spacing: -0.02em; }
+.main-content h2 { font-weight: 700; margin-top: 2.5rem; }
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.page-header h1 { color: var(--hh-heading); }
 
-  --ifm-background-color: #0d0d1a;
-  --ifm-background-surface-color: #13131f;
-  --ifm-navbar-background-color: #0d0d1a;
-  --ifm-footer-background-color: #080810;
-  --ifm-card-background-color: #13131f;
-  --ifm-toc-border-color: rgba(102, 126, 234, 0.2);
-  --ifm-color-emphasis-300: rgba(255, 255, 255, 0.12);
+.docmd-menubar .menubar-title,
+.docmd-menubar .menubar-title a { color: #fff; font-weight: 700; }
+
+.footer-complete { background: #080810; }
+
+.callout-info    { background: rgba(102, 126, 234, 0.1); border-color: rgba(102, 126, 234, 0.3); }
+.callout-tip     { background: rgba(72, 199, 142, 0.1);  border-color: rgba(72, 199, 142, 0.3); }
+.callout-warning { background: rgba(246, 173, 85, 0.1);  border-color: rgba(246, 173, 85, 0.3); }
+.callout-danger  { background: rgba(252, 129, 74, 0.1);  border-color: rgba(252, 129, 74, 0.3); }
+
+/* ─── 3. Landing page ────────────────────────────────────────────────────── */
+body.hh-landing {
+  margin: 0;
+  background: var(--hubhelper-dark-bg);
+  color: #e3e3ea;
+  font-family: var(--font-family-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Navbar logo ─────────────────────────────────────────────────────────── */
-.navbar__logo img {
-  height: 40px;
+/* Base resets. Headings and pre need class-level specificity to beat docmd's element
+   styles; component classes defined later in this file still take precedence.
+   The rest use :where() (zero specificity) so any component class wins. */
+.hh-landing :where(h1, h2, h3) {
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 1rem;
+  border: 0;
+  padding: 0;
 }
 
-/* ─── GitHub navbar icon ─────────────────────────────────────────────────── */
-.header-github-link::before {
-  content: '';
-  width: 24px;
-  height: 24px;
+:where(.hh-landing) :where(p) { margin: 0 0 1.25rem; }
+:where(.hh-landing) :where(a) { text-decoration: none; }
+:where(.hh-landing) :where(ul) { margin: 0 0 1.25rem; }
+.hh-landing :where(pre) { margin: 0; border: 0; border-radius: 0; }
+.hh-landing [hidden] { display: none !important; }
+
+/* Navbar (recreates the previous Docusaurus navbar) */
+.hh-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #0d0d1a;
+  box-shadow: 0 1px 0 0 rgba(102, 126, 234, 0.2);
+}
+
+.hh-navbar__inner {
   display: flex;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E") no-repeat;
+  align-items: center;
+  gap: 1.5rem;
+  height: 60px;
+  padding: 0 1rem;
 }
 
+.hh-navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.hh-navbar__brand img { height: 40px; width: auto; }
+
+.hh-navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.hh-navbar__links a {
+  color: #e3e3ea;
+  font-weight: 500;
+}
+
+.hh-navbar__links a:hover { color: var(--hh-primary); }
+
+.hh-navbar__github {
+  display: flex;
+  margin-left: auto;
+  color: #fff !important;
+}
+
+.hh-navbar__toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.hh-navbar__toggle span {
+  display: block;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+@media (max-width: 996px) {
+  .hh-navbar__inner { flex-wrap: wrap; height: auto; min-height: 60px; }
+  .hh-navbar__toggle { display: flex; order: -1; }
+  .hh-navbar__links { display: none; flex-basis: 100%; flex-direction: column; align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0 1rem; }
+  .hh-navbar--open .hh-navbar__links { display: flex; }
+  .hh-navbar__github { margin-left: 0; }
+}
+
+/* Footer (recreates the previous Docusaurus footer) */
+.hh-footer {
+  background: #080810;
+  padding: 2rem 1rem;
+  color: #e3e3ea;
+}
+
+.hh-footer__columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.hh-footer__title {
+  font-size: 1rem !important;
+  color: #fff;
+  margin-bottom: 0.5rem !important;
+}
+
+.hh-footer ul { list-style: none; padding: 0; margin: 0; }
+.hh-footer li { margin: 0.25rem 0; }
+.hh-footer a { color: #e3e3ea; }
+.hh-footer a:hover { color: var(--hh-primary); }
+
+.hh-footer__copyright {
+  text-align: center;
+  margin: 2rem 0 0 !important;
+}
+
+@media (max-width: 640px) {
+  .hh-footer__columns { grid-template-columns: 1fr; gap: 1.25rem; }
+}
+
+/* Small helpers replacing inline styles from the React components */
+.terminal-dot--red    { background: #ff5f56; }
+.terminal-dot--yellow { background: #ffbd2e; }
+.terminal-dot--green  { background: #27c93f; }
+.terminal-body .t-light { color: #e2e8f0; }
+.terminal-body--wrap { white-space: pre-wrap; }
+
+.scenario-group { margin-left: auto; display: flex; gap: 0.5rem; }
+
+.scenario-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #c0c0ce;
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scenario-btn[aria-pressed='true'] {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: rgba(102, 126, 234, 0.6);
+  color: #c8d2f9;
+}
+
+.btn-hero-primary--spaced { margin-top: 1.5rem; display: inline-flex; }
+.btn-hero-primary--gradient { background: var(--hubhelper-gradient) !important; color: #fff !important; display: inline-flex; }
+.flow-diagram--inline { padding: 1.5rem 0 !important; max-width: 100%; }
+.flow-caption { text-align: center; margin-top: 1rem; color: var(--hubhelper-text-dim); font-size: 0.82rem; }
+.quickstart-cta { text-align: center; margin-top: 2.5rem; }
+.pre-line { white-space: pre-line; }
+
+/* Policy example code: One Dark hues, lightened to meet WCAG AAA (≥ 7:1) on #1e2129 */
+.hh-code {
+  background: #1e2129;
+  color: #c8ccd4;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.hh-code .tok-key     { color: #f2a0a8; }
+.hh-code .tok-string  { color: #a8d88a; }
+.hh-code .tok-number  { color: #e8b48a; }
+.hh-code .tok-keyword { color: #d7a8f5; }
+.hh-code .tok-comment { color: #a8afbd; font-style: italic; }
+
+/* Carried over from the former custom.css ─────────────────────────────── */
 /* ─── Hero section ───────────────────────────────────────────────────────── */
 .hero-hubhelper {
   background: var(--hubhelper-gradient-accessible);
@@ -291,7 +485,7 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
-  color: var(--ifm-heading-color);
+  color: var(--hh-heading);
 }
 
 .section__subtitle {
@@ -332,7 +526,7 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
-  color: var(--ifm-heading-color);
+  color: var(--hh-heading);
 }
 
 .spotlight__copy p {
@@ -359,7 +553,7 @@
 
 .spotlight__bullets li::before {
   content: '✦';
-  color: var(--ifm-color-primary);
+  color: var(--hh-primary);
   font-size: 0.7rem;
   margin-top: 0.35rem;
   flex-shrink: 0;
@@ -403,7 +597,7 @@
 
 .policy-panel__tab.active {
   color: #fff;
-  border-bottom-color: var(--ifm-color-primary);
+  border-bottom-color: var(--hh-primary);
 }
 
 .policy-panel__tab:hover:not(.active) {
@@ -459,7 +653,7 @@
 
 .flow-arrow {
   font-size: 1.2rem;
-  color: var(--ifm-color-primary);
+  color: var(--hh-primary);
   padding: 0 0.5rem;
   margin-top: -0.5rem;
 }
@@ -498,7 +692,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
-  color: var(--ifm-heading-color);
+  color: var(--hh-heading);
 }
 
 .feature-card p {
@@ -546,7 +740,7 @@
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  color: var(--ifm-heading-color);
+  color: var(--hh-heading);
 }
 
 .quickstart-step p {
@@ -610,14 +804,8 @@
   50% { opacity: 0.5; transform: scale(0.75); }
 }
 
-/* ─── Docs page overrides ────────────────────────────────────────────────── */
-.markdown h1 { font-weight: 800; letter-spacing: -0.02em; }
-.markdown h2 { font-weight: 700; margin-top: 2.5rem; }
 
-[data-theme='dark'] .alert--info    { background: rgba(102,126,234,0.1); border-color: rgba(102,126,234,0.3); }
-[data-theme='dark'] .alert--warning { background: rgba(246,173,85,0.1);  border-color: rgba(246,173,85,0.3); }
-[data-theme='dark'] .alert--danger  { background: rgba(252,129,74,0.1);  border-color: rgba(252,129,74,0.3); }
-
+/* ─── 4. Accessibility ───────────────────────────────────────────────────── */
 /* ─── Focus indicators (WCAG 2.4.7 / 2.4.13) ───────────────────────────── */
 :focus-visible {
   outline: 2px solid #c890ff;
@@ -637,17 +825,17 @@
 }
 
 /* ─── Link discrimination (WCAG 1.4.1) ──────────────────────────────────── */
-.markdown a,
+.main-content a,
 .spotlight__copy a,
-.footer__link-item {
+.hh-footer a {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
-.markdown a:hover,
+.main-content a:hover,
 .spotlight__copy a:hover,
-.footer__link-item:hover {
+.hh-footer a:hover {
   text-decoration-thickness: 2px;
 }
 
@@ -679,4 +867,43 @@
   .hero-hubhelper { padding: 3.5rem 1.5rem 3rem; }
   .terminal-window { margin-top: 2rem; }
   .quickstart-step { padding-left: 3.25rem; }
+}
+
+/* ─── Docs menubar brand: logo + white wordmark, as the previous navbar ─── */
+.docmd-menubar .menubar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.docmd-menubar .menubar-brand::before {
+  content: '';
+  width: 32px;
+  height: 32px;
+  /* Relative to build/assets/css/, so it works under /HubHelper/ and in `docmd dev`. */
+  background: url('../../img/logo.svg') center / contain no-repeat;
+}
+
+.docmd-menubar .menubar-brand-text { color: #fff; }
+
+/* One logo on desktop: the menubar carries the brand, so hide the sidebar's. */
+@media (min-width: 769px) {
+  .sidebar .sidebar-header { display: none; }
+}
+
+/* Phones: the menubar links overflow, and docmd's own header already provides
+   the logo plus a menu button for the full navigation — so drop the menubar. */
+@media (max-width: 768px) {
+  :root { --menubar-h: 0px; }
+  .docmd-menubar { display: none !important; }
+}
+
+/* The policy example sits flush in its panel, as before (docmd styles <pre>). */
+.policy-panel__content pre.hh-code {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }

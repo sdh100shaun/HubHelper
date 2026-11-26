@@ -1,5 +1,4 @@
 ---
-sidebar_position: 6
 title: GitHub App Setup
 description: Set up automated scanning with a GitHub App for CI/CD environments
 ---

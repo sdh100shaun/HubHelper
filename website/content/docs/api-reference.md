@@ -1,5 +1,4 @@
 ---
-sidebar_position: 5
 title: API Reference
 description: Complete command-line interface reference for HubHelper
 ---
@@ -430,7 +429,7 @@ The tool respects these limits. For large organisations, you may need to:
 
 ### Configuration Errors
 
-```
+```text
 Error: GitHub token is required
 → Set GITHUB_TOKEN environment variable or use --token flag
 ```
@@ -439,7 +438,7 @@ Solution: Provide a valid GitHub token.
 
 ### Validation Errors
 
-```
+```text
 Error: Invalid organization name format
 → Must be alphanumeric with hyphens, cannot start or end with hyphen
 ```
@@ -448,7 +447,7 @@ Solution: Use a valid GitHub organisation name.
 
 ### API Errors
 
-```
+```text
 Error: API rate limit exceeded
 → Try again in 60 minutes
 ```
@@ -457,7 +456,7 @@ Solution: Wait for rate limit reset or authenticate with a token.
 
 ### Security Errors
 
-```
+```text
 Security error: path traversal detected
 → Files can only be saved in current directory or subdirectories
 ```

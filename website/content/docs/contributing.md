@@ -1,5 +1,4 @@
 ---
-sidebar_position: 8
 title: Contributing
 description: How to contribute to HubHelper
 ---
@@ -265,7 +264,7 @@ See [Security](/docs/security) for detailed guidelines.
 
 **Title**: Clear, descriptive summary
 
-```
+```text
 ✅ Good: feat: add detection for disabled scheduled workflows
 ❌ Bad: Update stuff
 ```
@@ -299,7 +298,7 @@ See [Security](/docs/security) for detailed guidelines.
 
 Understanding the codebase:
 
-```
+```text
 gh-tools/
 ├── src/
 │   ├── types/              # TypeScript interfaces

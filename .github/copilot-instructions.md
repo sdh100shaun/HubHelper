@@ -20,7 +20,19 @@ npm run format           # Format in place
 
 # Pre-commit gate (must all pass)
 npm run lint && npm run build && npm test
+
+# Documentation site (docmd, in website/)
+npm run docs:start       # Dev server with live reload
+npm run docs:build       # Build to website/build/
+npm run docs:serve       # Serve the build at http://localhost:3000/HubHelper/
+npm run docs:validate    # Check internal links
 ```
+
+Requires **Node.js 24+**.
+
+## Documentation site
+
+The public docs are built with [docmd](https://docmd.io) from the `website/` workspace (it replaced Docusaurus). Pages are Markdown in `website/content/docs/`; the sidebar is the `navigation` array in `website/docmd.config.js`; the landing page `website/content/index.md` is hand-written HTML. Callouts use `::: callout tip "Title"` … `:::`. Keep the explicit `plugins` block that disables the AI assistant, analytics and other plugins docmd would otherwise enable. See `website/README.md`.
 
 ## Architecture
 

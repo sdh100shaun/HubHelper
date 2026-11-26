@@ -67,7 +67,7 @@ jobs:
       - name: Serve docs site
         run: npm run docs:serve &
         env:
-          # Docusaurus serve defaults to port 3000
+          # website/scripts/serve.mjs serves build/ at http://localhost:3000/HubHelper/
           PORT: 3000
 
       - name: Wait for docs server

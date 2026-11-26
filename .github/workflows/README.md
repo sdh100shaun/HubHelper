@@ -23,13 +23,13 @@ Runs on every push and pull request to ensure code quality.
 Deploys documentation site to GitHub Pages.
 
 **Triggers:**
-- Push to `main` branch (when docs/ changes)
+- Push to `main` branch (when `website/**` changes)
 - Manual workflow dispatch
 
 **Deployment:**
-- Builds Eleventy static site
-- Deploys to GitHub Pages
-- Available at: https://sdh100shaun.github.io/gh-tools/
+- Builds the [docmd](https://docmd.io) static site in `website/` (`npm run docs:build`)
+- Deploys `website/build` to GitHub Pages
+- Available at: https://sdh100shaun.github.io/HubHelper/
 
 ### 3. npm Publishing (`npm-publish.yml`)
 
