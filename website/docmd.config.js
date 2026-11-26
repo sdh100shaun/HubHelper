@@ -106,6 +106,7 @@ export default {
       children: [
         { title: 'Bring Your Own Policy', path: '/docs/features/bring-your-own-policy/' },
         { title: 'AI Integration', path: '/docs/features/ai-integration/' },
+        { title: 'Copilot Insights', path: '/docs/features/copilot-insights/' },
         {
           title: 'Policy Standards & Compliance Frameworks',
           path: '/docs/features/policy-standards/',

@@ -24,6 +24,16 @@ AI-powered policy-driven security analysis tool for GitHub organizations. Uses d
 - Monitors for repeated action failures
 - Meta-controls for security PR volume recommendations
 
+🧭 **Copilot Insights** (`hubhelper copilot`)
+- Deep view of GitHub Copilot usage for an organisation or a whole enterprise
+- Adoption, engagement, feature mix, IDEs, languages, models, clients, teams, organisations and cost centres
+- Seats, idle seats, AI credit or premium request spend, and Copilot coding agent pull requests
+- Individual usage profiles, gated by a required, logged reason
+- Local SQLite history for long-term trends and your own SQL analysis
+- Ten Copilot governance controls (HH-GH-011 to HH-GH-020) and an offline HTML dashboard
+- AI summaries and plain-English questions via the Copilot SDK
+- See the [Copilot Insights guide](https://sdh100shaun.github.io/HubHelper/docs/features/copilot-insights/)
+
 🤖 **AI-Powered Insights**
 - Pattern detection across repositories
 - Risk assessment and prioritization
@@ -44,8 +54,9 @@ AI-powered policy-driven security analysis tool for GitHub organizations. Uses d
 
 ## Requirements
 
-- **Node.js**: 24.x or later
+- **Node.js**: 24.15 or later
   - Tested on Node.js 24 and 26
+  - Copilot Insights uses Node's built-in `node:sqlite` module (release candidate from 24.15)
 - **GitHub Personal Access Token** with read-only permissions
   - Fine-grained token (recommended) or Classic token
   - See [Authentication](#authentication) for detailed setup
@@ -238,6 +249,10 @@ Instead of passing flags, you can use environment variables:
 export GITHUB_TOKEN=ghp_xxx
 export GITHUB_ORG=myorg
 npx @sdh100shaun/hubhelper analyze
+
+# Copilot Insights for a whole enterprise
+export GITHUB_ENTERPRISE=myenterprise
+npx @sdh100shaun/hubhelper copilot usage
 ```
 
 ## Command Reference
@@ -277,12 +292,42 @@ npm run dev analyze --org myorg --compliance compliance.html --compliance-format
 npm run dev analyze --org myorg --json results.json --html report.html --sarif results.sarif --compliance compliance.json
 ```
 
+### `copilot`
+
+Deep view of GitHub Copilot usage for an organisation (`--org`) or an enterprise (`--enterprise`). Data is stored in a local SQLite database (`~/.hubhelper/copilot.db` by default) and each command fetches any missing days first unless you pass `--offline`.
+
+| Command | What it shows |
+|---------|---------------|
+| `copilot sync` | Fetch reports, seats, spend and coding agent PRs into the database |
+| `copilot usage --by <view>` | Adoption and breakdowns by feature, IDE, language, model, client, day, team, org or cost centre |
+| `copilot seats` | Seats and idle seats |
+| `copilot spend` | AI credit or premium request spend and the month's forecast |
+| `copilot user <login>` | One person's usage profile, with comparisons |
+| `copilot users` | Sortable list of people to drill into |
+| `copilot report` | Full HTML, JSON or Markdown dashboard with governance findings |
+| `copilot insights` | AI-written summary (aggregated figures only) |
+| `copilot ask "<question>"` | Plain-English questions answered with the Copilot SDK |
+| `copilot sql "<SELECT …>"` | Read-only SQL over the database |
+| `copilot db status\|vacuum\|purge-user\|export\|access-log` | Database housekeeping and the access log |
+
+Any output that names individuals needs `--reason "<why>"` (and optionally `--reason-code`). The reason is recorded in a tamper-evident access log; run `copilot db access-log` to see who viewed whose data and why. Use `--anonymise` for reports and seat lists without names.
+
+```bash
+npm run dev copilot sync --enterprise myenterprise --days 90
+npm run dev copilot usage --enterprise myenterprise --by org
+npm run dev copilot user octocat --org myorg --reason "Agent mode enablement follow-up" --reason-code enablement
+npm run dev copilot report --org myorg --anonymise --output copilot.html
+```
+
+See the [Copilot Insights guide](https://sdh100shaun.github.io/HubHelper/docs/features/copilot-insights/) for permissions, data quality notes and the database schema.
+
 ### Policy Profiles
 
 HubHelper uses YAML-based policy profiles to define security controls:
 
 - `policies/default.yaml` - Balanced security controls (default)
 - `policies/strict.yaml` - Stricter thresholds and elevated severities
+- `policies/copilot.yaml` - Copilot governance controls (HH-GH-011 to HH-GH-020), used by `copilot report`
 
 Create custom profiles by extending the catalog in `policies/catalog.yaml`.
 

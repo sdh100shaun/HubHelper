@@ -1,5 +1,32 @@
 # Copilot Insights Feature Plan
 
+## Implementation status
+
+Built on branch `claude/dreamy-lamport-fr736x` as one change rather than the seven slices below.
+User guide: `website/content/docs/features/copilot-insights.md`.
+
+Differences from this plan:
+
+- **Not built yet**: `watch --copilot`. Copilot controls run through `copilot report` and
+  `copilot insights` only.
+- **Schema**: `scope_day_metrics` is long format (`metric`, `value`) instead of fixed columns, so new
+  report fields need no migration. Scope breakdowns and flags have their own tables
+  (`scope_day_breakdown`, `scope_day_flags`), org settings are snapshotted in `org_settings_day`, and
+  the access log is split into `access_batch` (reason, hash chain) and `access_log` (one row per
+  person viewed).
+- **Code layout**: migrations live in `store/migrations.ts` (so they ship in `dist/` without a copy
+  step); read queries live in `usage-aggregator.ts` and `user-profile.ts` rather than a separate
+  `queries.ts`; the ten evaluators share `src/evaluators/copilot-evaluators.ts`; the CLI lives in
+  `src/cli/copilot-command.ts`.
+- **Seats**: `copilot seats --anonymise` lists pseudonymised seats without a reason. Named seat
+  lists still need one.
+- **Billed org**: the API does not say which organisation is billed for a person with seats in
+  several organisations, so profiles show it only when the person holds exactly one seat.
+- **Field names**: written without access to the live schema reference. Core counters are read by
+  name with fallbacks, and every `totals_by_*` array is stored generically, so unknown fields are
+  kept rather than lost. Check the names against a real report before relying on specific counters.
+
+
 ## Context
 
 HubHelper already uses `@github/copilot-sdk` for AI analysis (`CopilotService`, `SecurityQueryService`,
