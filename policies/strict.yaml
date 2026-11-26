@@ -23,6 +23,9 @@ controls:
     - HH-GH-008
     - HH-GH-009
     - HH-GH-010
+    - HH-GH-011
+    - HH-GH-012
+    - HH-GH-015
 
   # Tailor controls for stricter enforcement
   tailoring:

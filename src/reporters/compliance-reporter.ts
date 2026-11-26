@@ -9,7 +9,7 @@
 
 import * as fs from 'node:fs';
 import type { PolicyEngineResult } from '../policy/engine.js';
-import type { SecurityIssue } from '../types/index.js';
+import { COPILOT_ISSUE_CONTROL_IDS, type SecurityIssue } from '../types/index.js';
 
 interface FrameworkReport {
   framework: string;
@@ -339,6 +339,7 @@ export class ComplianceReporter {
       action_failure: 'HH-GH-008',
       'security-pr-volume': 'HH-GH-009',
       'contractor-repo-access': 'HH-GH-010',
+      ...COPILOT_ISSUE_CONTROL_IDS,
     };
 
     return typeToControlId[issueType] || 'HH-GH-000';

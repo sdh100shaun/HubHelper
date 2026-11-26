@@ -12,6 +12,18 @@ export {
 } from './action-failure-evaluator.js';
 export { BaseEvaluator } from './base-evaluator.js';
 export { ContractorRepoAccessEvaluator } from './contractor-repo-access-evaluator.js';
+export {
+  CopilotAgentPrUnreviewedEvaluator,
+  CopilotDuplicateSeatEvaluator,
+  CopilotIdleSeatEvaluator,
+  CopilotOrgPolicyDriftEvaluator,
+  CopilotPublicCodeMatchingEvaluator,
+  CopilotSeatSprawlEvaluator,
+  CopilotSpendThresholdEvaluator,
+  CopilotUnallocatedSpendEvaluator,
+  CopilotUnapprovedClientEvaluator,
+  CopilotUnapprovedModelEvaluator,
+} from './copilot-evaluators.js';
 export { DisabledActionsEvaluator } from './disabled-actions-evaluator.js';
 export { DisabledWorkflowEvaluator } from './disabled-workflow-evaluator.js';
 export { PausedWorkflowEvaluator } from './paused-workflow-evaluator.js';
@@ -23,6 +35,7 @@ export { UnreviewedSecurityPREvaluator } from './unreviewed-security-pr-evaluato
 // Import to trigger decorator registration
 import './action-failure-evaluator.js';
 import './contractor-repo-access-evaluator.js';
+import './copilot-evaluators.js';
 import './disabled-actions-evaluator.js';
 import './disabled-workflow-evaluator.js';
 import './paused-workflow-evaluator.js';

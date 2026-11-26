@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { CopilotService } from '../services/copilot-service.js';
-import type { AnalysisResult, CodeSearchResult, SecurityIssue } from '../types/index.js';
+import {
+  type AnalysisResult,
+  COPILOT_ISSUE_CONTROL_IDS,
+  type CodeSearchResult,
+  type SecurityIssue,
+} from '../types/index.js';
 
 // ── SDK mock setup ────────────────────────────────────────────────────────────
 
@@ -258,6 +263,11 @@ describe('CopilotService', () => {
         'paused-workflow',
         'disabled-workflow',
         'unreviewed-security-pr',
+        'action_failure',
+        'repeated_action_failure',
+        'security-pr-volume',
+        'contractor-repo-access',
+        ...(Object.keys(COPILOT_ISSUE_CONTROL_IDS) as SecurityIssue['type'][]),
       ];
 
       for (const type of types) {

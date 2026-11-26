@@ -60,7 +60,7 @@
   },
   "homepage": "https://github.com/sdh100shaun/gh-tools#readme",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.15.0"
   },
   "dependencies": {
     "@github/copilot-sdk": "^1.0.34",

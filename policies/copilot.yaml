@@ -1,0 +1,53 @@
+metadata:
+  title: HubHelper Copilot Governance Profile
+  version: "1.0.0"
+  owner: HubHelper Team
+  description: >
+    Copilot governance controls for organisations and enterprises. Used by
+    `hubhelper copilot report` and `hubhelper copilot usage` by default.
+    Fill in the approved models and clients, budget and baseline for your
+    organisation; empty lists and zero values turn those checks off.
+
+catalog-ref:
+  href: ./catalog.yaml
+  version: "1.0.0"
+
+controls:
+  include:
+    - HH-GH-011  # Idle Copilot seats
+    - HH-GH-012  # Suggestions matching public code
+    - HH-GH-013  # Unapproved models
+    - HH-GH-014  # Unapproved clients
+    - HH-GH-015  # Coding agent PRs merged without human review
+    - HH-GH-016  # Spend threshold
+    - HH-GH-017  # Seat sprawl
+    - HH-GH-018  # Duplicate seats (enterprise)
+    - HH-GH-019  # Policy drift between orgs (enterprise)
+    - HH-GH-020  # Spend without a cost centre (enterprise)
+
+  tailoring:
+    - control-id: HH-GH-011
+      parameter-values:
+        inactive_days: 30
+    - control-id: HH-GH-013
+      parameter-values:
+        allowed_models: []
+    - control-id: HH-GH-014
+      parameter-values:
+        allowed_clients: []
+    - control-id: HH-GH-016
+      parameter-values:
+        monthly_budget: 0
+        per_user_cap: 0
+    - control-id: HH-GH-019
+      parameter-values:
+        baseline:
+          - public_code_suggestions=block
+
+scope:
+  lookback-days: 28
+
+reporting:
+  formats:
+    - console
+  include-recommendations: true

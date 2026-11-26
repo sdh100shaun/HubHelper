@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import ora from 'ora';
 import { AIAnalyzer } from './analyzers/ai-analyzer.js';
 import { SecurityAnalyzer } from './analyzers/security-analyzer.js';
+import { buildCopilotCommand } from './cli/copilot-command.js';
 import type { PolicyEngineResult } from './policy/engine.js';
 import { PolicyEngine } from './policy/engine.js';
 import { ComplianceReporter } from './reporters/compliance-reporter.js';
@@ -1064,5 +1065,7 @@ program
       await author.dispose();
     }
   });
+
+program.addCommand(buildCopilotCommand());
 
 program.parse();

@@ -361,3 +361,228 @@ controls:
         - SI-2 # Flaw Remediation
       CIS-Controls:
         - "7.2" # Establish and Maintain a Remediation Process
+
+  # ========================================================================
+  # Copilot governance controls (HH-GH-011 to HH-GH-020)
+  #
+  # These are `github.copilot` controls. They need Copilot usage data, which
+  # the `hubhelper copilot` commands provide; other commands skip them.
+  # ========================================================================
+
+  # ========================================================================
+  # HH-GH-011: Idle Copilot Seats
+  # ========================================================================
+  - id: HH-GH-011
+    statement: >
+      Copilot seats SHOULD be in use. Seats with no activity for longer than
+      the configured number of days should be reclaimed or followed up.
+    family: Access Control
+    evaluator:
+      kind: github.copilot
+      detector: copilot-idle-seat
+    parameter:
+      - id: inactive_days
+        label: Days without activity before a seat counts as idle
+        type: number
+        default: 30
+    default-severity: low
+    mappings:
+      NIST-800-53:
+        - AC-2(3) # Disable Accounts
+      CIS-Controls:
+        - "5.3" # Disable Dormant Accounts
+
+  # ========================================================================
+  # HH-GH-012: Suggestions Matching Public Code
+  # ========================================================================
+  - id: HH-GH-012
+    statement: >
+      Copilot suggestions that match public code MUST be blocked unless the
+      organisation has approved them.
+    family: Configuration Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-public-code-matching
+    parameter:
+      - id: required_setting
+        label: Required value of the public code suggestions setting
+        type: string
+        default: block
+        values: [block, allow]
+    default-severity: high
+    mappings:
+      NIST-800-53:
+        - SA-4  # Acquisition Process
+        - CM-10 # Software Usage Restrictions
+
+  # ========================================================================
+  # HH-GH-013: Unapproved Copilot Models
+  # ========================================================================
+  - id: HH-GH-013
+    statement: >
+      Copilot SHOULD only be used with approved models. An empty list turns
+      this control off.
+    family: Configuration Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-unapproved-model
+    parameter:
+      - id: allowed_models
+        label: Approved model names (a name also approves its variants)
+        type: string-array
+        item-type: string
+        default: []
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - CM-7 # Least Functionality
+        - SA-9 # External System Services
+
+  # ========================================================================
+  # HH-GH-014: Unapproved Copilot Clients
+  # ========================================================================
+  - id: HH-GH-014
+    statement: >
+      Copilot SHOULD only be used from approved IDEs and clients. An empty
+      list turns this control off.
+    family: Configuration Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-unapproved-client
+    parameter:
+      - id: allowed_clients
+        label: Approved IDE and client names
+        type: string-array
+        item-type: string
+        default: []
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - CM-7(5) # Authorized Software
+
+  # ========================================================================
+  # HH-GH-015: Copilot Coding Agent PRs Merged Without Human Review
+  # ========================================================================
+  - id: HH-GH-015
+    statement: >
+      Pull requests opened by the Copilot coding agent MUST have an approving
+      review from a human before they are merged.
+    family: Change Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-agent-pr-unreviewed
+    default-severity: high
+    mappings:
+      NIST-800-53:
+        - CM-3  # Configuration Change Control
+        - SA-11 # Developer Testing and Evaluation
+      CIS-Controls:
+        - "16.12" # Implement Code-Level Security Checks
+
+  # ========================================================================
+  # HH-GH-016: Copilot Spend Threshold
+  # ========================================================================
+  - id: HH-GH-016
+    statement: >
+      Forecast monthly Copilot spend SHOULD stay within budget, and no single
+      person SHOULD exceed the per-user cap. A value of 0 turns a check off.
+    family: Resource Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-spend-threshold
+    parameter:
+      - id: monthly_budget
+        label: Monthly budget (net amount); 0 turns the check off
+        type: number
+        default: 0
+      - id: per_user_cap
+        label: Per-user AI credit or premium request cap for the period; 0 turns the check off
+        type: number
+        default: 0
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - SA-9 # External System Services
+
+  # ========================================================================
+  # HH-GH-017: Copilot Seat Sprawl
+  # ========================================================================
+  - id: HH-GH-017
+    statement: >
+      Copilot seats SHOULD be assigned through teams so that joiners and
+      leavers are handled automatically.
+    family: Access Control
+    evaluator:
+      kind: github.copilot
+      detector: copilot-seat-sprawl
+    parameter:
+      - id: max_direct_pct
+        label: Maximum percentage of seats assigned directly to people
+        type: number
+        default: 50
+    default-severity: low
+    mappings:
+      NIST-800-53:
+        - AC-2 # Account Management
+
+  # ========================================================================
+  # HH-GH-018: Duplicate Copilot Seats (enterprise)
+  # ========================================================================
+  - id: HH-GH-018
+    statement: >
+      In an enterprise, each person SHOULD hold a Copilot seat in only one
+      organisation.
+    family: Resource Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-duplicate-seat
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - AC-2 # Account Management
+        - SA-9 # External System Services
+
+  # ========================================================================
+  # HH-GH-019: Copilot Policy Drift Between Organisations (enterprise)
+  # ========================================================================
+  - id: HH-GH-019
+    statement: >
+      Copilot settings in each member organisation SHOULD match the baseline.
+      Entries take the form setting=value, for example
+      public_code_suggestions=block.
+    family: Configuration Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-org-policy-drift
+    parameter:
+      - id: baseline
+        label: Baseline settings as setting=value pairs
+        type: string-array
+        item-type: string
+        default: []
+    default-severity: medium
+    mappings:
+      NIST-800-53:
+        - CM-2 # Baseline Configuration
+        - CM-6 # Configuration Settings
+
+  # ========================================================================
+  # HH-GH-020: Copilot Spend Without a Cost Centre (enterprise)
+  # ========================================================================
+  - id: HH-GH-020
+    statement: >
+      Copilot usage SHOULD be assigned to a cost centre so it can be charged
+      back.
+    family: Resource Management
+    evaluator:
+      kind: github.copilot
+      detector: copilot-unallocated-spend
+    parameter:
+      - id: max_unallocated_pct
+        label: Maximum percentage of usage outside any cost centre
+        type: number
+        default: 10
+    default-severity: low
+    mappings:
+      NIST-800-53:
+        - SA-9 # External System Services

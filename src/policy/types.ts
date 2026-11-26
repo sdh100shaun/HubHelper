@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import type { CopilotUsageModel } from '../services/copilot/model.js';
 import type { PullRequest, Repository, UserProfile, WorkflowRun } from '../types/index.js';
 
 // ============================================================================
@@ -22,6 +23,7 @@ export const EvaluatorKindSchema = z.enum([
   'github.repository',
   'classifier',
   'meta',
+  'github.copilot',
 ]);
 export type EvaluatorKind = z.infer<typeof EvaluatorKindSchema>;
 
@@ -37,6 +39,16 @@ export const DetectorTypeSchema = z.enum([
   'repeated-action-failure',
   'security-pr-volume',
   'contractor-repo-access',
+  'copilot-idle-seat',
+  'copilot-public-code-matching',
+  'copilot-unapproved-model',
+  'copilot-unapproved-client',
+  'copilot-agent-pr-unreviewed',
+  'copilot-spend-threshold',
+  'copilot-seat-sprawl',
+  'copilot-duplicate-seat',
+  'copilot-org-policy-drift',
+  'copilot-unallocated-spend',
 ]);
 export type DetectorType = z.infer<typeof DetectorTypeSchema>;
 
@@ -232,6 +244,8 @@ export interface EvaluationContext {
   scope: ScopeConfig;
   classifierResults?: Map<string, unknown>;
   orgMembers?: UserProfile[]; // Org members with email profiles, used by member-aware controls
+  /** Copilot usage model; `github.copilot` controls return no issues when absent. */
+  copilot?: CopilotUsageModel;
 }
 
 export interface EvaluationResult {

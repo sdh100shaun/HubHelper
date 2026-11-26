@@ -66,6 +66,33 @@ export interface SecurityIssueDetails {
   [key: string]: unknown;
 }
 
+/** Issue types raised by the Copilot governance controls (HH-GH-011 to HH-GH-020). */
+export type CopilotIssueType =
+  | 'copilot-idle-seat'
+  | 'copilot-public-code-matching'
+  | 'copilot-unapproved-model'
+  | 'copilot-unapproved-client'
+  | 'copilot-agent-pr-unreviewed'
+  | 'copilot-spend-threshold'
+  | 'copilot-seat-sprawl'
+  | 'copilot-duplicate-seat'
+  | 'copilot-org-policy-drift'
+  | 'copilot-unallocated-spend';
+
+/** Control ID for each Copilot issue type. */
+export const COPILOT_ISSUE_CONTROL_IDS: Record<CopilotIssueType, string> = {
+  'copilot-idle-seat': 'HH-GH-011',
+  'copilot-public-code-matching': 'HH-GH-012',
+  'copilot-unapproved-model': 'HH-GH-013',
+  'copilot-unapproved-client': 'HH-GH-014',
+  'copilot-agent-pr-unreviewed': 'HH-GH-015',
+  'copilot-spend-threshold': 'HH-GH-016',
+  'copilot-seat-sprawl': 'HH-GH-017',
+  'copilot-duplicate-seat': 'HH-GH-018',
+  'copilot-org-policy-drift': 'HH-GH-019',
+  'copilot-unallocated-spend': 'HH-GH-020',
+};
+
 export interface SecurityIssue {
   type:
     | 'self-merge'
@@ -77,7 +104,8 @@ export interface SecurityIssue {
     | 'action_failure'
     | 'repeated_action_failure'
     | 'security-pr-volume'
-    | 'contractor-repo-access';
+    | 'contractor-repo-access'
+    | CopilotIssueType;
   severity: 'low' | 'medium' | 'high' | 'critical';
   repository: string;
   description: string;

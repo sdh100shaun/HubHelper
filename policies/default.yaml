@@ -23,6 +23,9 @@ controls:
     - HH-GH-008  # Single action failures
     - HH-GH-009  # Security PR volume recommendation
     - HH-GH-010  # Contractor repository access policy
+    - HH-GH-011  # Idle Copilot seats
+    - HH-GH-012  # Copilot suggestions matching public code
+    - HH-GH-015  # Copilot coding agent PRs merged without human review
 
   # No tailoring - use catalog defaults
   tailoring: []

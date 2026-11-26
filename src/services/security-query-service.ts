@@ -9,7 +9,11 @@
 
 import type { MCPHTTPServerConfig } from '@github/copilot-sdk';
 import { approveAll, CopilotClient, defineTool } from '@github/copilot-sdk';
-import type { AnalysisResult, SecurityIssue } from '../types/index.js';
+import {
+  type AnalysisResult,
+  COPILOT_ISSUE_CONTROL_IDS,
+  type SecurityIssue,
+} from '../types/index.js';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from './copilot-client-config.js';
 
 export interface QueryResult {
@@ -229,6 +233,7 @@ export class SecurityQueryService {
                 'repeated_action_failure',
                 'security-pr-volume',
                 'contractor-repo-access',
+                ...Object.keys(COPILOT_ISSUE_CONTROL_IDS),
               ],
               description: 'Issue type to filter by.',
             },

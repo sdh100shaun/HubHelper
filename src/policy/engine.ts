@@ -10,6 +10,7 @@
  * @module policy/engine
  */
 
+import type { CopilotUsageModel } from '../services/copilot/model.js';
 import type {
   PullRequest,
   Repository,
@@ -64,7 +65,8 @@ export class PolicyEngine {
     repositories: Repository[],
     pullRequests: PullRequest[],
     workflowRuns: WorkflowRun[],
-    orgMembers?: UserProfile[]
+    orgMembers?: UserProfile[],
+    copilot?: CopilotUsageModel
   ): Promise<PolicyEngineResult> {
     if (!this.policy) {
       throw new Error('Policy not loaded. Call loadPolicy() first.');
@@ -78,6 +80,7 @@ export class PolicyEngine {
       scope: this.policy.scope,
       classifierResults: new Map(),
       orgMembers,
+      copilot,
     };
 
     const allIssues: SecurityIssue[] = [];

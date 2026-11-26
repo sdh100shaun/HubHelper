@@ -305,6 +305,26 @@ ${snippetSection}`;
         `High volume of security-related PRs detected (${i.details.security_pr_count} PRs). This may indicate an ongoing security incident or a need for additional security review resources.`,
       'contractor-repo-access': (i) =>
         `Contractor ${i.details.contractor_login} (${i.details.contractor_email}) has pull-request activity in ${i.details.full_name}, which is outside their permitted repository list. Review and revoke access if this is not authorised.`,
+      'copilot-idle-seat': (i) =>
+        `A Copilot seat has had no activity for ${i.details.idle_days ?? 'an unknown number of'} days. Reclaim it or check whether the person needs help getting started.`,
+      'copilot-public-code-matching': (i) =>
+        `Copilot in ${i.repository} allows suggestions that match public code (setting: ${i.details.actual}). Block them to reduce licence and provenance risk.`,
+      'copilot-unapproved-model': (i) =>
+        `Copilot usage of model ${i.details.model} is outside the approved model list. Restrict model access in Copilot policies or approve the model.`,
+      'copilot-unapproved-client': (i) =>
+        `Copilot is being used from ${i.details.client}, which is not on the approved client list. Review which IDEs and tools may use Copilot.`,
+      'copilot-agent-pr-unreviewed': (i) =>
+        `A Copilot coding agent pull request (${i.details.title}) was merged without an approving human review. Require human approval for agent-authored changes.`,
+      'copilot-spend-threshold': (i) =>
+        `Copilot spend is above the configured limit (${i.details.actual} against ${i.details.limit}). Review budgets and heavy usage.`,
+      'copilot-seat-sprawl': (i) =>
+        `${i.details.direct_pct}% of Copilot seats are assigned directly to people rather than through teams, which makes licences harder to manage.`,
+      'copilot-duplicate-seat': (i) =>
+        `One person holds Copilot seats in several organisations (${String(i.details.orgs)}), which may mean paying more than once.`,
+      'copilot-org-policy-drift': (i) =>
+        `Copilot setting ${i.details.setting} in ${i.repository} is "${i.details.actual}" but the baseline is "${i.details.expected}".`,
+      'copilot-unallocated-spend': (i) =>
+        `${i.details.unallocated_pct}% of Copilot usage is not assigned to any cost centre, so it cannot be charged back.`,
     };
     return map[issue.type]?.(issue) ?? issue.description;
   }
