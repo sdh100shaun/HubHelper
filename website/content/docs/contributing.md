@@ -1,5 +1,4 @@
 ---
-sidebar_position: 8
 title: Contributing
 description: How to contribute to HubHelper
 ---
@@ -60,7 +59,7 @@ Ready to contribute code? Awesome!
 
 ### Prerequisites
 
-- **Node.js** 18.x, 20.x, or 22.x
+- **Node.js** 24.x or later
 - **npm** 8.x or later
 - **Git** 2.x or later
 - A **GitHub account**
@@ -265,7 +264,7 @@ See [Security](/docs/security) for detailed guidelines.
 
 **Title**: Clear, descriptive summary
 
-```
+```text
 ✅ Good: feat: add detection for disabled scheduled workflows
 ❌ Bad: Update stuff
 ```
@@ -299,7 +298,7 @@ See [Security](/docs/security) for detailed guidelines.
 
 Understanding the codebase:
 
-```
+```text
 gh-tools/
 ├── src/
 │   ├── types/              # TypeScript interfaces

@@ -1,5 +1,4 @@
 ---
-sidebar_position: 7
 title: Security
 description: Security features, best practices, and vulnerability reporting
 ---

@@ -1,5 +1,4 @@
 ---
-sidebar_position: 3
 title: Policy Standards & Compliance Frameworks
 description: HubHelper's security control catalogue is structured on OSCAL 1.1.2 and maps every control to NIST 800-53 and CIS Controls.
 ---
@@ -8,7 +7,7 @@ description: HubHelper's security control catalogue is structured on OSCAL 1.1.2
 
 HubHelper's policy engine is built on established security standards, not invented conventions. The control catalogue is structured according to **OSCAL 1.1.2** and every control is mapped to **NIST 800-53** and **CIS Controls** — so your findings slot directly into existing compliance programmes.
 
-:::info[Standards-based from day one]
+::: callout info "Standards-based from day one"
 The `policies/catalog.yaml` file carries `oscal-version: "1.1.2"` in its metadata. This means the catalogue, profile, and tailoring concepts you use when customising HubHelper are directly analogous to OSCAL document types — no translation layer needed.
 :::
 
@@ -83,7 +82,7 @@ Every HubHelper control and its framework mappings:
 
 Control IDs follow the pattern `HH-GH-###`:
 
-```
+```text
 HH   → HubHelper (tool namespace)
 GH   → GitHub (platform scope)
 ###  → Sequential three-digit number

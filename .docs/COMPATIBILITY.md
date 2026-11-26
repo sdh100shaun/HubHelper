@@ -6,17 +6,18 @@ This document outlines the Node.js version compatibility for HubHelper.
 
 | Node.js Version | Status | Tested | Notes |
 |----------------|--------|--------|-------|
-| 20.x (LTS) | ✅ Supported | Yes | Minimum required version |
-| 22.x (Current) | ✅ Supported | Yes | Recommended for production |
-| 24.x | ✅ Compatible | CI* | Future-ready |
+| 20.x | ❌ Not supported | No | End of life (April 2026); dependencies require newer Node.js |
+| 22.x | ❌ Not supported | No | Dropped in favour of a single LTS baseline |
+| 24.x (LTS) | ✅ Supported | Yes | Minimum required version; recommended for production |
+| 26.x | ✅ Supported | Yes | Tested in standard CI |
 | Latest | ✅ Compatible | CI* | Continuous compatibility testing |
 
 \* Tested in extended CI workflow with `continue-on-error` to catch future issues early
 
 ## Minimum Requirements
 
-- **Node.js**: >= 20.0.0
-- **npm**: >= 10.0.0 (bundled with Node.js 20+)
+- **Node.js**: >= 24.0.0
+- **npm**: >= 11.0.0 (bundled with Node.js 24+)
 
 ## Tested Features
 
@@ -51,35 +52,37 @@ This configuration ensures compatibility with all supported Node.js versions whi
 
 ## Dependency Compatibility
 
-All dependencies are tested for compatibility with Node.js 20+:
+All dependencies are tested for compatibility with Node.js 24+:
 
-- `@github/copilot-sdk`: Supports Node.js 20+
-- `@octokit/rest`: Supports Node.js 20+
-- `chalk`: v5.x uses ES modules, fully supported
-- `commander`: Fully supported
+- `@github/copilot-sdk`: v1.x requires Node.js 20.19+ or 22.12+
+- `@octokit/rest`: v22.x (ES modules only) requires Node.js 20+
+- `chalk`: v6.x (ES modules only) requires Node.js 22+
+- `commander`: v15.x requires Node.js 22.12+
 - `dotenv`: Supports all Node.js versions
-- `ora`: v8.x fully supported
+- `ora`: v10.x requires Node.js 22+
+- `zod`: v4.x, used for policy schema validation
+
+The Node.js 24 baseline satisfies every dependency's `engines` requirement.
 
 ## CI/CD Testing
 
 ### Standard CI (ci.yml)
 
 Tests on every push and pull request:
-- Node.js 20.x
-- Node.js 22.x
+- Node.js 24.x
+- Node.js 26.x
 
 ### Extended CI (ci-extended.yml)
 
 Tests on schedule and push with newer/future versions:
-- Node.js 22.x
-- Node.js 24.x
+- Node.js 26.x
 - Node.js latest
 
 The extended CI uses `continue-on-error: true` to allow failures on unreleased versions while still providing early warning of potential compatibility issues.
 
 ## Publishing
 
-npm packages are built and published using Node.js 22 to ensure compatibility with the latest features and best practices.
+npm packages are built and published using Node.js 24 to ensure compatibility with the latest features and best practices.
 
 ## Troubleshooting
 
@@ -88,7 +91,7 @@ npm packages are built and published using Node.js 22 to ensure compatibility wi
 Ensure you're using a supported Node.js version:
 
 ```bash
-node --version  # Should be >= v20.0.0
+node --version  # Should be >= v24.0.0
 ```
 
 ### Module Resolution
@@ -96,18 +99,18 @@ node --version  # Should be >= v20.0.0
 If you see `ERR_MODULE_NOT_FOUND` errors, ensure your Node.js version supports ES modules properly:
 
 ```bash
-node --version  # ES modules fully supported in Node 20+
+node --version  # ES modules fully supported in Node 24+
 ```
 
 ### Native Dependencies
 
-All dependencies are pure JavaScript. No native modules are used, ensuring compatibility across platforms and Node.js versions.
+HubHelper's own code is pure JavaScript. `@github/copilot-sdk` pulls in `koffi`, which ships prebuilt native binaries for common platforms, so no compiler toolchain is needed on supported systems.
 
 ## Reporting Issues
 
 If you encounter compatibility issues with a specific Node.js version:
 
-1. Check that you're using a supported version (>= 20.0.0)
+1. Check that you're using a supported version (>= 24.0.0)
 2. Try updating to the latest patch version of your Node.js major version
 3. Report the issue at https://github.com/sdh100shaun/gh-tools/issues with:
    - Node.js version (`node --version`)
@@ -118,8 +121,8 @@ If you encounter compatibility issues with a specific Node.js version:
 ## Future Support
 
 We aim to support:
-- Current LTS versions (20.x, 22.x)
+- Current LTS versions (24.x, 26.x)
 - Current stable version
 - Future versions (tested in extended CI)
 
-Older versions (< 20) are not supported to ensure modern features, performance, and security updates.
+Older versions (< 24) are not supported to ensure modern features, performance, and security updates.

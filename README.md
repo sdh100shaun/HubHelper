@@ -44,9 +44,8 @@ AI-powered policy-driven security analysis tool for GitHub organizations. Uses d
 
 ## Requirements
 
-- **Node.js**: 20.x, 22.x, or later
-  - Tested on Node.js 20 and 22
-  - Compatible with Node.js 24+ (future versions)
+- **Node.js**: 24.x or later
+  - Tested on Node.js 24 and 26
 - **GitHub Personal Access Token** with read-only permissions
   - Fine-grained token (recommended) or Classic token
   - See [Authentication](#authentication) for detailed setup

@@ -1,4 +1,4 @@
-name: CI Extended (Node 24+)
+name: CI Extended (Node 26+)
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x, 24.x, latest]
+        node-version: [26.x, latest]
       fail-fast: false
 
     steps:
