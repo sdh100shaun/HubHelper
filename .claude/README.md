@@ -63,7 +63,7 @@ Comprehensive technical implementation plan for the watch capability feature. In
 The planning files in this directory are supplemented by:
 - `/docs/WATCH_FEATURE_SPEC.md` - User-facing feature specification
 - `/src/types/watch.ts` - Type definitions for watch mode
-- `/docs/pages/api/index.md` - API documentation (includes watch command)
+- `/website/content/docs/api-reference.md` - API documentation (includes watch command)
 
 ## Maintenance
 

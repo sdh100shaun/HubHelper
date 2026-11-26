@@ -60,7 +60,7 @@ Publishes package to npm registry.
 - Uploads artifacts with 90-day retention
 
 **Setup Required:**
-1. Create a GitHub App (see [documentation](https://sdh100shaun.github.io/gh-tools/pages/github-app/))
+1. Create a GitHub App (see [documentation](https://sdh100shaun.github.io/HubHelper/docs/github-app/))
 2. Add secrets to repository:
    - `SECURITY_SCANNER_APP_ID`
    - `SECURITY_SCANNER_APP_PRIVATE_KEY`
@@ -80,7 +80,7 @@ Publishes package to npm registry.
    ```
 
 2. **Create a GitHub App**:
-   - Follow the [GitHub App Setup Guide](https://sdh100shaun.github.io/gh-tools/pages/github-app/)
+   - Follow the [GitHub App Setup Guide](https://sdh100shaun.github.io/HubHelper/docs/github-app/)
    - Required permissions:
      - Actions: Read
      - Pull requests: Read
@@ -186,7 +186,7 @@ steps:
    - Tokens expire automatically (1 hour)
    - Better audit trail
    - Separate identity from users
-   - See [GitHub App documentation](https://sdh100shaun.github.io/gh-tools/pages/github-app/)
+   - See [GitHub App documentation](https://sdh100shaun.github.io/HubHelper/docs/github-app/)
 
 2. **Store secrets securely**
    - Use repository/organization secrets
