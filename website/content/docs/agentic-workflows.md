@@ -125,6 +125,19 @@ This copies `hubhelper-org-audit.md` into `.github/workflows/`, compiles it to `
 opens a pull request. Merge it. Both files must be committed: the `.md` file is the source and the `.lock.yml`
 file is what GitHub Actions runs.
 
+#### Security review on install
+
+gh-aw's *safe update mode* asks you to review new secrets and actions before it accepts them. For this workflow it
+lists:
+
+| Item | Why it's there | Where it's used |
+|------|----------------|-----------------|
+| Secret `HUBHELPER_APP_PRIVATE_KEY` | Signs in as the read-only HubHelper App | The `Run HubHelper` step of `hubhelper_scan` (step `env` only), and gh-aw's token minting for the agent's GitHub tools. Never passed to the model |
+| Action `github/codeql-action/upload-sarif` | GitHub's official action for uploading SARIF to Code Scanning, pinned by commit SHA | The `hubhelper_scan` job only |
+
+Once you've reviewed them, accept with `gh aw compile hubhelper-org-audit --approve`. Later compiles only ask again
+if a secret or action is added.
+
 To pin a HubHelper release, add `@<tag>`, for example `gh aw add sdh100shaun/HubHelper/gh-aw@v1.1.0`.
 
 ### 5. Run it once
