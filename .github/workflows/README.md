@@ -1,6 +1,6 @@
 # GitHub Workflows
 
-This directory contains GitHub Actions workflows for the gh-security-tools project.
+This directory contains GitHub Actions workflows for the HubHelper project.
 
 ## Available Workflows
 
@@ -15,7 +15,7 @@ Runs on every push and pull request to ensure code quality.
 **Jobs:**
 - Linting (Biome)
 - TypeScript compilation
-- Unit tests (172 tests)
+- Unit tests
 - Coverage reporting (requires ≥75%)
 
 ### 2. Documentation Deployment (`deploy-docs.yml`)
@@ -44,139 +44,30 @@ Publishes package to npm registry.
 - Runs linting and build before publishing
 - Publishes with provenance for security
 
-### 4. Scheduled Security Scan (`scheduled-security-scan.yml`) ⭐
+### 4. gh-aw Validate (`gh-aw-validate.yml`)
 
-**Example workflow** demonstrating automated security scanning using GitHub Apps.
+Compiles the agentic workflows in `gh-aw/workflows/` with the pinned gh-aw CLI in strict mode (`--no-emit`), so
+a broken workflow can't be released.
 
 **Triggers:**
-- Schedule: Every Monday at 9:00 AM UTC (configurable)
-- Manual workflow dispatch (for testing)
+- Push to `main` or `claude/**`, and pull requests to `main`, when `gh-aw/**` changes
+- Manual workflow dispatch
 
-**Features:**
-- Uses GitHub App authentication (more secure than tokens)
-- Runs security analysis across organization
-- Generates JSON and HTML reports
-- Creates GitHub issues for critical findings
-- Uploads artifacts with 90-day retention
+## Running HubHelper on a schedule
 
-**Setup Required:**
-1. Create a GitHub App (see [documentation](https://sdh100shaun.github.io/gh-tools/pages/github-app/))
-2. Add secrets to repository:
-   - `SECURITY_SCANNER_APP_ID`
-   - `SECURITY_SCANNER_APP_PRIVATE_KEY`
-3. Enable workflow in Actions tab
+The old `scheduled-security-scan.yml` example has been removed. HubHelper now ships a
+[GitHub Agentic Workflow](https://github.github.com/gh-aw/) in `gh-aw/`, which runs a weekly HubHelper scan and
+has an agent triage the results into a digest discussion and issues. It lives outside `.github/workflows/`, so it
+never runs in this public repository.
 
-**Note:** This workflow is provided as an example. You can copy it to your own repositories to run automated security scans.
+Install it into a **private** security repository in your organisation:
 
-## Using the Scheduled Scan in Your Organization
-
-### Quick Setup
-
-1. **Copy the workflow file** to your repository:
-   ```bash
-   mkdir -p .github/workflows
-   curl -o .github/workflows/security-scan.yml \
-     https://raw.githubusercontent.com/sdh100shaun/gh-tools/main/.github/workflows/scheduled-security-scan.yml
-   ```
-
-2. **Create a GitHub App**:
-   - Follow the [GitHub App Setup Guide](https://sdh100shaun.github.io/gh-tools/pages/github-app/)
-   - Required permissions:
-     - Actions: Read
-     - Pull requests: Read
-     - Issues: Write (optional - for creating issues)
-     - Metadata: Read
-
-3. **Add repository secrets**:
-   ```bash
-   # Go to: Repository Settings → Secrets → Actions
-   # Add:
-   SECURITY_SCANNER_APP_ID=<your-app-id>
-   SECURITY_SCANNER_APP_PRIVATE_KEY=<your-private-key>
-   ```
-
-4. **Customize schedule** (optional):
-   ```yaml
-   on:
-     schedule:
-       # Change to your preferred schedule
-       - cron: '0 9 * * 1'  # Every Monday at 9 AM UTC
-   ```
-
-5. **Commit and push**:
-   ```bash
-   git add .github/workflows/security-scan.yml
-   git commit -m "feat: Add automated security scanning"
-   git push
-   ```
-
-6. **Test manually**:
-   - Go to Actions tab
-   - Select "Scheduled Security Scan"
-   - Click "Run workflow"
-   - Select branch and click "Run workflow"
-
-### Customization Options
-
-#### Change Analysis Period
-
-```yaml
-workflow_dispatch:
-  inputs:
-    days:
-      default: '30'  # Analyze last 30 days instead of 7
+```bash
+gh aw add sdh100shaun/HubHelper/gh-aw
 ```
 
-#### Change Schedule
-
-```yaml
-on:
-  schedule:
-    - cron: '0 6 * * *'  # Daily at 6 AM UTC
-    # or
-    - cron: '0 9 * * 1-5'  # Weekdays at 9 AM UTC
-```
-
-#### Adjust Critical Thresholds
-
-```yaml
-- name: Check for critical issues
-  run: |
-    SELF_MERGES=$(jq '.summary.totalSelfMerges // 0' security-report.json)
-
-    # Raise threshold to 10
-    if [ "$SELF_MERGES" -gt 10 ]; then
-      echo "has_critical=true" >> $GITHUB_OUTPUT
-    fi
-```
-
-#### Add Notifications
-
-```yaml
-- name: Send Slack notification
-  if: steps.check-issues.outputs.has_critical == 'true'
-  uses: slackapi/slack-github-action@v1
-  with:
-    webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-    payload: |
-      {
-        "text": "Security scan found issues: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-      }
-```
-
-#### Scan Multiple Organizations
-
-```yaml
-strategy:
-  matrix:
-    org: [org1, org2, org3]
-
-steps:
-  - name: Run security analysis
-    env:
-      GITHUB_ORG: ${{ matrix.org }}
-    run: gh-security analyze --org "$GITHUB_ORG"
-```
+See the [agentic workflow guide](https://sdh100shaun.github.io/HubHelper/docs/agentic-workflows/) for the
+GitHub App, secrets and customisation.
 
 ## Workflow Security
 
@@ -186,7 +77,7 @@ steps:
    - Tokens expire automatically (1 hour)
    - Better audit trail
    - Separate identity from users
-   - See [GitHub App documentation](https://sdh100shaun.github.io/gh-tools/pages/github-app/)
+   - See [GitHub App documentation](https://sdh100shaun.github.io/HubHelper/docs/github-app/)
 
 2. **Store secrets securely**
    - Use repository/organization secrets

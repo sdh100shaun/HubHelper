@@ -1,0 +1,22 @@
+manifest-version: "1"
+min-version: v1.4.0
+name: HubHelper organisation audit
+emoji: "🛡️"
+description: >-
+  Weekly HubHelper policy audit of a GitHub organisation, triaged by an agent into a
+  digest discussion and issues for new high-severity findings.
+experimental: true
+includes:
+  # The source lives outside .github/workflows so it never runs in this public repository.
+  - source: workflows/hubhelper-org-audit.md
+    destination: .github/workflows/hubhelper-org-audit.md
+    kind: agentic-workflow
+config:
+  - type: repo-label
+    name: hubhelper
+    description: Created by the HubHelper agentic audit
+    color: 1f6feb
+  - type: repo-label
+    name: security
+    description: Security finding
+    color: d73a4a
