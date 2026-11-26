@@ -1,0 +1,42 @@
+name: gh-aw validate
+
+# Compiles the agentic workflows shipped in gh-aw/ in strict mode, without emitting
+# lock files, so a broken workflow can't reach a release.
+
+on:
+  push:
+    branches: [main, claude/**]
+    paths:
+      - 'gh-aw/**'
+      - '.github/workflows/gh-aw-validate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'gh-aw/**'
+      - '.github/workflows/gh-aw-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GH_AW_VERSION: v1.4.0
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install gh-aw CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh extension install github/gh-aw --pin "$GH_AW_VERSION"
+
+      - name: Compile agentic workflows (strict)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh aw compile --dir gh-aw/workflows --strict --no-emit

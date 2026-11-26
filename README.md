@@ -212,8 +212,8 @@ npx @sdh100shaun/hubhelper analyze --org myorg \
 Use built-in profiles or create your own:
 
 ```bash
-# Use strict profile (higher severity, stricter thresholds)
-npx @sdh100shaun/hubhelper analyze --org myorg --profile policies/strict.yaml
+# Use the built-in strict profile (higher severity, stricter thresholds)
+npx @sdh100shaun/hubhelper analyze --org myorg --profile strict
 
 # Use custom profile
 npx @sdh100shaun/hubhelper analyze --org myorg --profile my-custom-policy.yaml
@@ -250,7 +250,7 @@ Analyze organization activity and detect security issues using policy-driven con
 - `-o, --org <organization>` - GitHub organization name (default: from .env)
 - `-t, --token <token>` - GitHub token (default: from .env)
 - `-d, --days <number>` - Days to look back (default: 30)
-- `--profile <file>` - Policy profile to use (default: policies/default.yaml)
+- `--profile <name|file>` - Policy profile: `default`, `strict` or a YAML path inside the current directory (default: `default`)
 - `--legacy` - Use legacy hardcoded analysis (deprecated)
 - `--json <file>` - Save results as JSON
 - `--html <file>` - Save results as HTML
@@ -265,7 +265,7 @@ Analyze organization activity and detect security issues using policy-driven con
 npm run dev analyze --org myorg --days 90
 
 # Use strict policy profile
-npm run dev analyze --org myorg --profile policies/strict.yaml
+npm run dev analyze --org myorg --profile strict
 
 # Generate SARIF for GitHub Code Scanning
 npm run dev analyze --org myorg --sarif results.sarif
@@ -281,10 +281,28 @@ npm run dev analyze --org myorg --json results.json --html report.html --sarif r
 
 HubHelper uses YAML-based policy profiles to define security controls:
 
-- `policies/default.yaml` - Balanced security controls (default)
-- `policies/strict.yaml` - Stricter thresholds and elevated severities
+- `default` (`policies/default.yaml`) - Balanced security controls (default)
+- `strict` (`policies/strict.yaml`) - Stricter thresholds and elevated severities
 
-Create custom profiles by extending the catalog in `policies/catalog.yaml`.
+Both are bundled with the npm package, so `--profile default` and `--profile strict` work from any directory. If the
+current directory has its own `policies/default.yaml` or `policies/strict.yaml`, that copy is used instead.
+
+Create custom profiles by extending the catalog in `policies/catalog.yaml`. Custom profile paths must be `.yaml`
+or `.yml` files inside the current directory.
+
+## Run Weekly with GitHub Agentic Workflows
+
+HubHelper ships a [GitHub Agentic Workflow](https://github.github.com/gh-aw/) that runs a weekly policy scan of your
+organisation, then has a Copilot agent triage the results into a digest discussion and issues for new high-severity
+findings. Install it into a **private** security repository:
+
+```bash
+gh extension install github/gh-aw
+gh aw add sdh100shaun/HubHelper/gh-aw
+```
+
+See the [Agentic Workflows guide](https://sdh100shaun.github.io/HubHelper/docs/agentic-workflows/) for the GitHub
+App, secrets and customisation.
 
 ## Security Issues Detected
 

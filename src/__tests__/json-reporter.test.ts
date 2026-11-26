@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { JSONReporter } from '../reporters/json-reporter';
-import type { AnalysisResult } from '../types/index';
+import { JSON_SCHEMA_VERSION, JSONReporter } from '../reporters/json-reporter';
+import type { AnalysisResult, ListReport } from '../types/index';
+import { getFindingFingerprint } from '../utils/finding-identity';
 
 describe('JSONReporter', () => {
   let reporter: JSONReporter;
@@ -63,8 +64,67 @@ describe('JSONReporter', () => {
 
       expect(parsed.summary).toBe(mockResult.summary);
       expect(parsed.statistics).toEqual(mockResult.statistics);
-      expect(parsed.issues).toEqual(mockResult.issues);
+      expect(parsed.issues).toHaveLength(mockResult.issues.length);
       expect(parsed.recommendations).toEqual(mockResult.recommendations);
+    });
+
+    it('should include the schema version', () => {
+      reporter.saveToFile(mockResult, testFilePath);
+      const parsed = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+
+      expect(parsed.schema_version).toBe(JSON_SCHEMA_VERSION);
+    });
+
+    it('should add control_id and fingerprint to every issue', () => {
+      reporter.saveToFile(mockResult, testFilePath);
+      const parsed = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+
+      expect(parsed.issues[0]).toMatchObject(mockResult.issues[0]);
+      expect(parsed.issues[0].control_id).toBe('HH-GH-001');
+      expect(parsed.issues[0].fingerprint).toBe(getFindingFingerprint(mockResult.issues[0]));
+    });
+
+    it('should add identity to review issues when present', () => {
+      const withReview: AnalysisResult = {
+        ...mockResult,
+        reviewIssues: [{ ...mockResult.issues[0], type: 'security-pr', severity: 'low' }],
+      };
+
+      reporter.saveToFile(withReview, testFilePath);
+      const parsed = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+
+      expect(parsed.reviewIssues[0].control_id).toBe('HH-GH-003');
+      expect(parsed.reviewIssues[0].fingerprint).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    it('should not add reviewIssues when the result has none', () => {
+      reporter.saveToFile(mockResult, testFilePath);
+      const parsed = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+
+      expect(parsed).not.toHaveProperty('reviewIssues');
+    });
+
+    it('should save list reports unchanged apart from metadata', () => {
+      const listReport: ListReport = {
+        list: 'critical',
+        generated: '2026-11-26T00:00:00Z',
+        summary: {
+          totalRepos: 0,
+          actionsEnabled: 0,
+          securityEnabled: 0,
+          totalIssues: 0,
+          criticalIssues: 0,
+          highIssues: 0,
+        },
+        repositories: [],
+        recommendations: [],
+      };
+
+      reporter.saveToFile(listReport, testFilePath);
+      const parsed = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+
+      expect(parsed).toMatchObject(listReport);
+      expect(parsed.schema_version).toBe(JSON_SCHEMA_VERSION);
     });
 
     it('should include generated_at timestamp', () => {
