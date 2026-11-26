@@ -34,7 +34,9 @@ export class RepeatedActionFailureEvaluator extends BaseEvaluator {
 
     const issues: SecurityIssue[] = [];
 
-    // Group failures by repository:workflow
+    // Group failures by repository and workflow. The repository and name are
+    // read from the runs themselves rather than parsed back out of the map key:
+    // workflow names may contain ':' (e.g. "CI: build").
     const failuresByWorkflow = new Map<string, WorkflowRun[]>();
 
     for (const run of context.workflowRuns) {
@@ -48,9 +50,9 @@ export class RepeatedActionFailureEvaluator extends BaseEvaluator {
     }
 
     // Check for repeated failures
-    for (const [key, failures] of failuresByWorkflow) {
+    for (const failures of failuresByWorkflow.values()) {
       if (failures.length >= threshold) {
-        const [repository, workflowName] = key.split(':');
+        const { repository, workflow_name: workflowName } = failures[0];
         const sortedFailures = [...failures].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
