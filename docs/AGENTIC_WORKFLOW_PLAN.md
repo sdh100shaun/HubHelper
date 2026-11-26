@@ -302,9 +302,10 @@ Each change gets unit tests in `src/__tests__/` (coverage above 75% per file).
   Distribution), not in a public repository.
 - **gh-aw only.** No composite `action.yml`. The scan job installs the CLI with `npx` at a pinned version.
   People who don't use gh-aw can still run the CLI from any workflow, as the docs page will show.
-- **Weekly cadence:** `schedule: weekly on monday` plus manual runs. The digest stays a **Discussion** in the
-  `audits` category, with `fallback-to-issue` (on by default) creating an issue if Discussions is off.
+- **Weekly cadence:** `schedule: weekly on monday` plus manual runs. The digest is a **Discussion** in the
+  `audits` category (confirmed). `fallback-to-issue` (on by default) creates an issue if Discussions is off,
+  and the docs page tells users to enable Discussions and create the `audits` category.
 
 ## Open questions
 
-1. Should the digest be a Discussion (current default, falls back to an issue) or always an issue?
+None at present. Next step: phase 1.
